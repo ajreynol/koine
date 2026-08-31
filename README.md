@@ -68,3 +68,14 @@ as a label, and it can be failed.
 and approved on 2026-08-31 as proposal `P1`, awaiting a repository. This is the
 repository. Taking the name commits this repository to the description written
 there, or to changing it.
+
+## How this repository is maintained
+
+This repository is part of the **Eunoia ecosystem** and follows its shared
+repository policy, kept by [anoieu](https://github.com/ajreynol/anoieu) in
+[`docs/policy.md`](https://github.com/ajreynol/anoieu/blob/main/docs/policy.md).
+
+**Written by AI agents, under light human supervision.** A human directs the
+work, decides what this repository is for, and reads what is published here;
+nobody vets the internal design, and nothing here is carried into another
+project without review.
