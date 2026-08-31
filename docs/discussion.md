@@ -29,6 +29,75 @@ what we think would improve one, and what is about to move under them.
 **Nothing here is delivered by machine.** A person carries a topic to whoever
 owns it.
 
+## D2 — what `init_eo` cannot finish from inside the new repository
+
+**To:** anoieu
+**Kind:** request
+**Status:** open
+**Opened:** 2026-08-31, at anoieu `8339376`
+**Settles when:** a taken name's row in the register says where the tool lives,
+and the brief records the commit it was copied from — or both are written down as
+a person's step
+
+`init_eo` ran here this afternoon, before any of the joining in D1, and it did
+what it says: took the name from the register, wrote a README saying what the tool
+is for, complied with nothing else, left the work staged. **The order it insists
+on is right, and D1 is the evidence for it** — the README was written without
+reading the policy, and joining afterwards appended a maintenance note without
+changing a line of what the README says the tool is for. What follows is two
+things the prompt cannot finish, because neither can be finished from inside a
+brand new repository, and one smaller thing that is not its fault.
+
+**On which version ran:** the prompt was the one before `03f65b0`, which asked the
+agent to choose a name and offered the reserved list. It read the register anyway,
+found `koine` already approved and awaiting a repository, and took that — so
+nothing here turns on the difference, and the change since reads correctly from
+this end.
+
+**1. The register still says this repository does not exist.** `names.md` closes
+by saying *add the name here when you take it, with one line, and say where it
+lives*. `init_eo` cannot: it runs in the new repository, which has no reason to
+have anoieu checked out and no business committing in it. At `8339376` the row
+still reads **Approved**, awaiting its repository and points at `P1`, whose step 1
+says no name is claimed until a person creates one — while by now the repository
+exists, carries a README that argues for the name at some length, has joined, and
+runs your check on every push. The register is where anybody else looks to find
+that out, and it is the one place that is now wrong. It is a two-minute edit and
+it will keep being skipped, because nothing asks for it and nothing checks it. The
+cheapest fix is for `init_eo` to print the register line to paste as the last
+thing it says, while whoever ran it still has the context in front of them.
+`welcome_eo` is the other candidate, since it already reads the new tree from your
+side — but it runs when somebody remembers to run it, and the row is wrong from
+the moment `init_eo` exits.
+
+**2. The brief cannot say which version it copied.** The reason `init_eo` gives
+for `ynoia-brief.local.md` is exactly right — the register moves, and the version
+you read is the only thing that explains what you wrote — and the file it asks for
+cannot carry the fact that makes that work. The prompt links
+`.../blob/main/tools/ynoia/names.md`, and what comes back from a branch URL is a
+cached copy with no commit attached. The brief here is stamped `5668c20` only
+because the agent asked the API for the tip separately; those two caches agreed by
+luck rather than by construction. Both were also behind: the tip was `03f65b0`,
+which had just rewritten the one paragraph of `P1` that bore on the job in hand —
+*whoever builds it may reject all five* became *the name is ours to decide*. So
+this repository's brief is a verbatim copy of superseded text, and it says so
+nowhere. `welcome_eo` is built to use exactly this — *if the brief shows they were
+working from something we have since changed, that is entirely ours* — and it can
+only see it if the brief names what it read. Resolving the tip first and fetching
+`raw.githubusercontent.com/ajreynol/anoieu/<sha>/tools/ynoia/names.md` is one line
+of prompt, and it makes the stamp a fact rather than a second lookup that can
+disagree.
+
+**3. Smaller, and not `init_eo`'s to fix.** The brief has to stay untracked, and
+`init_eo` is right not to write a `.gitignore` — that is layout, and layout is
+`join_eo`'s. `join_eo` did not write one either, so `*.local.md` is a naming
+convention here with nothing behind it: it is ignored in anoieu by a line in
+anoieu's own `.gitignore`, and in this repository the only thing keeping a
+deliberately private document out of the history is that nobody types
+`git add -A`. Your own run says as much and moves on — *skip working space is
+untracked — nothing at `.gitignore`* — which is the check that would have caught
+it. One line in the joining set closes it.
+
 ## D1 — joining cost four files and about eighteen hundred lines of reading
 
 **To:** anoieu
