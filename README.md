@@ -1,12 +1,13 @@
 # koine
 
 A tool in the Eunoia ecosystem raises findings about projects that are not its
-own: the analyzer reads somebody else's repository, the scrutineer reads
-somebody else's proof, and each has to get what it found to the people who own
-it. The trip is always the same shape. A script runs in the project the finding
-is about and leaves a question; somebody answers it in a file; a second script
-runs back at home and reads the answer; and a check confirms that the wording
-the scripts use still matches the document that defines it.
+own: [anoieu](https://github.com/ajreynol/anoieu) reads somebody else's Eunoia
+signature, [dokimasia](https://github.com/ajreynol/dokimasia) reads somebody
+else's proof-production C++, and each has to get what it found to the people who
+own it. The trip is always the same shape. A script runs in the project the
+finding is about and leaves a question; somebody answers it in a file; a second
+script runs back at home and reads the answer; and a check confirms that the
+wording the scripts use still matches the document that defines it.
 
 **koine is that trip, held once instead of once per tool.** It is the shared
 half of the reporting loop — the part that is identical no matter which tool is
@@ -17,10 +18,39 @@ at one end or which project is at the other.
 *How does a finding get from the tool that raised it to the people it is about,
 and an answer back, in a form both ends read the same way?*
 
-That is a narrow, mechanical question, and it is the whole of the job. Two
-tools in this ecosystem have now built the loop separately and arrived at the
-same code for these parts — not similar code, the same code. koine exists
-because the second one had to be written at all.
+That is a narrow, mechanical question, and it is the whole of the job. Two tools
+in this ecosystem have now built the loop separately and arrived at the same
+code for these parts — not similar code, the same code. They overlap in nothing
+else: different inputs, different questions, no dependency in either direction.
+The loop is the entire intersection, and koine exists because the second one had
+to be written at all.
+
+## Its two customers
+
+**anoieu and dokimasia.** Not *tools in the ecosystem* — those two, by name,
+today. anoieu reads `.eo` and `.eos` files and asks whether a signature and its
+semantics agree; dokimasia reads cvc5's proof-production C++ and asks whether
+the solver can reach a conclusion no proof step covers. Different subjects,
+different questions, no shared line of code. Both run the same reporting loop,
+and that is the only reason this repository has a subject at all.
+
+**We supply the tooling; they run it and own what comes out.** koine does not
+maintain anybody's report and does not hold anybody's ledger. A customer's
+record stays in the customer's tree, under their name, settled by them, and what
+counts as a finding or as an answer stays theirs to decide. This is the boundary
+that makes koine cheap to depend on: adopting it costs a tool nothing it would
+have to argue about later.
+
+**They decide what gets built.** This repository takes its work from the two
+tools that use it and invents nothing on its own. A feature neither has asked
+for is a guess about somebody else's needs — likely wrong, and more expensive to
+withdraw than it was to write. There is no third party whose hypothetical use
+would justify guessing on their behalf.
+[`docs/discussion.md`](docs/discussion.md) is where an ask arrives.
+
+**It is plumbing, and means to stay plumbing.** Small, fixed, and correct, with
+no property a reader would notice except that nothing went wrong. A clever koine
+would be a worse koine.
 
 ## The question it does not answer
 
@@ -38,22 +68,49 @@ fixing them now would fix them before anybody has evidence about which is
 right. Nor does using koine enrol a repository in anything; a tool somebody
 depends on is not thereby a member of this ecosystem.
 
+## The open question
+
+**The goal is that a reporting structure stays cheap to change.** A tool learns
+what its record needs by keeping one: a field it did not know it wanted, a state
+that turned out to be two, a view somebody actually has to read. That learning
+is expensive today, because the ledger, the reply format and the scripts that
+read them were each written once by hand and drift apart the moment any of them
+moves. Making those changes cheap is the job.
+
+**The hypothesis, which is open and may be wrong: a reporting record is better
+kept in the tree than exported to an issue tracker.** Files under version
+control have properties a tracker does not — the record is reviewed in a diff,
+it is pinned to a commit, it arrives with a clone, and a program can decide
+things about it with no network and no account. Against that, a tracker has what
+files do not: notification, search across projects, a stable public URL, and a
+way for somebody who will never clone the repository to reply.
+
+This is a low-level technical question rather than a position, and it is the
+first one this repository has. What would settle it is a customer running both
+and saying which cost them less. If the answer is the tracker, koine is the tool
+that should say so first.
+
 ## Running it
 
-Nothing runs. This README is the only file here.
+Nothing runs. There is no code here yet — no command, no package, no interface —
+and how a customer would fetch and call this has not been designed. Saying so is
+more useful than a plan. What is here besides this page is the ecosystem's
+apparatus: a documentation index, the channel in
+[`docs/discussion.md`](docs/discussion.md), and the workflow that holds this
+repository to the policy the note at the bottom claims it follows.
 
-There is no code, no command, no package, and no interface — how a consumer
-would fetch and call this has not been designed, and saying so is more useful
-than a plan. If that changes, it will arrive the way this ecosystem shares
-anything else: a consumer pins a commit and fetches it. That describes the
-mechanism, not a release.
+If that changes, it will arrive the way this ecosystem shares anything else: a
+customer pins a commit and fetches it. That describes the mechanism, not a
+release.
 
 ## The name
 
 κοινή — *koinē*, the common dialect. The Greek that spread after Alexander and
 became the tongue people whose Greek differed used to understand each other. It
 is here because what two tools running this loop actually share is not code but
-a dialect they must both speak; the code is only what keeps them speaking it.
+a dialect they must both speak; the code is only what keeps them speaking it. It
+was also the plain register rather than the literary one, which is the right
+ambition for plumbing.
 
 The objection, which belongs in the same paragraph as the claim: κοινή is a
 word about communication in general, fastened to a tool about reporting in
