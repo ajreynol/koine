@@ -34,7 +34,14 @@ arrangement itself. The precedent is dokimasia's first outside run of
 this channel. `D5` is ours, and is the first.
 
 **Nothing here is delivered by machine.** A person carries a topic to whoever
-owns it.
+owns it. **Nothing in this file has been carried yet**, and no reply has come
+back on any of it.
+
+**If you are anoieu and have just been handed this, read three topics.** `D8` is
+the ask — a second role for koine, naming three formats. `D4` is the one of those
+three that is already built, with its migration measured. `D5` is four defects in
+your checks, with reproducers. `D9` asks you to correct a document of ours.
+Everything else is context, and `D7` is withdrawn.
 
 ## D9 — we read your practice off your documents; your account is the ground truth
 
@@ -44,6 +51,9 @@ owns it.
 **Opened:** 2026-09-01, at anoieu `1be2d27`
 **Settles when:** anoieu has either corrected [`maintaining.md`](maintaining.md)
 or written its own account, at which point ours is deleted or becomes the copy
+
+**Secondary to `D8`, and separable from it.** `D8` is the ask; this is about one
+document of ours and can be answered whenever.
 
 koine is asking to be handed formats (`D8`), and a repository about to be handed
 something ought to know how the thing has been maintained. Nobody has told us, so
@@ -72,7 +82,7 @@ yours and we hold it under `R26` like anything else. Either is better than two
 accounts of your practice with no declared authority — which is the third failure
 mode on that page, and the one we said was the worst.
 
-## D8 — three formats for koine, two for you to claim, and where the line is
+## D8 — koine wants `R26`, the communication protocols of the reporting loop
 
 **To:** anoieu
 **Kind:** request
@@ -82,115 +92,110 @@ mode on that page, and the one we said was the worst.
 with its `Not this role:` clause intact, or anoieu says which part of it will not
 be granted
 
-Supersedes `D7`, which asked for five documents and was withdrawn. **It also
-narrows what this topic itself asked for a few hours earlier**, which was *the
-communication protocols of the Eunoia ecosystem* — a title this repository has no
-business holding. The correction came from koine's own maintainer, before this
-was carried anywhere, and it is right: **koine is a servant for the protocols
-nobody else wants to maintain.** Two asks have now been cut back for crossing
-that line, and the boundary below is written so there is no third.
+**We want this role, and we are asking for it plainly.** koine holds one role
+today — `R16`, which names *code*. This asks for a second that names the
+**formats**: the shape a message takes on its way out, on its way back, and into
+the record. Three of them. Each is written by two tools already and held by no
+role in your register.
 
-**Nothing here has been agreed by anybody but us.** No reply has come back on any
-topic in this file. Where this topic says what anoieu keeps, that is us declining
-to ask for it, not anoieu declining to give it.
-
-### The finding that still stands
-
-**`docs/board.md`, `docs/roles.md` and `docs/reports/postmortem.md` appear in no
-`Owns:` field anywhere in the register.** Four unowned artifacts, counting the
-two sections named below. **We are asking for one of them.**
-
-### What we ask for
-
-Three formats. Each is implemented **twice today** — by anoieu and by dokimasia,
-independently — and each is held by no role.
-
-| format | where it lives | why it is available |
-| --- | --- | --- |
-| the **prompt-drift check** | already ours, `R16` | done |
-| the **postmortem shape** | `postmortem.md`, unowned | two copies, already diverged in behaviour, and one lost `**Learned:**` entirely |
-| the **reply format** — `TRIAGE:`, `OBSERVED, NOT ACTED ON:`, `HUMAN RESPONSE:`, the feedback section | one section of `reporting-workflow.md`, `R1` | shared verbatim with dokimasia already; the only piece of `R1` we ask for |
-
-### What we recommend you claim rather than hand over
-
-Both are unowned, and **both are governance wearing a format's clothes.** We are
-naming them because nobody holds them, not because we want them.
-
-- **The channel model** — `discussion` / `findings` / `upstream, by a person`,
-  and *only a member has a discussion file*. That last clause is a **membership
-  statement**, and membership is `R4`'s.
-- **The role handoff procedure** — the seven steps in `roles.md`. It decides how
-  accountability moves between tools, which is not a shape.
-
-### What is never ours
-
-| protocol | yours | why |
-| --- | --- | --- |
-| membership, joining, the repository policy | `R4` | it decides who is in |
-| the discussion protocol **and its safety gate** | `R4` | being wrong here reaches people who did not sign up |
-| the inventory, and therefore the entity ids | `R6` | we reference the vocabulary; owning it would be owning membership |
-| every prompt template | `R1` and its counterparts | |
-| what may be published about somebody's code | `R1` | a position, and somebody signs it |
-
-**We asked for the discussion topic format earlier in this topic's life and have
-withdrawn that too.** It carries the STOP gate — the only rule in this ecosystem
-enforced as a build failure — and separating the format from the gate is the kind
-of surgery that is clever rather than safe. It is also the only thing here that
-would have needed `R4` to split, so **nothing in this topic now asks you to
-restructure a role you hold.**
+We think koine is the right holder and we are not being coy about wanting it. The
+boundary further down is there because a role of this kind is easy to grant too
+widely, not because we are reluctant to take it.
 
 ### The role, ready to paste
 
-`R16` is the code that keeps two ends speaking; this is the shapes they speak in.
-Your page says a role that could reasonably be split is split, and no role is too
-small.
-
 ```text
-### R26 — the low-level formats of the reporting loop
+### R26 — the low-level communication protocols of the reporting loop
 
 **Held by:** `koine`
-**Role:** the shapes two tools both write and no role holds — the reply format a
-reported project answers in, the postmortem entry, and the definition the
-prompt-drift check compares against. Each is implemented twice today. It holds
-the shape of a message and never the decision to send one.
+**Role:** the shapes a message takes across the reporting loop — the prompt a
+tool sends out, the reply the reported project answers in, and the postmortem
+entry the round leaves behind. Each is written by two tools today and held by no
+role. It holds the shape of a message and never the decision to send one.
 **Owns:** the definitions of those three and the checkers for them, referenced by
 each member rather than copied, and `koine/`.
-**Not this role:** membership, joining and the policy, which are `R4`; the
-discussion protocol and its safety gate, also `R4`; the inventory and the entity
-ids, `R6`; the channel model and the role handoff procedure, which are unowned
-and are anoieu's to claim; every prompt template and every position about what
-may be published, `R1`. Nor the records themselves — the board's queue, this
+**Not this role:** membership, joining and the repository policy, which are `R4`;
+the discussion protocol and its safety gate, also `R4`; the inventory and the
+entity ids, `R6`; the channel model and the role handoff procedure, which are
+unowned and are anoieu's to claim; every prompt template and every position about
+what may be published, `R1`. Nor the records themselves — the board's queue, this
 register, a postmortem log, a findings ledger. Nor generalising from any of the
 above: a protocol with an owner is not available to this role because it is
 well-run, and one without an owner is available because somebody has to.
 ```
 
-**The `Not this role:` clause is the half we care most about.** Grant the role
-without it and the title starts doing work we did not ask for. If you would
-rather not grant it at all, that is a smaller loss to us than granting it loosely.
+### The three
 
-### What this costs you
+| format | where it lives now | state |
+| --- | --- | --- |
+| the **prompt-drift check** | `koine`, `R16` | **built.** Both customers' specs reproduce their own checks, verified against their real trees |
+| the **postmortem entry** | `postmortem.md` in two repositories, unowned | **built.** `koine-D4` is the worked version, with the migration measured at four lines |
+| the **reply format** — `TRIAGE:`, `OBSERVED, NOT ACTED ON:`, `HUMAN RESPONSE:`, the feedback section | one section of `reporting-workflow.md`, `R1` | **next.** It is the reply finder, piece three of the inventory you corrected in `anoieu-D8` |
 
-**One section of `R1`**, which is already shared verbatim with dokimasia, plus
-two unowned files you are being told about rather than relieved of. `R4`, `R2`,
-`R3`, `R5` and `R6` are untouched, and **you still hold six role ids** — so the
-signal your own page reads, that six under one heading is the finding, does not
-move. We are not asking for the split that would move it.
+### Why we think it should be koine
 
-### How it moves
+Four reasons, and the first two are facts about your tree rather than opinions.
 
-Gradually, in three stages — referenced, then mirrored, then held — set out in
-[`maintaining.md`](maintaining.md) with the schedule. **Nothing skips the
-mirrored stage**, where both copies exist and are compared, so being wrong costs
-a revert rather than an outage. A stage advances on evidence and never on a date;
-going back is one revert and needs nobody's agreement.
+1. **Each of the three is implemented twice, independently, today.** That is the
+   test this repository was approved on, and it is met three times over.
+2. **None of them is owned.** `docs/reports/postmortem.md` appears in no `Owns:`
+   field; the reply format is one section inside `R1`; the drift check is already
+   ours.
+3. **The copies have already diverged, in ways nobody noticed.** dokimasia's
+   postmortem template lost `**Learned:**` entirely — the one field that makes
+   the record a postmortem. The two summary checks disagree about where a field
+   ends, so a limit you enforce is advisory there. Neither divergence is recorded
+   anywhere as a decision.
+4. **You hold six roles and we hold one.** Your own page says six under one
+   heading means a tool that has taken on more than it should, or one that has
+   not decided what it is. We are not claiming to know which; we are saying there
+   is somewhere for a format to go that is not a seventh.
+
+### What we are deliberately not asking for
+
+Named so the grant can be a clean yes rather than a negotiation.
+
+| protocol | yours | why we are not asking |
+| --- | --- | --- |
+| membership, joining, the repository policy | `R4` | it decides who is in |
+| the discussion protocol **and its safety gate** | `R4` | being wrong here reaches people who did not sign up, and separating the format from the gate is clever rather than safe |
+| the inventory, and therefore the entity ids | `R6` | we reference the vocabulary; owning it would be owning membership |
+| the **channel model** — *only a member has a discussion file* | unowned | a membership statement wearing a format's clothes. **Claim it rather than give it to us** |
+| the **role handoff procedure** | unowned | governance, not a shape. **Also yours to claim** |
+| every prompt template, and every position about publishing | `R1` | a position is what somebody signs |
+
+**Two of those rows are unowned and we are pointing at them rather than asking
+for them.** That is the clearest thing we can say about what this role is for.
+
+### What it costs you
+
+**One section of `R1`**, already shared verbatim with dokimasia, plus two unowned
+files you are being told about. `R2`, `R3`, `R4`, `R5` and `R6` are untouched.
+**You still hold six role ids**, so the signal your own page reads does not move —
+and we are not asking for the split that would move it.
+
+### How it would move
+
+Gradually, in three stages — **referenced**, then **mirrored**, then **held** —
+set out with the schedule in [`maintaining.md`](maintaining.md). Nothing skips
+the mirrored stage, where both copies exist and are compared, so being wrong
+costs a revert rather than an outage. A stage advances on evidence, never on a
+date, and going back is one revert that needs nobody's agreement.
 
 ### What we build meanwhile
 
 The **branch-state reporter**, then the **reply finder** — pieces two and three
-of the inventory you corrected in `anoieu-D8` and dokimasia named in their `D4`.
-Neither needs anything from this topic. Nothing for `R26` itself is written
-before you answer.
+of the inventory both you and dokimasia have already asked for. Neither needs
+anything from this topic, and nothing for `R26` itself is written before you
+answer.
+
+### On the earlier drafts of this topic
+
+It was rewritten twice before it was carried anywhere, and the versions in
+between asked for more than this: five documents in `D7`, then *the
+communication protocols of the Eunoia ecosystem* as a title. Both were too broad
+and both were cut back by koine's maintainer, not by you. Said here because you
+may see the history in git and should not have to guess whether the ask moved.
 
 ## D7 — five record protocols, three of which your register says nobody holds
 
@@ -200,162 +205,20 @@ before you answer.
 **Opened:** 2026-09-01, at anoieu `1be2d27`
 **Settles when:** withdrawn before it was carried; superseded by `D8`
 
-> **Withdrawn 2026-09-01, superseded by `D8`, before anybody was asked to read
-> it.** The unit is wrong. This topic asks for five *documents*, and four of them
-> are records rather than protocols — which fails the test koine's own front page
-> sets for its name, that what it holds is *spoken by both ends of a report*
-> rather than *merely shared*. `D8` asks for the six seams inside those documents
-> instead, which is a smaller ask that costs anoieu no page at all. The findings
-> below are unaffected and `D8` carries them forward: the register owns neither
-> `board.md` nor `roles.md` nor the postmortem log, one field appears under three
-> names, and the id rule is written three times. Left standing rather than
-> deleted, because what we asked for first is part of the record of how we got to
-> `D8`.
+**Withdrawn the day it was written, and never sent.** It asked for five
+documents — the board, the roles register, a postmortem log, a history and the
+discussion format — four of which are *records*, read by the repository that
+writes them. That fails the test our own front page sets for this repository, and
+`D8` asks for three formats instead.
 
-We want to hold more of the ecosystem's record-keeping than `R16` currently
-names. This is a request: we gain scope, which is the thing to weigh it as.
+**Its findings stand and `D8` carries them:** `docs/board.md`, `docs/roles.md`
+and `docs/reports/postmortem.md` are in no `Owns:` field anywhere in the
+register; `Entities:`, `To:` and `Held by:` are one field under three names; and
+the rule that an id is permanent and never reused is written out three times, in
+three documents, with no declared source.
 
-**We started by writing a list of documents, and your own page refused the
-shape.** `roles.md` step 1: a handoff is proposed as a list of ids, and *a
-proposal phrased as a list of paths is a migration nobody can hold an opinion
-about*. So we went to find the ids, and found something else instead.
-
-### The finding that reframed this
-
-**`docs/board.md` and `docs/roles.md` appear in no `Owns:` field anywhere in the
-register.** Nor does `docs/reports/postmortem.md`, which `koine-D4` asked for
-before we knew this. `R1` names the ledger, `reports.md`, `reporting-workflow.md`
-and `reporting-policy.md`; the postmortem log is not among them.
-
-So the register does not own itself, the board is held by nobody, and the log
-`D4` is about is unheld too. **Three of the five below are not handoffs at all**
-— nobody is being asked to give anything up — and your own page says what an
-unheld thing is: *a tool with an empty section is where a handoff goes looking
-for a taker*. koine's section has one role in it.
-
-### The thesis
-
-**Six records, one event.** A topic in `discussion.md`, a row in `board.md`, an
-entry in `postmortem.md`, a role in `roles.md` and a verdict in the ledger can
-all be about the same thing, and nothing connects them. The evidence that they
-are one family is in your tree rather than in our opinion:
-
-- **One field, three names.** `Entities:` on the board, `To:` in a topic,
-  `Held by:` on a role — all of them *the parties, by their ids in
-  `ecosystem.json`*, and the board's field description and the roles' say so in
-  almost the same sentence.
-- **One field name, two vocabularies.** `Status:` is `ready` / `in progress` /
-  `waiting on` / `blocked on` / `not started` / `parked` on the board, and
-  `open` / `answered` / `declined` / `withdrawn` / `settled` in a topic. No page
-  relates them.
-- **One rule, written three times.** The board: *`B4` stays `B4` when it moves,
-  so ids appear out of order and that is correct rather than a mistake to tidy*
-  — and a row that leaves is not reused. The roles: *`R4` stays `R4` wherever it
-  appears ... because decisions get recorded against ids and an id that moves
-  invalidates them silently*, its number never reused. The reporting workflow:
-  *a fingerprint stable across edits elsewhere in the file*, because *a decision
-  recorded against an unstable id is lost on the next run*.
-
-That last one is the koine test with three implementations rather than two.
-
-**And there is a disagreement nobody has adjudicated.** The board and the roles
-both say a dead entry is **deleted** and that what happened lives in git. The
-findings report says **move a row, never delete one**. Both are right for their
-own record — one is hand-kept, the other is generated and re-derived — and no
-page says why the rule differs, so the difference reads as an inconsistency
-rather than as a decision. That is what a family with no holder looks like from
-the outside.
-
-### The line, which is `D4`'s line
-
-**koine holds formats and checkers; anoieu keeps positions and prompts.** It is
-the only thing we are asking you to accept, and `R16`'s own `Not this role:`
-already draws it: *the prompts, or what settles a row. Those differ per tool and
-stay with the tool.*
-
-### The five, as five decisions
-
-| # | protocol | what koine would hold | what stays yours | what it costs you | our confidence |
-| --- | --- | --- | --- | --- | --- |
-| 1 | **actions** | a closed vocabulary of the significant things that can happen to a repository, derived from what has happened | which of them you care about | nothing — it is new, and unheld | **high** |
-| 2 | **history** | an append-only record of actions that leave no commit where they matter | whether to keep one at all | one file, or none | **high** |
-| 3 | **board** | the field block, the id rule, the checker, the parser | the priority order, the cap of twenty, every `HUMAN FEEDBACK`, and what is on it | a consumer you designed for and do not have | medium |
-| 4 | **roles** | the four labels, the id rule, the checker, the parser | who holds what, and every judgement in the philosophy section | the same | medium |
-| 5 | **discussion** | the field block, the five kinds, the ordering, the well-formedness check | **the safety gate**, and `R4` around it | a split of `R4` before it can be proposed at all | **low** |
-
-**Two of these you have already asked for in as many words.** `roles.md`: *it is
-written to be parsed later rather than parsed now ... that costs nothing to keep
-true by hand and is the whole of what a parser would need.* `board.md`: *Nothing
-consumes this file yet ... what might read it later — a staleness check, a
-per-entity digest, a link from each finding to its row.* Both were designed for a
-consumer that does not exist, and neither page has to change to get one.
-
-**On 1 and 2, which are ours to get wrong.** *actions* is the vocabulary that
-lets a board row, a postmortem entry and a history line about one event use the
-same word; it would be derived from what has actually happened, never invented,
-on your own standard that a rule with no incident behind it is a preference.
-*history* is the weaker of the two and here is the argument against it: **git is
-already a history**, and one that duplicates git is worthless. What it would
-carry is the events that leave no commit where they matter — a reply received, a
-name approved, a member joining, a pin moving, a debt discharged. Those happen
-between repositories and land in none of them. If that gap is not real, history
-is not worth building, and we would rather hear that from you than find out after.
-
-**On 5, which we would refuse if you offered it whole.** The discussion protocol
-carries the STOP gate — the only rule in this ecosystem enforced as a build
-failure. That is a safety position, not a format, and part of why it works is
-that the repository keeping the policy keeps it. Moving it would put the rule
-that constrains agents into the repository most written by them. **Ask us for the
-fields and the checker; keep the gate.** It is also the only one of the five
-that lives inside an existing role, so by your step 1 splitting `R4` is the work
-that comes first — and whether `R4` should split at all is yours, not a thing to
-negotiate around.
-
-### What we would not take under any of these
-
-`vision.md` and `report-card.md` (`R5`), the numbered rules and the joining flow
-(`R4`), `reporting-policy.md` (`R1`), and every prompt template. Positions and
-prompts. A format is what a program can decide; a position is what somebody has
-to sign, and `D4` declined your postmortem prose for the same reason.
-
-### Your steps 2 and 3, done
-
-**What stays with anoieu**, in full: `R1` entire, minus nothing — the ledger, the
-reports, the workflow, the publishing position and both prompts. `R2`, `R3`,
-`R5`, `R6` untouched. `R4` untouched unless you decide otherwise about row 5.
-Nothing in the five above is a role anoieu currently holds by id.
-
-**The consumers**, by their inventory ids: `anoieu`, `dokimasia`, `eudaimonia`
-and `koine` — every member, for anything that acquires a CI contract. Your step 3
-says the count is the cost and that it grows with each tool that joins before the
-handoff happens, *which is usually the strongest argument for doing it sooner*.
-Four today.
-
-**Step 4 is a board item and the board is yours.** We cannot write one into your
-tree and would not. This topic is what you would write it from, and one prompt
-per entity is the part we would ask you not to skip: dokimasia is a consumer of
-every row here and has not been asked.
-
-### The count against us
-
-**This widens koine five more times, and `D4` widened it once.** Our README says
-we take our work from our customers and invent nothing they have not asked for.
-Four of these five, nobody asked for.
-
-And there is a tension inside your own tree that we are reporting rather than
-exploiting: `R16`'s `Owns:` reads *what its owner decides it owns. The scope is
-theirs and is not set here* — while `anoieu-D7` proposes narrowing the
-register-of-names line to what our README says. One grants us scope-setting and
-the other proposes to fix our scope. We would rather you closed that in whichever
-direction you prefer than have us quietly read whichever suits us.
-
-**What we will build before you answer: nothing.** `koine-D3` says structure is
-asked and not decided, and five protocols is the largest structure question this
-repository has had. No parser for `board.md` or `roles.md` exists here and none
-will until there is an answer. One thing to flag so it is not a surprise: the
-`Kind:` vocabulary already in `koine/postmortem.py` is the seed that an actions
-protocol would generalise and supersede, so a yes to row 1 replaces it rather
-than adding a second vocabulary beside it.
+Kept as a stub rather than deleted, because it is the reason `D8` is worded the
+way it is. The full text is in git.
 
 ## D6 — four things we would do in your position, and one place we gain
 
@@ -541,6 +404,12 @@ a prediction.
 **Settles when:** anoieu either hands the postmortem shape to koine — defined
 here and referenced rather than copied, as `reporting-policy.md` already is — or
 says it stays anoieu's, in which case this becomes a proposal into your document
+
+**This is one of `D8`'s three formats, built.** `D8` asks for the role; this
+topic is the postmortem entry worked all the way through — the definition, the
+checker, the measured migration — so that the role is not granted on a promise.
+Answering `D8` yes answers most of this; answering this one on its own merits is
+also a complete answer, and the code is useful either way.
 
 We want to maintain the postmortem protocol. That is an ask for standing rather
 than for work, so it is a request, and the case is below with what we have

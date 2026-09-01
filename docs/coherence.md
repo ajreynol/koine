@@ -134,8 +134,10 @@ neither has been asked to run it. Until one does, everything on
 against a second opinion.
 
 **A second role is proposed and nothing for it is to be built.** `D8` asks
-anoieu to record `R26` — *the low-level formats of the reporting loop* — beside
-`R16`: three shapes that two tools both write and no role holds. **No reply has
+anoieu to record `R26` — *the low-level communication protocols of the reporting
+loop* — beside `R16`: three shapes that two tools both write and no role holds.
+**koine wants that role**, and `D8` says so plainly rather than hedging; what it
+declines to ask for is listed there and in [`maintaining.md`](maintaining.md). **No reply has
 come back on any topic in this file**, so nothing in it is agreed.
 
 **The scope test is the working rule, and it is not the one to reach for first.**
