@@ -9,9 +9,19 @@ finding is about and leaves a question; somebody answers it in a file; a second
 script runs back at home and reads the answer; and a check confirms that the
 wording the scripts use still matches the document that defines it.
 
-**koine is that trip, held once instead of once per tool.** It is the shared
-half of the reporting loop — the part that is identical no matter which tool is
-at one end or which project is at the other.
+**koine is where that trip is defined and checked.** It is the shared half of
+the reporting loop — the part that is identical no matter which tool is at one
+end or which project is at the other.
+
+Not *held once instead of once per tool*, which is how this page used to put it
+and is wrong. **Redundancy is a feature; ambiguity about which copy is right is
+the defect.** A protocol is read where somebody is working, not where it is
+decided, so the copies should exist — a script still carries the prompt it sends,
+and should. What makes a copy safe is that the document says which one is the
+ground truth and something mechanical compares the rest to it. **koine's job is
+to be the ground truth and the comparison, never to be the only copy**, and a
+member holds its own copy and keeps working when this repository is unreachable.
+[`docs/maintaining.md`](docs/maintaining.md) is the practice in full.
 
 ## The question it answers
 
@@ -56,9 +66,30 @@ the paragraph above it, and the case for the exception is put where it can be
 refused: `D4` in the discussion file. If anoieu says no, the page becomes a
 proposal into their document and the code stays available to whoever wants it.
 
+It is the **one** exception, and the boundary below is what keeps it one. Two
+larger asks have already been narrowed or withdrawn for crossing it.
+
 **It is plumbing, and means to stay plumbing.** Small, fixed, and correct, with
 no property a reader would notice except that nothing went wrong. A clever koine
 would be a worse koine.
+
+**It is a servant for the protocols nobody else wants to maintain**, and that is
+the whole of its claim. koine does not own the documentation of how protocols
+work in this ecosystem, and the higher-level ones are not available to it:
+**membership and joining, the discussion protocol and its safety gate, the
+inventory of who is in the ecosystem, the procedure by which a role changes
+hands, and every position about what may be published.** Those are anoieu's, and
+not because of seniority — they are the ones somebody is already maintaining, and
+the ones where being wrong reaches people who did not sign up. What is left is
+the low-level end: the shape of a reply, the shape of a postmortem entry, the
+check that a script still says what its document says.
+
+So the test for anything proposed here is **not *is this a protocol*** — it is
+**is anybody else maintaining this, and would they want to.** The
+[ground-truth principle](docs/maintaining.md) is true of every protocol anywhere,
+which makes it tempting to conclude that koine should hold them; it does not
+follow, and this repository has already been wrong about that once. A useful rule
+and a narrow job are different things.
 
 ## The question it does not answer
 

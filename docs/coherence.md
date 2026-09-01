@@ -133,14 +133,34 @@ neither has been asked to run it. Until one does, everything on
 [`postmortem-protocol.md`](postmortem-protocol.md) is a design nobody has tested
 against a second opinion.
 
-**Five protocols are proposed and none of them is to be built.** `D7` asks
-anoieu for the *actions*, *history*, *board*, *roles* and *discussion-format*
-protocols. Until it is answered, **write no parser for `board.md` or
-`roles.md`**, and add no second `Kind:` vocabulary — the one in
-`koine/postmortem.py` is what an actions protocol would generalise, and building
-a rival beside it is the specific way this goes wrong. Five protocols is the
-largest structure question this repository has had, and by the division above it
-is asked, not decided.
+**A second role is proposed and nothing for it is to be built.** `D8` asks
+anoieu to record `R26` — *the low-level formats of the reporting loop* — beside
+`R16`: three shapes that two tools both write and no role holds. **No reply has
+come back on any topic in this file**, so nothing in it is agreed.
+
+**The scope test is the working rule, and it is not the one to reach for first.**
+Ask **is anybody else maintaining this, and would they want to** — not *is this a
+protocol*. koine is a servant for the protocols nobody else wants to maintain;
+membership, joining, the discussion protocol and its gate, the inventory and the
+entity ids, the channel model and the role handoff procedure are **not
+available**, and [`maintaining.md`](maintaining.md) tables them. This repository
+has already over-reached twice: `D7` asked for five documents and was withdrawn,
+and `D8` asked to be *maintainer of the communication protocols of the Eunoia
+ecosystem* before being cut back the same day. **The ground-truth principle is
+true of every protocol anywhere, and that is not a reason for koine to hold
+them.**
+
+Until `D8` is answered, **write no parser for `board.md` or `roles.md`**, and add
+no second `Kind:` vocabulary beside the one in `koine/postmortem.py`. What *is*
+open to build meanwhile is the branch-state reporter and then the reply finder —
+pieces two and three of the four-piece inventory both customers already asked
+for, needing nothing from `D8`.
+
+**And if `R26` is granted, the clause that matters is `Not this role:`.** koine
+holds the shape of a message; anoieu keeps every constraint on whether it may be
+sent — the STOP gate, *nothing crosses a repository boundary automatically*,
+*touch no issue tracker*. A grant without that clause is worse than no grant, and
+`D8` says so to them in those words.
 
 **Nothing generates anything yet.** `lessons()` and `open_debts()` return records
 and no document is written from them, so anoieu's standing-rules table is still
