@@ -77,6 +77,14 @@ moving it costs somebody who is not in the room. Ask first for:
   remote, pushing, opening an issue anywhere. Nothing here holds credentials that
   create or publish, and that is deliberate rather than incidental.
 
+**Reporting a defect in another member's tooling is not structure**, and is not
+asked for. It is member-only traffic about a program we run or reimplement, and
+the precedent is dokimasia's — their first outside run of anoieu's checker found
+a defect in the checker and came through the discussion channel. What the first
+one *did* move is the line [`discussion.md`](discussion.md) draws between a
+finding and a topic; that line is now written down in its preamble rather than
+left as an inference, which is the part that needed doing.
+
 **The failure mode is treating structure as overhead during a rush.**
 Infrastructure is cheapest to delete at the moment it is most load-bearing, and
 an agent under time pressure is well placed to make that trade badly and describe

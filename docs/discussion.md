@@ -26,8 +26,190 @@ and a line number — is a finding, and koine has no findings ledger because it
 raises none. What is here is everything else: what we want from another tool,
 what we think would improve one, and what is about to move under them.
 
+**A defect in the ecosystem's own tooling is a topic, not a finding.** The
+distinction is what the defect is *about*: a finding is about the subject a tool
+analyses, and a broken check in a program we run or reimplement is about the
+arrangement itself. The precedent is dokimasia's first outside run of
+`policy_check.py`, which found a defect in `policy_check.py` and came through
+this channel. `D5` is ours, and is the first.
+
 **Nothing here is delivered by machine.** A person carries a topic to whoever
 owns it.
+
+## D6 — four things we would do in your position, and one place we gain
+
+**To:** dokimasia
+**Kind:** proposal
+**Status:** open
+**Opened:** 2026-09-01, at dokimasia `355edf2`
+**Settles when:** dokimasia has acted on each or said why not; the first is the
+only one with a deadline, and its deadline is your first postmortem entry
+
+We reimplemented both halves of your workflow to build koine, which meant reading
+your tree closely enough to notice things. Most of this is yours to gain from and
+one part is not, so the gain is marked where it falls.
+
+**1. Your postmortem template dropped `**Learned:**`, and your own rule catches
+it.** anoieu's template carries it on the sections beneath an entry; the copy in
+`docs/postmortem.md` ends at *what happened*. It is the one field that makes the
+record a postmortem rather than a log — an entry without it says an event
+occurred and never what the next person should do differently.
+
+What makes this worth a topic rather than a note is that **you already have the
+mechanism that would have caught it**. Your `workflows.md` carries *Where we
+diverge*, it records the fourth triage label `answered` and the rows that name no
+file, and it says in as many words that a divergence nobody wrote down is drift.
+`Learned:` is not in that section. So this reads as a copy that lost a field
+rather than a decision somebody took — and if it *was* a decision, the section is
+where it belongs.
+
+**And you are at the cheapest moment this can ever be fixed.** Your log has zero
+entries; your own page says the first run writes the first one. Everybody else
+who fixes this is amending a record. You are editing a template.
+
+**2. You got the summary semantics right and anoieu did not.** Your
+`test_postmortem()` reads a `**Summary:**` on to the next field. anoieu's stops
+at a blank line, which makes its 250-character limit evadable by pressing return
+— we measured it: six characters counted with four hundred and eighty following.
+koine took your reading, and both logs still pass under it. Worth knowing that
+the copy improved on the original in one place, and that neither of you knew.
+It is `D5`'s third item, reported to them.
+
+**3. Adopt `PROTOCOL` directly and skip `SHAPE` entirely.** The two levels exist
+so that a repository with a written log can drop its checker today and migrate
+later. **You have no entries, so you have no migration** — you are the only
+member who can take the whole thing on day one and never own the intermediate
+state. anoieu's path is six steps; yours is one.
+
+**4. Book your two known debts now, before the first round.** `workflows.md`
+names both weak slots plainly: nothing restores the cvc5 commit a row was
+measured against (`M0.5` and `A.3`), and a curated row has no fingerprint anybody
+can reproduce — so *do not add a row by hand* is the one convention that does not
+yet bind you. Your postmortem page says either could be what the first entry is
+about.
+
+They are prose in a document about workflows, which is where a debt goes to be
+forgotten. A `Debt:` field carries a *settles when* clause and is enumerable:
+`open_debts()` returns what has been booked and not written off. Booking them
+before the first round means your first round is measured against a record that
+already knows what it is missing, rather than against one that discovers it.
+
+**5. Where we gain, so you can discount it.** You can delete `test_prompts()` —
+about sixty lines — today. We ran your six cases against your real tree and all
+six reproduce, which is in [`../tests/customers.py`](../tests/customers.py) so
+that you can run it rather than believe us. koine gains a second adopter from
+this and you gain sixty lines, and those are not the same size.
+
+**6. On your own `D4`, which events overtook rather than answered.** You argued
+against a repository of its own and for anoieu's `tools/`: the mechanism already
+existed, you would be the second consumer, and isolation is worth paying for at
+the third. koine was approved above both of us and that argument was never
+actually met. You are the right party to hold us to it. If pinning a second
+repository costs you more than keeping the copy did, **that is a real answer to
+the question koine's front page says it exists to settle**, and we would much
+rather have it from you than not have it. Say so plainly if it does.
+
+## D5 — four checks that pass when they should not
+
+**To:** anoieu
+**Kind:** notice
+**Status:** open
+**Opened:** 2026-09-01, at anoieu `1be2d27`
+**Settles when:** each is fixed, or anoieu says the behaviour is intended and the
+docstring that says otherwise is corrected
+
+Found by running your checker on this repository and by writing the second
+implementation of two of your checks. Each has a reproducer, because *some of
+what a tool reports is wrong* is your standard and we are not exempt from it.
+
+They share a shape: **a check that reports nothing where it should report
+something**, which is the direction that looks fine. Three are one-line fixes.
+The fourth is not fixable by tightening anything, and is the argument for `D4`.
+
+**1. `check_links` reads fenced code blocks.** A path inside a ```` ```python ````
+example is a string literal, not a link, and is reported as a broken one.
+
+**The reproducer, which this topic cannot carry verbatim.** Commit a `docs/x.md`
+whose body is a fenced `python` block containing one assignment whose value is a
+quoted repo-relative path under `docs/` that does not exist. The run then reports a `FAIL` saying that `docs/x.md` links to that path,
+which does not exist.
+
+Writing that path literally here makes *this* file fail the same check, so every
+mention of it above is in backticks to get the topic past your checker. **That is
+the defect, demonstrated at your expense and ours**, and it is the most compact
+statement of it we can make.
+
+The bare-path rule's lookbehind excludes a preceding backtick, `/`, `(` and word
+characters — but not a quote, which is exactly what a code example puts there. It
+cost us two spurious failures on a page whose whole purpose is to show a customer
+what to copy. **You already know fences are not content**: `postmortem_shape()`,
+in `tests/run.py`, strips them before reading, with the comment *not the
+template*. `check_links` is the same argument and does not.
+
+We removed the workaround rather than keeping it, on your own sentence that a
+check firing on a non-problem is yours to fix. What we replaced it with was
+better anyway — the examples duplicated the specs in our tests — so this cost us
+nothing beyond the diagnosis, and we would not have found it otherwise.
+
+**2. `postmortem_shape()` silently stops checking when a `Summary:` wraps.** The
+extraction requires a literal space after the field name:
+
+    r"^\*\*Summary:\*\* (.+?)(?=\n\*\*|\n\n|\Z)"
+
+and the no-match case is `continue`. So an entry written
+
+    **Summary:**
+    Ethos aborted with a C++ runtime error on a malformed type.
+
+is measured against neither limit — not over-length, not too many sentences,
+nothing. Verified against your exact expression: the wrapped form returns `None`
+and the entry is skipped in silence.
+
+This is the serious one. It is not a check that gets an answer wrong; it is a
+check that stops running and reports success. Two edits close it: `\s*` for the
+space, and treat no-match as a failure rather than a skip — an entry with a
+`Summary:` the reader cannot find is itself a defect.
+
+**3. The 250-character limit can be evaded by pressing return.** The lookahead
+ends the field at a blank line, so:
+
+    **Summary:** Short.
+
+    ...four hundred and eighty characters of further prose...
+
+measures **six characters**, and passes. The limit is enforced in your repository
+and advisory in practice. dokimasia's copy reads on to the next field and does not
+have this; koine took their reading, and under it both logs still pass, so the
+correct behaviour costs nobody an edit today.
+
+**4. The landing audit cannot see a verdict that drops the phrase.**
+`landing.malformed()` requires `"awaiting landing" in line` before it will
+complain that a marker does not parse. Three synthetic closed rows through
+`tools/landing.py`:
+
+| verdict ends with | `malformed()` | `read_ledger()` |
+| --- | --- | --- |
+| `awaiting landing: ethos anoieu-findings 1234567` | — | **in the audit** |
+| `awaiting landing: ethos anoieu-findings` | **caught** | — |
+| `it will land shortly` | — | — |
+
+The third row is closed, owes the debt, and is in neither list. That is exactly
+the failure `landing_markers()` names in its own docstring — *a verdict somebody
+reworded ... silently, and in the direction that looks fine* — and the guard
+covers only the case where the rewording keeps the words it is searching for.
+
+**No regex closes this**, because nothing requires a closed row to say anything
+about landing at all: the absence of a phrase is not detectable in free text. It
+is the one item here we are not offering you a one-line fix for, and it is why
+`D4` proposes `Debt:` as a field. A field has a required presence; a phrase in
+prose does not. Fixing it that way deletes `landing_markers()` rather than
+correcting it, because there is nothing left that can be reworded.
+
+**What we are not claiming.** We have not looked at the rest of `tests/run.py` or
+`policy_check.py` with this in mind, so this is four things we tripped over
+rather than an audit. Three of them we found by writing the same check twice,
+which is the argument koine was approved on, arriving as evidence rather than as
+a prediction.
 
 ## D4 — koine should hold the postmortem protocol, and is volunteering
 
@@ -96,12 +278,34 @@ table is derivable from the log in a one-line call, and we have written it.
    carry a *settles when* clause, in the words this file already uses for the
    same reason.
 
-**What it costs you, measured rather than estimated.** Two levels. `SHAPE` is
-what your check already does and nothing more; your log passes it untouched, and
-[`../tests/customers.py`](../tests/customers.py) is what we ran to say so rather
-than to assume it. `PROTOCOL` is the page above, and moving your two entries to
-it is four lines — a `Kind:` and a `Learned:` on each — which the same harness
-prints as a list.
+**The migration, as steps rather than as an estimate.** Every number below was
+measured by running it, not guessed; `SHAPE` and `PROTOCOL` are arguments to one
+function, so each step is a revert of one commit and none of them is a fork.
+
+| # | step | what it costs | what it removes |
+| --- | --- | --- | ---: |
+| 0 | pin a koine commit and clone it in the workflow, as you already do for the policy | one CI step | — |
+| 1 | call `postmortem.report(log)` at `SHAPE` and delete `postmortem_shape()` | **no edit to any document** — we ran it against your log | 52 lines |
+| 2 | add a `Kind:` and a `Learned:` to each of your two entries, then move the call to `PROTOCOL` | 4 lines, and the harness prints exactly which | — |
+| 3 | replace the `awaiting landing:` marker with `Debt:` fields, and have `landing.py` read `open_debts()` | the real work: one pass over the closed rows that carry it | 26 lines |
+| 4 | generate *Standing rules this log has produced* from `lessons()` | a table you maintain by hand | a hand-maintained table |
+| 5 | independent of the rest: delete `prompts_agree()` and pass a spec to `koine.drift` | none; all four of your cases reproduce | 107 lines |
+
+**Order matters for 1 → 2 → 3 and for nothing else.** Step 5 can go first or
+last; it is the piece you asked for in `D8` and does not depend on any of this.
+
+**Step 3 is the one worth doing for its own sake**, and `D5`'s fourth defect is
+the argument: your landing audit cannot see a verdict that drops the phrase
+`awaiting landing` altogether, which is precisely the failure `landing_markers()`
+was written to prevent. No tightening of the regex closes it, because nothing
+requires a closed row to say anything about landing at all. A field has a
+required presence and a phrase in prose does not. That step deletes the guard
+because there is nothing left to reword.
+
+**What stays yours, and we would decline it if offered:** the prose preamble and
+the procedure section of your log, *Where the workflow stands*, and the decision
+about what counts as a round. koine holds the shape and the checker; the judgement
+about your own workflow is not a format.
 
 **What we are not asking for.** `reporting-policy.md` is a position about what
 may be published about somebody else's code, and `reporting-workflow.md`'s
