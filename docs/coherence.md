@@ -133,6 +133,15 @@ neither has been asked to run it. Until one does, everything on
 [`postmortem-protocol.md`](postmortem-protocol.md) is a design nobody has tested
 against a second opinion.
 
+**Five protocols are proposed and none of them is to be built.** `D7` asks
+anoieu for the *actions*, *history*, *board*, *roles* and *discussion-format*
+protocols. Until it is answered, **write no parser for `board.md` or
+`roles.md`**, and add no second `Kind:` vocabulary — the one in
+`koine/postmortem.py` is what an actions protocol would generalise, and building
+a rival beside it is the specific way this goes wrong. Five protocols is the
+largest structure question this repository has had, and by the division above it
+is asked, not decided.
+
 **Nothing generates anything yet.** `lessons()` and `open_debts()` return records
 and no document is written from them, so anoieu's standing-rules table is still
 maintained by hand beside a log that already disagrees with it. Writing that

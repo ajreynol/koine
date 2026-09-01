@@ -36,6 +36,161 @@ this channel. `D5` is ours, and is the first.
 **Nothing here is delivered by machine.** A person carries a topic to whoever
 owns it.
 
+## D7 — five record protocols, three of which your register says nobody holds
+
+**To:** anoieu
+**Kind:** request
+**Status:** open
+**Opened:** 2026-09-01, at anoieu `1be2d27`
+**Settles when:** anoieu has answered each of the five rows below separately — a
+yes to all of them and a no to all of them are both complete answers, and a
+partial one is the expected one
+
+We want to hold more of the ecosystem's record-keeping than `R16` currently
+names. This is a request: we gain scope, which is the thing to weigh it as.
+
+**We started by writing a list of documents, and your own page refused the
+shape.** `roles.md` step 1: a handoff is proposed as a list of ids, and *a
+proposal phrased as a list of paths is a migration nobody can hold an opinion
+about*. So we went to find the ids, and found something else instead.
+
+### The finding that reframed this
+
+**`docs/board.md` and `docs/roles.md` appear in no `Owns:` field anywhere in the
+register.** Nor does `docs/reports/postmortem.md`, which `koine-D4` asked for
+before we knew this. `R1` names the ledger, `reports.md`, `reporting-workflow.md`
+and `reporting-policy.md`; the postmortem log is not among them.
+
+So the register does not own itself, the board is held by nobody, and the log
+`D4` is about is unheld too. **Three of the five below are not handoffs at all**
+— nobody is being asked to give anything up — and your own page says what an
+unheld thing is: *a tool with an empty section is where a handoff goes looking
+for a taker*. koine's section has one role in it.
+
+### The thesis
+
+**Six records, one event.** A topic in `discussion.md`, a row in `board.md`, an
+entry in `postmortem.md`, a role in `roles.md` and a verdict in the ledger can
+all be about the same thing, and nothing connects them. The evidence that they
+are one family is in your tree rather than in our opinion:
+
+- **One field, three names.** `Entities:` on the board, `To:` in a topic,
+  `Held by:` on a role — all of them *the parties, by their ids in
+  `ecosystem.json`*, and the board's field description and the roles' say so in
+  almost the same sentence.
+- **One field name, two vocabularies.** `Status:` is `ready` / `in progress` /
+  `waiting on` / `blocked on` / `not started` / `parked` on the board, and
+  `open` / `answered` / `declined` / `withdrawn` / `settled` in a topic. No page
+  relates them.
+- **One rule, written three times.** The board: *`B4` stays `B4` when it moves,
+  so ids appear out of order and that is correct rather than a mistake to tidy*
+  — and a row that leaves is not reused. The roles: *`R4` stays `R4` wherever it
+  appears ... because decisions get recorded against ids and an id that moves
+  invalidates them silently*, its number never reused. The reporting workflow:
+  *a fingerprint stable across edits elsewhere in the file*, because *a decision
+  recorded against an unstable id is lost on the next run*.
+
+That last one is the koine test with three implementations rather than two.
+
+**And there is a disagreement nobody has adjudicated.** The board and the roles
+both say a dead entry is **deleted** and that what happened lives in git. The
+findings report says **move a row, never delete one**. Both are right for their
+own record — one is hand-kept, the other is generated and re-derived — and no
+page says why the rule differs, so the difference reads as an inconsistency
+rather than as a decision. That is what a family with no holder looks like from
+the outside.
+
+### The line, which is `D4`'s line
+
+**koine holds formats and checkers; anoieu keeps positions and prompts.** It is
+the only thing we are asking you to accept, and `R16`'s own `Not this role:`
+already draws it: *the prompts, or what settles a row. Those differ per tool and
+stay with the tool.*
+
+### The five, as five decisions
+
+| # | protocol | what koine would hold | what stays yours | what it costs you | our confidence |
+| --- | --- | --- | --- | --- | --- |
+| 1 | **actions** | a closed vocabulary of the significant things that can happen to a repository, derived from what has happened | which of them you care about | nothing — it is new, and unheld | **high** |
+| 2 | **history** | an append-only record of actions that leave no commit where they matter | whether to keep one at all | one file, or none | **high** |
+| 3 | **board** | the field block, the id rule, the checker, the parser | the priority order, the cap of twenty, every `HUMAN FEEDBACK`, and what is on it | a consumer you designed for and do not have | medium |
+| 4 | **roles** | the four labels, the id rule, the checker, the parser | who holds what, and every judgement in the philosophy section | the same | medium |
+| 5 | **discussion** | the field block, the five kinds, the ordering, the well-formedness check | **the safety gate**, and `R4` around it | a split of `R4` before it can be proposed at all | **low** |
+
+**Two of these you have already asked for in as many words.** `roles.md`: *it is
+written to be parsed later rather than parsed now ... that costs nothing to keep
+true by hand and is the whole of what a parser would need.* `board.md`: *Nothing
+consumes this file yet ... what might read it later — a staleness check, a
+per-entity digest, a link from each finding to its row.* Both were designed for a
+consumer that does not exist, and neither page has to change to get one.
+
+**On 1 and 2, which are ours to get wrong.** *actions* is the vocabulary that
+lets a board row, a postmortem entry and a history line about one event use the
+same word; it would be derived from what has actually happened, never invented,
+on your own standard that a rule with no incident behind it is a preference.
+*history* is the weaker of the two and here is the argument against it: **git is
+already a history**, and one that duplicates git is worthless. What it would
+carry is the events that leave no commit where they matter — a reply received, a
+name approved, a member joining, a pin moving, a debt discharged. Those happen
+between repositories and land in none of them. If that gap is not real, history
+is not worth building, and we would rather hear that from you than find out after.
+
+**On 5, which we would refuse if you offered it whole.** The discussion protocol
+carries the STOP gate — the only rule in this ecosystem enforced as a build
+failure. That is a safety position, not a format, and part of why it works is
+that the repository keeping the policy keeps it. Moving it would put the rule
+that constrains agents into the repository most written by them. **Ask us for the
+fields and the checker; keep the gate.** It is also the only one of the five
+that lives inside an existing role, so by your step 1 splitting `R4` is the work
+that comes first — and whether `R4` should split at all is yours, not a thing to
+negotiate around.
+
+### What we would not take under any of these
+
+`vision.md` and `report-card.md` (`R5`), the numbered rules and the joining flow
+(`R4`), `reporting-policy.md` (`R1`), and every prompt template. Positions and
+prompts. A format is what a program can decide; a position is what somebody has
+to sign, and `D4` declined your postmortem prose for the same reason.
+
+### Your steps 2 and 3, done
+
+**What stays with anoieu**, in full: `R1` entire, minus nothing — the ledger, the
+reports, the workflow, the publishing position and both prompts. `R2`, `R3`,
+`R5`, `R6` untouched. `R4` untouched unless you decide otherwise about row 5.
+Nothing in the five above is a role anoieu currently holds by id.
+
+**The consumers**, by their inventory ids: `anoieu`, `dokimasia`, `eudaimonia`
+and `koine` — every member, for anything that acquires a CI contract. Your step 3
+says the count is the cost and that it grows with each tool that joins before the
+handoff happens, *which is usually the strongest argument for doing it sooner*.
+Four today.
+
+**Step 4 is a board item and the board is yours.** We cannot write one into your
+tree and would not. This topic is what you would write it from, and one prompt
+per entity is the part we would ask you not to skip: dokimasia is a consumer of
+every row here and has not been asked.
+
+### The count against us
+
+**This widens koine five more times, and `D4` widened it once.** Our README says
+we take our work from our customers and invent nothing they have not asked for.
+Four of these five, nobody asked for.
+
+And there is a tension inside your own tree that we are reporting rather than
+exploiting: `R16`'s `Owns:` reads *what its owner decides it owns. The scope is
+theirs and is not set here* — while `anoieu-D7` proposes narrowing the
+register-of-names line to what our README says. One grants us scope-setting and
+the other proposes to fix our scope. We would rather you closed that in whichever
+direction you prefer than have us quietly read whichever suits us.
+
+**What we will build before you answer: nothing.** `koine-D3` says structure is
+asked and not decided, and five protocols is the largest structure question this
+repository has had. No parser for `board.md` or `roles.md` exists here and none
+will until there is an answer. One thing to flag so it is not a surprise: the
+`Kind:` vocabulary already in `koine/postmortem.py` is the seed that an actions
+protocol would generalise and supersede, so a yes to row 1 replaces it rather
+than adding a second vocabulary beside it.
+
 ## D6 — four things we would do in your position, and one place we gain
 
 **To:** dokimasia
@@ -226,6 +381,14 @@ than for work, so it is a request, and the case is below with what we have
 already built to make it concrete:
 [`postmortem-protocol.md`](postmortem-protocol.md) and
 [`../koine/postmortem.py`](../koine/postmortem.py).
+
+**And no role holds it.** Found after this topic was written, while looking for
+the ids `D7` needed: `R1`'s `Owns:` names the ledger, `reports.md`,
+`reporting-workflow.md`, `reporting-policy.md` and the two prompts.
+`docs/reports/postmortem.md` is not among them, and appears in no other `Owns:`
+field either. So this is not a handoff and nobody is being asked to give
+something up — which is a better fact than the one we opened with, and we did not
+have it at the time.
 
 **You told us this was the fourth copy, and said you were not asking for it.**
 `postmortem_shape()` here, `test_postmortem()` there, written independently,
