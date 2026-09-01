@@ -92,16 +92,42 @@ that should say so first.
 
 ## Running it
 
-Nothing runs. There is no code here yet — no command, no package, no interface —
-and how a customer would fetch and call this has not been designed. Saying so is
-more useful than a plan. What is here besides this page is the ecosystem's
-apparatus: a documentation index, the channel in
-[`docs/discussion.md`](docs/discussion.md), and the workflow that holds this
-repository to the policy the note at the bottom claims it follows.
+**One piece of the loop is built: the prompt-drift check.** A script that carries
+a copy of a prompt still says what the document defining that prompt says it
+says. It is the piece anoieu asked for first, on the ground that it is the one
+guaranteed to rot — it exists to catch divergence, and it was two copies with
+nothing watching either. [`docs/drift.md`](docs/drift.md) is the whole of it.
 
-If that changes, it will arrive the way this ecosystem shares anything else: a
-customer pins a commit and fetches it. That describes the mechanism, not a
-release.
+There is no package and no install step. A customer pins a commit, clones it, and
+puts the directory on `sys.path` — the same mechanism this ecosystem already uses
+to share a policy checker, and the reason adopting this costs one clone and
+abandoning it costs restoring a file you already had.
+
+```python
+import sys; sys.path.insert(0, "/tmp/koine")
+from koine import drift
+
+failures = drift.report(SPEC)      # SPEC is data; docs/drift.md has both customers'
+```
+
+Both customers' specs are written out there verbatim, and
+`python3 tests/customers.py ~/src/anoieu ~/src/dokimasia` runs them against the
+real trees: they reproduce all four of anoieu's cases and all six of dokimasia's,
+with no case, form or line of coverage lost. That is a claim worth being able to
+re-run rather than take on our word, which is the only reason it is a script. What each would see
+change on adopting it is listed in the same document, in full, because a shared
+implementation that quietly alters somebody's behaviour is the thing this
+repository exists to prevent.
+
+`python3 tests/run.py` is koine's own suite. It needs no dependency, no network
+and no customer checked out: everything runs against a miniature repository under
+`tests/fixtures/`, and every part of the comparison is tested against a script
+that has drifted as well as one that has not.
+
+**Three of the four shared pieces are not built** — the branch-state reporter,
+the reply finder, and the postmortem-shape check. The first two were asked for,
+in that order, after this one; the third was named only to correct the inventory.
+None of them is started.
 
 ## The name
 

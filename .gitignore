@@ -1,0 +1,15 @@
+# Working space that is deliberately not part of the record. `*.local.md` is the
+# ecosystem's convention for a private working document -- a brief written from
+# a page that has since moved, notes taken during a joining -- and until this
+# file existed the only thing keeping one out of the history was nobody typing
+# `git add -A`.
+*.local.md
+*.local.json
+
+# Scratch space a run may write and nothing may commit. The policy requires the
+# line by name; a repository that has never written to it still carries it, so
+# that the first thing that does is already ignored.
+scratch/
+
+__pycache__/
+*.pyc
