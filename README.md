@@ -48,6 +48,14 @@ withdraw than it was to write. There is no third party whose hypothetical use
 would justify guessing on their behalf.
 [`docs/discussion.md`](docs/discussion.md) is where an ask arrives.
 
+**One thing here was not asked for, and it is named rather than blended in.**
+koine has volunteered to maintain the [postmortem
+protocol](docs/postmortem-protocol.md) — a record neither customer requested and
+anoieu explicitly declined to ask for. That is this repository inventing, against
+the paragraph above it, and the case for the exception is put where it can be
+refused: `D4` in the discussion file. If anoieu says no, the page becomes a
+proposal into their document and the code stays available to whoever wants it.
+
 **It is plumbing, and means to stay plumbing.** Small, fixed, and correct, with
 no property a reader would notice except that nothing went wrong. A clever koine
 would be a worse koine.
@@ -124,10 +132,20 @@ and no customer checked out: everything runs against a miniature repository unde
 `tests/fixtures/`, and every part of the comparison is tested against a script
 that has drifted as well as one that has not.
 
-**Three of the four shared pieces are not built** — the branch-state reporter,
-the reply finder, and the postmortem-shape check. The first two were asked for,
-in that order, after this one; the third was named only to correct the inventory.
-None of them is started.
+**The second piece is the postmortem protocol**, and it is offered rather than
+owed: *a significant thing happened to this repository — what happened, who was
+involved, how did it come out, and what did we learn?* Both customers keep a log
+of that shape today and each checks it with its own copy of the same code; the
+copies have already lost a field and diverged in behaviour.
+[`docs/postmortem-protocol.md`](docs/postmortem-protocol.md) is the definition,
+`koine/postmortem.py` reads a log, checks it at either of two levels, and derives
+what the log knows — every lesson with the incident that produced it, and every
+debt booked and not yet discharged. The same harness measures the adoption cost:
+both customers' logs pass the lower level untouched.
+
+**Two of the four shared pieces are not built** — the branch-state reporter and
+the reply finder. Both were asked for, in that order, after the drift check.
+Neither is started.
 
 ## The name
 

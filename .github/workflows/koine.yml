@@ -10,3 +10,4 @@ jobs:
       # No dependencies, no network, no customer checked out: everything runs
       # against tests/fixtures/customer/.
       - run: python3 tests/run.py
+      - run: python3 tests/test_postmortem.py

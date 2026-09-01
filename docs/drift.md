@@ -119,103 +119,43 @@ result   = drift.run(SPEC)           # the same, structured, for your own output
 `run` returns a `Report` with `.failures` and a `.cases` list of `CaseResult`,
 each carrying `.ok`, `.diff` and `.error`. Neither writes anything anywhere.
 
-Both specs below are also the ones [`../tests/customers.py`](../tests/customers.py)
-holds, so the claim that they reproduce what each repository already had is
-something a reader re-runs rather than takes on our word:
+### The two real specs live in the tests, not here
+
+[`../tests/customers.py`](../tests/customers.py) holds anoieu's four cases and
+dokimasia's six, and runs them against the real trees:
 
 ```bash
 python3 tests/customers.py ~/src/anoieu ~/src/dokimasia
 ```
 
-It is not part of CI — it needs somebody else's checkout, and it fails when a
-customer moves their prompts, which is their business.
+They are **there and not written out here on purpose.** A spec copied into a
+document is a second copy that drifts from the first, which is the failure this
+whole page is about; and a spec in the tests is one a reader runs rather than
+reads. That harness is not part of CI — it needs somebody else's checkout, and it
+fails when a customer moves their prompts, which is their business.
 
-### anoieu's spec
-
-Verbatim, and checked against anoieu at `1be2d27`: it reproduces all four of
-`prompts_agree()`'s cases.
+What a spec looks like, in the small:
 
 ```python
-ROOT  = ...                                    # the anoieu checkout
-SWEEP = "-- or, for the sweep form --"
-POSTM = "-- or, with --no-postm --"
-
-TWO = [drift.after("TRIAGE: is an assistant"),
-       drift.drop_paragraphs(["Working in the anoieu repository",
-                              "Process ", "Address "])]
-
 SPEC = drift.Spec(
     root=ROOT,
-    document="docs/reports/reporting-workflow.md",
-    prompts={"one": drift.Prompt("### Prompt one", "### Prompt two"),
-             "two": drift.Prompt("### Prompt two", "### Prompt three")},
+    document="the/document/that/defines/the/prompts.md",
+    prompts={"one": drift.Prompt("### Prompt one", "### Prompt two")},
     cases=[
-        drift.Case("scripts/check_anoieu, one id", "one",
-                   ["bash", "scripts/prompts/check_anoieu", "--show-prompt", "ID"],
-                   forms={SWEEP: False},
-                   rules=[drift.sub("anoieu-ID", "BRANCH")]),
-        drift.Case("scripts/check_anoieu, the sweep", "one",
-                   ["bash", "scripts/prompts/check_anoieu", "--show-prompt"],
-                   forms={SWEEP: True},
-                   rules=[drift.sub("PROJECT", "anoieu"),
-                          drift.sub("anoieu-findings", "BRANCH")]),
-        drift.Case("scripts/process_anoieu", "two",
-                   ["bash", "scripts/prompts/process_anoieu", "--show-prompt",
-                    "--no-check", ROOT],
-                   forms={POSTM: False}, rules=TWO),
-        drift.Case("scripts/process_anoieu --no-postm", "two",
-                   ["bash", "scripts/prompts/process_anoieu", "--show-prompt",
-                    "--no-check", "--no-postm", ROOT],
-                   forms={POSTM: True}, rules=TWO),
+        drift.Case(
+            name="the script, in its one-row form",
+            prompt="one",
+            argv=["bash", "scripts/the_script", "--show-prompt", "ID"],
+            forms={"-- or, for the sweep form --": False},
+            rules=[drift.sub("tool-ID", "BRANCH")],
+        ),
     ],
 )
 ```
 
-### dokimasia's spec
-
-Verbatim, and checked against dokimasia at `355edf2`: it reproduces all six of
-`test_prompts()`'s cases.
-
-```python
-ROOT   = ...                                   # the dokimasia checkout
-SWEEP  = "-- or, for the sweep form --"
-BLOCKS = "-- or, for every block --"
-POSTM  = "-- or, with --no-postm --"
-READ   = [drift.after("Read it as two things.")]
-
-def two(name, argv, blocks, postm, rules=()):
-    return drift.Case(name, "two", argv,
-                      forms={BLOCKS: blocks, POSTM: postm}, rules=rules)
-
-SPEC = drift.Spec(
-    root=ROOT,
-    document="docs/workflows.md",
-    prompts={"one": drift.Prompt("## Prompt one", "## Prompt two"),
-             "two": drift.Prompt("## Prompt two", "### Keeping them in step")},
-    cases=[
-        drift.Case("scripts/check_dokimasia, one row", "one",
-                   ["bash", "scripts/check_dokimasia", "--show-prompt", "ID"],
-                   forms={SWEEP: False},
-                   rules=[drift.sub("dokimasia-ID", "BRANCH")]),
-        drift.Case("scripts/check_dokimasia, the sweep", "one",
-                   ["bash", "scripts/check_dokimasia", "--show-prompt"],
-                   forms={SWEEP: True},
-                   rules=[drift.sub("dokimasia-findings", "BRANCH")]),
-        two("scripts/process_dokimasia, one row",
-            ["bash", "scripts/process_dokimasia", "--show-prompt",
-             "--link", "LINK", "ID"], False, False),
-        two("scripts/process_dokimasia, every block",
-            ["bash", "scripts/process_dokimasia", "--show-prompt",
-             "--link", "LINK"], True, False),
-        two("scripts/process_dokimasia --no-postm",
-            ["bash", "scripts/process_dokimasia", "--show-prompt", "--no-postm",
-             "--link", "LINK", "ID"], False, True),
-        two("scripts/process_dokimasia, from a checkout",
-            ["bash", "scripts/process_dokimasia", "--show-prompt", ROOT, "ID"],
-            False, False, rules=READ),
-    ],
-)
-```
+anoieu's differs from that in four ways and dokimasia's in five: a second prompt,
+a second alternatives marker, and the `after`/`drop_paragraphs` rules for the
+openings each words differently on purpose. Read them where they run.
 
 ## What changes for a customer who adopts it
 

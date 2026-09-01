@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
-"""The two customers' real specs, run against their real trees.
+"""The two customers' real files, run against koine's implementations.
 
     python3 tests/customers.py ~/src/anoieu ~/src/dokimasia
     python3 tests/customers.py --anoieu ~/src/anoieu
 
-This is the evidence for the claim `docs/drift.md` makes: that koine reproduces
-the check each repository already had, with no case, form or line of coverage
-lost. It is the whole reason to believe adopting this is free, and a claim of
-that kind that nobody can re-run is a claim on our word.
+This is the evidence for the claim koine's documents make twice: that adopting a
+piece costs a customer nothing on the first day. `docs/drift.md` says koine
+reproduces the prompt check each repository already had, with no case, form or
+line of coverage lost; `docs/postmortem-protocol.md` says a log that passed the
+old shape check still passes `SHAPE`, and prints what moving to `PROTOCOL` would
+cost. Both are claims that nobody can re-run unless this exists.
 
 It is **not** part of CI and nothing depends on it. It needs a checkout of
 somebody else's repository, which `tests/run.py` deliberately does not, and it
@@ -24,7 +26,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.dirname(HERE))
 
-from koine import drift  # noqa: E402
+from koine import drift, postmortem  # noqa: E402
 
 SWEEP = "-- or, for the sweep form --"
 BLOCKS = "-- or, for every block --"
@@ -101,7 +103,41 @@ def dokimasia(root):
     )
 
 
-CUSTOMERS = {"anoieu": (anoieu, 4), "dokimasia": (dokimasia, 6)}
+#: name -> (spec builder, cases their own check had, their postmortem log)
+CUSTOMERS = {
+    "anoieu": (anoieu, 4, "docs/reports/postmortem.md"),
+    "dokimasia": (dokimasia, 6, "docs/postmortem.md"),
+}
+
+
+def check_log(root, rel):
+    """Their real postmortem log, at both levels.
+
+    `SHAPE` failing is a failure here: it would mean adopting koine costs them an
+    edit, which is the claim. `PROTOCOL` failing is not — it is the migration,
+    and printing it is the point.
+    """
+    path = os.path.join(root, rel)
+    if not os.path.isfile(path):
+        print(f"  skip {rel} -- no log there")
+        return 0
+    log = postmortem.read(path)
+    print(f"  {rel}: {len(log.entries)} entry(s), "
+          f"{len(postmortem.lessons(log))} lesson(s), "
+          f"{len(postmortem.open_debts(log))} open debt(s)")
+    bad = postmortem.check(log, postmortem.SHAPE, require_entries=False)
+    for problem in bad:
+        print(f"  FAIL {problem}")
+    if not bad:
+        print("  ok   it keeps SHAPE untouched -- adopting the check costs no edit")
+    todo = postmortem.check(log, postmortem.PROTOCOL, require_entries=False)
+    if todo:
+        print(f"  -- moving to PROTOCOL would take {len(todo)} edit(s):")
+        for problem in todo:
+            print(f"     {problem}")
+    else:
+        print("  ok   it already keeps PROTOCOL")
+    return len(bad)
 
 
 def main(argv):
@@ -127,7 +163,7 @@ def main(argv):
         return 0
 
     failures = 0
-    for name, (build, expected) in CUSTOMERS.items():
+    for name, (build, expected, log_rel) in CUSTOMERS.items():
         root = roots.get(name)
         if root is None:
             print(f"skip {name} -- no checkout given\n")
@@ -146,6 +182,7 @@ def main(argv):
                   "this spec no longer covers what their own check covered")
             failures += 1
         failures += result.failures
+        failures += check_log(root, log_rel)
         print()
 
     print(f"-- the customers: {failures} failure(s)")

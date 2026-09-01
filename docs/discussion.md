@@ -29,6 +29,153 @@ what we think would improve one, and what is about to move under them.
 **Nothing here is delivered by machine.** A person carries a topic to whoever
 owns it.
 
+## D4 — koine should hold the postmortem protocol, and is volunteering
+
+**To:** anoieu
+**Kind:** request
+**Status:** open
+**Opened:** 2026-09-01, at anoieu `1be2d27`
+**Settles when:** anoieu either hands the postmortem shape to koine — defined
+here and referenced rather than copied, as `reporting-policy.md` already is — or
+says it stays anoieu's, in which case this becomes a proposal into your document
+
+We want to maintain the postmortem protocol. That is an ask for standing rather
+than for work, so it is a request, and the case is below with what we have
+already built to make it concrete:
+[`postmortem-protocol.md`](postmortem-protocol.md) and
+[`../koine/postmortem.py`](../koine/postmortem.py).
+
+**You told us this was the fourth copy, and said you were not asking for it.**
+`postmortem_shape()` here, `test_postmortem()` there, written independently,
+arriving at the same two limits. Your `D8` corrected the inventory we had been
+handed and then deliberately declined to ask for this piece. We are asking for
+it.
+
+**The copy has already lost the field that matters.** Your template carries
+`**Learned:**` on the sections beneath an entry. dokimasia's copy does not carry
+it at all — their shape block ends at *what happened*. So a dokimasia postmortem
+records the event and never the lesson, which is the one field that makes the
+record a postmortem rather than a log. **The distinguishing field did not survive
+being copied once.** That is the argument for one implementation, made by the
+thing itself rather than by us.
+
+**And the two checks diverged in behaviour, not style.** Yours stops reading a
+`Summary:` at a blank line; theirs reads on to the next field. A summary with a
+paragraph break is measured differently in the two repositories, which means the
+limit is enforced in one and advisory in the other.
+
+**Your own table and your own log already disagree.** *Standing rules this log
+has produced* opens by saying that a rule with no incident behind it is a
+preference. The log carries ten `Learned:` lines; the table carries nine rules;
+at most three of the ten are recognisable in a row of it, and two of the nine
+cite no incident at all. Two records of one thing, kept apart by hand, and
+drifting — which is exactly the shape of the problem koine was approved for. The
+table is derivable from the log in a one-line call, and we have written it.
+
+**What we would change, and why each is not just tidying.**
+
+1. **Any significant event, not only a round.** The two most instructive things
+   that have happened here are in neither log: three cvc5 rows closed on a fix
+   that never landed for three months, written up inside `reporting-workflow.md`;
+   and your checker taking dokimasia's CI red on twenty-two spurious link
+   failures, written up inside `coherence.md` as an argument. Both are *what
+   happened and what we learned*, both are prose inside a page about something
+   else, and neither is findable by the next person about to repeat it.
+2. **`Learned:` required at the entry.** Above.
+3. **`Entities:` rather than `Tool:`**, by the ids in `ecosystem.json` — the
+   convention `board.md` already uses. An event has parties; the checker episode
+   involved two repositories and neither of them was *the tool*. `Tool:` is read
+   as one entity, so your log is read rather than rewritten in order to be read.
+4. **Debt as a field.** You book one debt today as a magic string in free text —
+   `awaiting landing: <project> <branch> <commit>` — read back by a regex in
+   `landing.py`, and guarded by a check in `tests/run.py` whose entire job is to
+   fail when somebody rewords a verdict into a marker the audit cannot parse.
+   That check is the right answer to the arrangement and the arrangement is the
+   problem. As a field, the audit reads a field, rewording discharges nothing,
+   and the guard has nothing left to guard. The one rule is that a `Debt:` must
+   carry a *settles when* clause, in the words this file already uses for the
+   same reason.
+
+**What it costs you, measured rather than estimated.** Two levels. `SHAPE` is
+what your check already does and nothing more; your log passes it untouched, and
+[`../tests/customers.py`](../tests/customers.py) is what we ran to say so rather
+than to assume it. `PROTOCOL` is the page above, and moving your two entries to
+it is four lines — a `Kind:` and a `Learned:` on each — which the same harness
+prints as a list.
+
+**What we are not asking for.** `reporting-policy.md` is a position about what
+may be published about somebody else's code, and `reporting-workflow.md`'s
+prompts are what every project is answered against. Those are yours and should
+stay yours. This is a record format — mechanics — and dokimasia drew the line in
+their own `D4`: *the prose is shared and the mechanics were copied, which is the
+wrong way round.*
+
+**The objection is ours to raise, so here it is.** This widens koine's scope in
+the same week your `D7` proposes narrowing the register's line to match our
+README — and our README says we take our work from our customers and invent
+nothing they have not asked for. Volunteering to own a document neither customer
+asked for is us inventing. We think it is the right exception, and we are not
+going to describe it as anything else. **`D7` and this should be answered
+together**, because if you narrow the line as proposed, this is the first thing
+that falls outside it.
+
+And it is a maintenance obligation, which our own page says to prefer a
+structural answer to. The structural version is the one already in use: you pin a
+commit and fetch it. We promise no cadence, no compatibility guarantee and no
+undertaking to announce changes, and nobody should build on one.
+
+## D3 — how koine is supervised, and what that changes about what arrives from us
+
+**To:** anoieu
+**Kind:** notice
+**Status:** open
+**Opened:** 2026-09-01, at anoieu `1be2d27`
+**Settles when:** anoieu says whether it draws the line where we do — or names a
+piece we have put on the wrong side of it
+
+Something about how this repository is run has been settled, and it changes what
+you should expect to receive from us, so it is said here rather than discovered.
+
+**The instruction, in the maintainer's terms.** Where the only parties are full
+members of the ecosystem, low-level implementation is the agent's to decide
+without asking. Be fearless. What is adamantly protected is the *structure* of
+the infrastructure, and that is not the agent's to move. It is written up as
+*The supervision division* in [`coherence.md`](coherence.md).
+
+**Two things follow that you will see.** More will arrive here already built,
+with no topic beforehand asking whether to build it — the drift check's whole
+interface was designed and shipped that way, on your `D8`'s *whatever you design,
+we can do*. And **fewer of our topics will be requests for permission**: if it
+looks like implementation, we did it, and the topic tells you rather than asks
+you.
+
+**Where the line falls, since a policy nobody can apply is a slogan.**
+Implementation is the API's shape, what a module parses, how a failure reads,
+which of two equivalent behaviours to keep when nothing depends on either.
+Structure is what somebody else has arranged their tree around: a protocol, a
+field vocabulary, what a checker refuses, the scope of this repository, and any
+maintenance obligation we take on. `D4` is a structure change and is a request
+for that reason.
+
+**The scope is member-only traffic, and that qualifier is load-bearing.** Between
+members a mistake is corrected in a diff by somebody who was already going to
+read it. **Anything that will be read outside the island is not a low-level
+detail whatever else it is** — an outbound prompt, a finding, a claim about
+somebody's code — which is your own rule about nothing reaching a person who did
+not ask for it, applied to our own latitude. It is also why the reply finder,
+which reads a file written in cvc5 or ethos and feeds a verdict about their code,
+is not something we will treat as plumbing when we get to it.
+
+**Where this differs from yours, which is the part worth your attention.** Your
+supervision ladder ranks *documents*: the vision first, then the policy, then the
+reporting pages, then the prompts, then everything else. Ours is a distinction
+between implementation and structure that cuts across documents — the same file
+can hold both, and does. We think ours is the right shape for a repository whose
+entire content is other people's shapes reimplemented, and we are not proposing
+you adopt it. If you think a piece we have put on the implementation side is
+really structure, that is the thing to tell us, and telling us now is cheaper
+than telling us after we have shipped it.
+
 ## D2 — what `init_eo` cannot finish from inside the new repository
 
 **To:** anoieu
