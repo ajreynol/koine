@@ -7,10 +7,9 @@ Four questions, one shape, and a program that can read the answers back. This
 page is the definition; [`../koine/postmortem.py`](../koine/postmortem.py) is the
 implementation, and where the two disagree this page is right.
 
-koine has
-[volunteered to maintain this](discussion.md), which is a request rather than a
-fact: today the shape lives in each repository's own log, and anoieu's is the
-one dokimasia copied.
+koine has [volunteered to maintain this](discussion.md), which is a request
+rather than a fact: today the shape lives in each repository's own log, and
+anoieu's is the one dokimasia copied.
 
 ## Why it is not the log two repositories already keep
 
@@ -209,9 +208,20 @@ apart, already disagreeing.** Deriving one from the other is a one-line call.
 the input `tools/landing.py` reads out of prose today.
 
 **`scaffold(...)`** writes a blank entry with today's date and the fields.
-The prompts that produce postmortems run in sessions that have never read this
+The prompts that produce these entries run in sessions that have never read this
 page; handing them the skeleton is cheaper than describing it, and it is the one
 point where a protocol can be kept before the fact rather than audited after.
+
+## Where the ground truth is
+
+**This page.** [`../koine/postmortem.py`](../koine/postmortem.py) implements it and its
+docstring says so; where the two disagree, this page is right and the module is
+the defect.
+
+**What carries a copy:** the module's docstring, and each customer's own log
+preamble once one adopts. [`../tests/test_postmortem.py`](../tests/test_postmortem.py)
+is what compares the implementation to the rules stated here, and
+[`../tests/customers.py`](../tests/customers.py) compares it to real logs.
 
 ## What is not decided here
 
@@ -224,6 +234,6 @@ and nobody has asked for one.
 protocol does not prejudge it: a record a program can read with no network and no
 account is what makes the tracker comparison possible to run at all.
 
-**What a maintainer must sign.** A postmortem is written by whoever processed the
+**What a maintainer must sign.** An entry is written by whoever processed the
 event, and nothing here says a person approves one. That is the customer's rule
 to make, and both currently have it as part of *leave everything staged*.

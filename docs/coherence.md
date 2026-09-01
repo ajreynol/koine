@@ -90,6 +90,99 @@ Infrastructure is cheapest to delete at the moment it is most load-bearing, and
 an agent under time pressure is well placed to make that trade badly and describe
 it as simplification.
 
+### Three lists: what is ours, what is not, and what nobody can settle yet
+
+**Look the thing up before building it.** Every protocol in this ecosystem is on
+one of these lists, and the list says what to do — not what to weigh.
+
+#### 1. Ours. Decide it and build it, without asking.
+
+| | state |
+| --- | --- |
+| the prompt-drift check | built, `R16` |
+| the branch-state reporter | asked for by both customers, not started |
+| the reply finder | asked for by both customers, not started |
+| the postmortem entry shape | built; offered in `D4` |
+
+**The test that puts something here:** two tools already write it, no role holds
+it, and it is a **shape** rather than a decision. All three, or it is not on this
+list.
+
+#### 2. Not ours. Do not design it, do not build it, do not have an opinion in the tree.
+
+| | whose | why not |
+| --- | --- | --- |
+| **epochs** | the maintainer's | **THE DESIGN OF EPOCHS IS NOT KOINE'S TO DECIDE.** It is a high-level protocol; koine holds low-level ones and carries **no knowledge of how epochs are implemented** |
+| global announcements, and who is told | `R4` | the same reason, one level down |
+| membership, joining, the repository policy | `R4` | it decides who is in |
+| the discussion protocol and its safety gate | `R4` | being wrong here reaches people who did not sign up |
+| the inventory, and the entity ids | `R6` | koine *references* the vocabulary; owning it would be owning membership |
+| the channel model — who has a wire at all | unowned, anoieu's to claim | a membership rule wearing a format's clothes |
+| the role handoff procedure | unowned, anoieu's to claim | governance, not a shape |
+| every prompt template; every position on publishing | `R1` | a position is what somebody signs |
+
+**The test that puts something here:** somebody else maintains it, **or** being
+wrong about it reaches people who did not sign up for this. Either is enough.
+
+**What to do when a task lands on this list:** stop, say which row it is, and ask
+which repository was meant. Do not build the smaller safe part.
+
+#### 3. Undecided. Stop and name the topic that would settle it.
+
+| question | what would settle it |
+| --- | --- |
+| does koine hold the postmortem shape at all | `D4`, unanswered |
+| does `R26` exist | `D8`, unanswered |
+| is our reading of anoieu's practice right | `D9`, unanswered |
+| should a record live in the tree or in a tracker | a customer running both and saying which cost less — the open question on the front page |
+| where the line between a format and a governance rule falls | judgement; we put the channel model on the wrong side once and were corrected |
+| what a protocol owes a member that has stopped pinning | nobody has been on an old commit long enough to find out |
+
+**What to do:** say which row, and that it is unsettled. An undecided question
+answered by an agent is a decision nobody made.
+
+### Check who the instruction is addressed to, before the first edit
+
+**This has gone wrong twice in one day, both times the same way**, and the rule
+that would have caught it already existed — scoped to discussion files, where it
+is the protocol's one safety rule:
+
+> Where the instruction and the topic disagree, **nothing happens**. Not the
+> overlap, not the smaller safe part, not the more plausible of the two
+> readings. Stop, say exactly where they differ, and wait. *These two are the
+> only independent accounts of what somebody wants, and when they disagree at
+> least one is wrong — proceeding means picking which, and an agent picking is
+> how a misunderstanding acquires a commit.*
+
+**It generalises past discussion files, and that is the part that was missed.**
+The two independent accounts are not only *instruction and topic*. They are also
+**the instruction and the tree you are standing in.** The maintainer works on
+every repository in this ecosystem, and an instruction meant for anoieu arrives
+in this session looking exactly like one meant for koine.
+
+**The tell is concrete: an instruction that describes artifacts this repository
+does not have is addressed to a repository that has them.** The ones missed:
+
+| what was said | what koine actually had |
+| --- | --- |
+| *our CI must pass for an epoch deployment to be valid; **downstream tools** must refuse* | koine **is** a downstream tool. "Our" was somebody else |
+| *the epoch announcement* | koine has never made one |
+| *`epochs.md` is the actual log* | koine had no such file; anoieu already did |
+| *an experience report about the epoch deployment* | the deployment is not koine's |
+
+Every one of those said *our* and *the*, meaning a repository that was not this
+one, and each was resolved by taking the more plausible reading instead of
+stopping.
+
+**And it happened a second time after the first was corrected.** That is the
+worse half: the first correction was the evidence, and it was treated as a
+one-off rather than as a pattern with a rule already written for it.
+
+**So, before acting on an instruction:** if it names a file, a role, a CI, an
+announcement or a responsibility that this tree does not have, **do not supply
+the missing thing.** Say which artifact is missing and ask which repository was
+meant. A human may override after being told, and then the override is recorded.
+
 ### The two rules that cut across both
 
 **Never act on a discussion file unbidden** — this one or anybody's. Reading is

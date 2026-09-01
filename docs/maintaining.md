@@ -57,14 +57,8 @@ missing.
 not own the documentation of how protocols work in this ecosystem, and the
 higher-level ones are not available to it:
 
-| not koine's | held by | why not |
-| --- | --- | --- |
-| membership, joining, and the repository policy | `R4` | somebody is already maintaining it, and it decides who is in |
-| the discussion protocol and its safety gate | `R4` | being wrong here reaches people who did not sign up |
-| the inventory of who is in the ecosystem, and therefore the entity ids | `R6` | koine *uses* the vocabulary; owning it would be owning membership |
-| the procedure by which a role changes hands | unowned, and anoieu's to claim | it is governance, not a format |
-| the channel model — who has a wire at all | unowned, and anoieu's to claim | *only a member has a discussion file* is a membership statement wearing a format's clothes |
-| what may be published about somebody else's code | `R1` | a position, and somebody signs it |
+The three lists — what is ours, what is not, and what nobody can settle yet —
+are in [`coherence.md`](coherence.md), which is the one place they live.
 
 What is left is the low-level end: the shape of a reply, the shape of a
 postmortem entry, the check that a script still says what its document says. Two

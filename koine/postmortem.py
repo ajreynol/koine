@@ -245,7 +245,7 @@ def parse(text: str, path: Optional[str] = None) -> Log:
         head, _, body = chunk.partition("\n")
         head = head.strip()
         date = head[:10]
-        title = head[10:].strip().lstrip("—-").strip()
+        title = head[10:].strip().lstrip("\u2014-").strip()
         parts = _SECTION.split(body)
         entry = Entry(date=date, title=title, fields=_fields(parts[0]),
                       line=line_of[i])

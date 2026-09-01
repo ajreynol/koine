@@ -17,4 +17,4 @@ a caller hands it.
     from koine import drift
 """
 
-__all__ = ["drift"]
+__all__ = ["drift", "postmortem"]
