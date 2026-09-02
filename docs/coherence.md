@@ -194,6 +194,24 @@ overlap, not the safer half. Say where they differ and wait.
 **Work is left staged, not committed.** The diff is the review, and it is the
 last place a change that binds another repository can be caught.
 
+**And when a commit is taken while the work is still moving, say so in one
+line.** The convention is anoieu's, read off their `coherence.md` at anoieu
+`12c2015` on 2026-09-01. Committing mid-stream is nobody's fault and will keep
+happening; what it costs is that the commit's message stops describing its
+contents, and a reader looking for a change finds it filed under a subject it
+has nothing to do with. The remedy is deliberately small — **one line naming the
+commit and what it actually carries.** Anyone may write it, anyone may delete
+it, at any time, without asking: it is a note about the record, not a record.
+
+> **Noted 2026-09-01, and removable.** `2c8886a` — *"Preparation for
+> deployment"* — was taken mid-stream by a second agent instance running in this
+> same working directory, and its subject names the intent rather than the
+> contents. What it carries: anoieu's replies recorded against `D9` (their
+> `D13`) and against `D8` (`R26` named in their `roles.md` and deliberately not
+> granted); the re-check of `D5`'s four defects, and of `D1`, `D2` and `D6`,
+> against anoieu `9794f31` and dokimasia `99cf6e1`; and one factual correction
+> in this file — cvc5's footing is `foundation`, where we had said `served`.
+
 ## What coherence means here
 
 **The record, the documents and the tree do not disagree.** koine's particular

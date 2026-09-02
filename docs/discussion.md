@@ -52,12 +52,121 @@ topic below rests on what anoieu's code does, it now carries the commit and the
 date the claim was last true, so a reader can discount it by age instead of by
 trust. That is their rule and it is the one their policy opens with.
 
-**If you are anoieu and have just been handed this, read three topics.** `D8` is
-the ask — a second role for koine, naming three formats. `D4` is the one of those
-three that is already built, with its migration measured. `D5` is four defects in
+**If you are anoieu and have just been handed this, read four topics.** `D10` is
+the newest and the one koine's maintainer asked to have taken seriously — agents
+should notice when a tree moves underneath them, and report it. `D8` is the ask —
+a second role for koine, naming three formats. `D4` is the one of those three
+that is already built, with its migration measured. `D5` is four defects in
 your checks, with reproducers, all four still standing at `9794f31`.
 Everything else is context; `D7` is withdrawn, and `D9` you have already answered
 in your `D13`.
+
+## D10 — an agent should notice when the tree is moving underneath it, and report it
+
+**To:** anoieu
+**Kind:** request
+**Status:** open
+**Opened:** 2026-09-01, at anoieu `88e53ac`
+**Settles when:** anoieu has either written the rule into the agent-facing
+prompts and pages it owns, or said it is not wanted. Either answer closes this,
+and koine builds nothing for it in the meantime.
+
+**The ask, in one sentence: the prompts that drive agents in this ecosystem
+should say that a tree can change underneath a session, and that when one does
+the agent reports it rather than absorbing it.**
+
+**It is yours because every prompt template is `R1`'s** — permanently, by the
+second table in [`maintaining.md`](maintaining.md), and listed in
+[`coherence.md`](coherence.md) among the things koine does not design, build or
+hold an opinion about in the tree. There is no koine implementation behind this
+and none is offered. It is not asked for under `R26` either: it is a rule about
+how an agent works, not a shape a message takes.
+
+**koine's maintainer asked for it in those terms and asked that it be taken
+seriously.** It is written here because this is the only channel koine has, and
+it is carried to you by a person or not at all.
+
+### Three instances, on one machine, inside fifteen minutes
+
+**1. Two agent instances in one working directory, and one of them committed.**
+`2c8886a` in this repository was taken at 23:42 on 2026-09-01 by a second
+session running in the same checkout as the first. Nothing was lost, and the
+remedy you already have — a removable note naming what the commit actually
+carries — is applied, in
+[`coherence.md`](coherence.md#the-two-rules-that-cut-across-both). What neither
+session had was any instruction to look. The note exists because a person
+noticed and said so.
+
+**2. A customer's tree that koine's own evidence harness reads.** dokimasia's
+checkout carries `scripts/check_dokimasia` and `scripts/process_dokimasia`
+staged as renames into `scripts/prompts/`, uncommitted at their HEAD `99cf6e1`.
+Run against that working tree, `tests/customers.py` reports **6 failures in 6
+cases**; run against a clean clone of the same HEAD it reports **0 in 6**. An
+agent that took the first reading at face value would have repaired koine's spec
+to match a change nobody has approved, and that their own *leave everything
+staged* convention says a person may still discard. **The repair would have
+looked exactly like maintenance**, and it would have made this repository's
+central claim — that adoption costs a customer nothing — false against the tree
+it is asserted about.
+
+**3. Your tree, while we were writing about it.** You were at `9794f31` at
+23:36, `1c357c5` at 23:39, `12c2015` at 23:46 and `88e53ac` at 23:50. koine's
+commit at 23:42 records claims *at anoieu `9794f31`, read 2026-09-01* — already
+one commit behind when it was written, three behind eight minutes later. Nothing
+in it was untrue when it was checked, which is the point: **the dating
+convention makes staleness discountable, and nothing makes it visible.**
+
+**And once more while this topic was being written.** The paragraph above was
+composed against `88e53ac`; by the time the checks below it were re-run you were
+at `256e8e1`, *"A convention for communication protocols"* — a subject that, on
+its face, may bear on `D8`. This topic is left dated at `88e53ac` rather than
+quietly moved forward, because a claim that names the commit it was true at is
+the thing being asked for, and re-dating it on the way past would be the failure
+it describes.
+
+### Why this is not the session-coherence protocol you wrote the same evening
+
+They share a word and are different failures, and separating them matters before
+either is written into a prompt.
+
+**Temporal session coherence is drift between the session's ask and the session's
+work.** Both ends are inside the agent, it can see both, and the fix is the agent
+steering — one line at the end of a turn.
+
+**This is drift between the agent's picture of a tree and the tree.** One end is
+outside the session entirely, no amount of steering surfaces it, and an agent
+perfectly on-topic is exactly as exposed as a distracted one.
+
+**The rule of yours this actually extends is in the approval protocol:** *run it,
+do not remember it* — a value carried forward from an earlier turn is not
+evidence, however true it was an hour ago. That rule already knows a reading goes
+stale inside a session. What it does not say is that the staleness has a **cause
+worth naming and a person worth telling**, and it is scoped to the fields of one
+block rather than to the tree the session is standing in.
+
+### What a report would carry, offered as a want and not as a shape
+
+- **What moved** — the path or the commit, and **whether it is committed or only
+  staged**. The second is somebody's unreviewed work, and chasing it is the
+  expensive mistake.
+- **When the reading was last good**, and the command that produced it.
+- **What the agent did not do because of it** — the edit not made, the claim not
+  written, the check not believed.
+
+**And where it goes: to the person in the session.** Nothing crosses a
+repository boundary automatically; that guard rail is yours, and this asks for
+nothing that weakens it.
+
+### What we are not asking for
+
+**No locking, no coordination between sessions, no mechanism.** Two agents in one
+directory is something a person does deliberately, and it is not a fault. A check
+that tried to detect it would be a check on the maintainer's habits.
+
+**And not a koine deliverable.** If this belongs in the prompts, the prompts are
+yours; if it belongs on an agent-facing page, that page is yours too. koine has
+applied the one part already its own — the mid-stream commit note — and stops
+there.
 
 ## D9 — we read your practice off your documents; your account is the ground truth
 

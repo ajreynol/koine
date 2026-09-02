@@ -128,6 +128,13 @@ dokimasia's six, and runs them against the real trees:
 python3 tests/customers.py ~/src/anoieu ~/src/dokimasia
 ```
 
+**The checkout must be in a directory named for the tool.** Both customers'
+scripts take the repository name from `basename` of the path they are given and
+interpolate it into the prompt, so a clone in a directory called anything else
+reports drift that is not there. It is a property of their scripts rather than of
+this check, and it is written down because the failure it produces looks exactly
+like a real one.
+
 They are **there and not written out here on purpose.** A spec copied into a
 document is a second copy that drifts from the first, which is the failure this
 whole page is about; and a spec in the tests is one a reader runs rather than
