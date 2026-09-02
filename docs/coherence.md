@@ -48,7 +48,8 @@ is slower for everybody.
 **The scope of that is member-only traffic.** anoieu, dokimasia, eudaimonia and
 koine are members: they have joined, they read diffs, and a mistake between them
 is corrected in a commit by somebody who was already going to read it. cvc5,
-ethos and logos are not — they are `served` and `candidate` in
+ethos and logos are not — at anoieu `9794f31`, read 2026-09-01, cvc5 is
+`foundation` and ethos and logos are `candidate` with `proposed: associate` in
 [`ecosystem.json`](https://github.com/ajreynol/anoieu/blob/main/tools/ecosystem.json),
 and what reaches them reaches people who did not sign up for this. **Anything
 that will be read outside the island is not a low-level detail**, whatever else

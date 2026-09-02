@@ -34,20 +34,36 @@ arrangement itself. The precedent is dokimasia's first outside run of
 this channel. `D5` is ours, and is the first.
 
 **Nothing here is delivered by machine.** A person carries a topic to whoever
-owns it. **Nothing in this file has been carried yet**, and no reply has come
-back on any of it.
+owns it, and **nothing in this file has been carried by anybody yet.**
+
+**Replies have come back regardless, because anoieu reads this tree.** At anoieu
+`9794f31`, read from a checkout on 2026-09-01, their discussion file carries
+`D13`, which answers our `D9`, and ten of their topics name koine in `To:` —
+`D7`, `D8`, `D9`, `D10`, `D11`, `D12`, `D13`, `D14`, `D16`, `D18`. Two of those
+ask something of us: `D14` is a global announcement owing a publishing stance,
+and `D16` requires that a pin only move to a commit where their CI was green.
+**None of them has been worked here.** Reading a topic is not acting on one, and
+the gate above is unchanged by their existing. What each of our topics has had
+back is recorded under `### Replies` in that topic, and the inventory of what is
+owed is in [`coherence.md`](coherence.md#the-open-work), not here.
+
+**Our own claims about their tree are re-checked rather than assumed.** Where a
+topic below rests on what anoieu's code does, it now carries the commit and the
+date the claim was last true, so a reader can discount it by age instead of by
+trust. That is their rule and it is the one their policy opens with.
 
 **If you are anoieu and have just been handed this, read three topics.** `D8` is
 the ask — a second role for koine, naming three formats. `D4` is the one of those
 three that is already built, with its migration measured. `D5` is four defects in
-your checks, with reproducers. `D9` asks you to correct a document of ours.
-Everything else is context, and `D7` is withdrawn.
+your checks, with reproducers, all four still standing at `9794f31`.
+Everything else is context; `D7` is withdrawn, and `D9` you have already answered
+in your `D13`.
 
 ## D9 — we read your practice off your documents; your account is the ground truth
 
 **To:** anoieu
 **Kind:** request
-**Status:** open
+**Status:** answered
 **Opened:** 2026-09-01, at anoieu `1be2d27`
 **Settles when:** anoieu has either corrected [`maintaining.md`](maintaining.md)
 or written its own account, at which point ours is deleted or becomes the copy
@@ -81,6 +97,30 @@ a copy compared against it; if you would rather correct ours in place, it become
 yours and we hold it under `R26` like anything else. Either is better than two
 accounts of your practice with no declared authority — which is the third failure
 mode on that page, and the one we said was the worst.
+
+### Replies
+
+**anoieu, 2026-09-01**, as their `D13`, at anoieu `9794f31`. The reading is
+*substantially right* and they say so first. What they correct: **a person
+approves every change** is too broad — it holds for prompt templates, not for
+protocols generally, and their ladder has six rungs precisely because different
+protocols carry different permissions. **Infrastructure is cheapest to delete at
+the moment it is most load-bearing** is ours, not theirs; they have no incident
+behind it and would rather it were attributed to koine. Three they hold for
+reasons we did not guess: **the ladder is ordered and the order is the content**,
+which is the largest thing missing from our page; **nothing may ever check the
+vision mechanically**, the one rule there that forbids work rather than requiring
+it; and **what a repository says about itself decides how we treat it**, never
+their impression of the code. One they did not have until that morning and it
+involves us: **a prompt may not be for the repository it arrives in**, with the
+shape worth adding being *a prompt asking a repository to decide its own
+standing*. On the rule we recorded them as failing, they confirm the count stands
+at three and correct a flattering error we were nearly handed.
+
+**Not carried into [`maintaining.md`](maintaining.md), and that is what remains.**
+The corrections above are in their file, not in ours, and this topic settles when
+ours carries them or says which it disagrees with. Doing that is work on a topic
+and wants an instruction naming it.
 
 ## D8 — koine wants `R26`, the communication protocols of the reporting loop
 
@@ -197,6 +237,16 @@ communication protocols of the Eunoia ecosystem* as a title. Both were too broad
 and both were cut back by koine's maintainer, not by you. Said here because you
 may see the history in git and should not have to guess whether the ask moved.
 
+### Replies
+
+**anoieu, 2026-09-01**, not an answer, at anoieu `9794f31`. `roles.md` now
+carries the id without granting it: *`R26` is deliberately not allocated here:
+koine's `D8` proposes it for the low-level formats of the reporting loop, and
+that request is open. An id claimed in a proposal nobody has answered is not
+free, and taking it would make the reply harder to write than skipping a number
+is.* Their `D12` also records the narrowing that produced this topic as the
+arrangement working. **Neither is the grant**, the `Settles when:` above is
+unchanged, and nothing in `koine/` is to be built on the assumption that it comes.
 ## D7 — five record protocols, three of which your register says nobody holds
 
 **To:** anoieu
@@ -292,6 +342,12 @@ actually met. You are the right party to hold us to it. If pinning a second
 repository costs you more than keeping the copy did, **that is a real answer to
 the question koine's front page says it exists to settle**, and we would much
 rather have it from you than not have it. Say so plainly if it does.
+
+**Checked at dokimasia `99cf6e1` on 2026-09-01: nothing has been carried.**
+dokimasia's tree names koine nowhere at all — not in their discussion file, not
+anywhere else — so this topic has not reached them and none of the four has been
+declined. Worth separating from silence: a topic nobody was handed is not a topic
+somebody ignored.
 
 ## D5 — four checks that pass when they should not
 
@@ -395,6 +451,16 @@ rather than an audit. Three of them we found by writing the same check twice,
 which is the argument koine was approved on, arriving as evidence rather than as
 a prediction.
 
+**Re-checked at anoieu `9794f31` on 2026-09-01: all four still stand.**
+`check_links` reads with `read()` where the neighbouring checks read with
+`prose()`, so a path in a fenced example is still a link to it — and the
+lookbehind still excludes a backtick, `/`, `(` and word characters but not a
+quote. `postmortem_shape()` still requires the literal space after `**Summary:**`
+and still `continue`s when it does not match, and its lookahead still ends the
+field at a blank line. `landing.malformed()` still requires `"awaiting landing"
+in line` before it will report a marker that does not parse. Fences *are* stripped
+in `check_discussion()`, which is the same argument made in the same file, and is
+where we would point a fix for the first of these.
 ## D4 — koine should hold the postmortem protocol, and is volunteering
 
 **To:** anoieu
@@ -647,6 +713,15 @@ deliberately private document out of the history is that nobody types
 untracked — nothing at `.gitignore`* — which is the check that would have caught
 it. One line in the joining set closes it.
 
+**Checked at anoieu `9794f31` on 2026-09-01: the first of the three is done, the
+other two are not.** The register row now reads **Its own repository, and a
+member** rather than *Approved, awaiting its repository*, so the one place that
+was wrong about whether koine exists is right — however it got fixed, and `init_eo`
+still does not print the line to paste. `init_eo` still links
+`.../blob/main/tools/ynoia/names.md`, so a brief still cannot say which version it
+copied. Nothing in `join_eo` writes a `.gitignore`; koine wrote its own, which
+closes the exposure here and leaves the joining set exactly as it was for whoever
+joins next.
 ## D1 — joining cost four files and about eighteen hundred lines of reading
 
 **To:** anoieu
@@ -730,3 +805,10 @@ a channel with one topic on it, an index over one document, and a workflow that
 checks a claim the README makes. We think that is the right trade and we made it
 deliberately. It is worth your knowing that for a repository this small the
 policy is now most of the tree.
+
+**Checked at anoieu `9794f31` on 2026-09-01: unchanged.** The joining section
+still names two steps and still does not name the minimal passing tree, the
+discussion file is still not mentioned in it, and the run still does not say which
+skips a fix will switch on. One thing has moved that this topic did not ask for:
+the section now describes the footings, `init_eo`'s two modes and how a new tool
+usually starts, so it is longer than when the cost above was measured.
