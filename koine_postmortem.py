@@ -7,7 +7,7 @@ purpose — and four questions are worth answering while anybody still remembers
 
 This module is the protocol's implementation: it reads a log, checks it, derives
 what the log knows, and writes a blank entry so nobody has to invent the shape.
-[`docs/postmortem-protocol.md`](../docs/postmortem-protocol.md) is the
+[`docs/postmortem-protocol.md`](docs/postmortem-protocol.md) is the
 definition, and where the two disagree the document is right.
 
 ## Two levels, so adoption is free on the first day
@@ -27,7 +27,7 @@ level a repository runs, and when, is the repository's.
 
 ## Calling it
 
-    from koine import postmortem
+    import koine_postmortem as postmortem
 
     log = postmortem.read(path)
     problems = postmortem.check(log, level=postmortem.PROTOCOL)
@@ -35,7 +35,7 @@ level a repository runs, and when, is the repository's.
     for debt in postmortem.open_debts(log): ...
     print(postmortem.scaffold(kind="round", entities=["anoieu", "ethos"]))
 
-`report` prints and returns a count, the way `koine.drift.report` does, so a
+`report` prints and returns a count, the way `koine_drift.report` does, so a
 customer's test runner calls one and the other the same way.
 """
 
@@ -348,7 +348,7 @@ def check(log: Log, level: str = SHAPE,
 
 
 def report(log: Log, level: str = SHAPE, registry=None, out=None) -> int:
-    """Print it and return the count, the way `koine.drift.report` does."""
+    """Print it and return the count, the way `koine_drift.report` does."""
     import sys
     stream = sys.stdout if out is None else out
     problems = check(log, level=level, registry=registry)

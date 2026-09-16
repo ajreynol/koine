@@ -161,7 +161,7 @@ abandoning it costs restoring a file you already had.
 
 ```python
 import sys; sys.path.insert(0, "/tmp/koine")
-from koine import drift
+import koine_drift as drift
 
 failures = drift.report(SPEC)      # SPEC is data; docs/drift.md has both customers'
 ```
@@ -186,7 +186,7 @@ involved, how did it come out, and what did we learn?* Both customers keep a log
 of that shape today and each checks it with its own copy of the same code; the
 copies have already lost a field and diverged in behaviour.
 [`docs/postmortem-protocol.md`](docs/postmortem-protocol.md) is the definition,
-`koine/postmortem.py` reads a log, checks it at either of two levels, and derives
+`koine_postmortem.py` reads a log, checks it at either of two levels, and derives
 what the log knows — every lesson with the incident that produced it, and every
 debt booked and not yet discharged. The same harness measures the adoption cost:
 both customers' logs pass the lower level untouched.
@@ -208,7 +208,7 @@ qualified in prose. anoieu's `D25` asks for a machine-readable record under that
 table, written by more than one producer, and asks koine to choose the format
 rather than inherit theirs. [`docs/findings-record.md`](docs/findings-record.md)
 is the definition and says why it is lines of JSON;
-[`koine/findings.py`](koine/findings.py) reads one, writes it canonically, merges
+[`koine_findings.py`](koine_findings.py) reads one, writes it canonically, merges
 two of them with conflicts reported rather than resolved, and says per id whether
 two producers agreed. The condition their topic sets is that the page a reader is
 pointed at must not change, so the harness reads both of their real ledgers into

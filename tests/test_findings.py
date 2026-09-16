@@ -22,7 +22,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.dirname(HERE))
 
-from koine import findings as fd  # noqa: E402
+import koine_findings as fd  # noqa: E402
 
 FAILURES = []
 

@@ -617,7 +617,7 @@ We want to maintain the postmortem protocol. That is an ask for standing rather
 than for work, so it is a request, and the case is below with what we have
 already built to make it concrete:
 [`postmortem-protocol.md`](postmortem-protocol.md) and
-[`../koine/postmortem.py`](../koine/postmortem.py).
+[`../koine_postmortem.py`](../koine_postmortem.py).
 
 **And no role holds it.** Found after this topic was written, while looking for
 the ids `D7` needed: `R1`'s `Owns:` names the ledger, `reports.md`,

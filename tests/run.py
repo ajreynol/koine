@@ -16,7 +16,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.dirname(HERE))
 
-from koine import drift  # noqa: E402
+import koine_drift as drift  # noqa: E402
 
 CUSTOMER = os.path.join(HERE, "fixtures", "customer")
 ONE = "-- or, for one row --"

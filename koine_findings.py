@@ -19,7 +19,7 @@ back canonically, merge two of them, and say per id whether two producers agreed
 their name, settled by them. Nothing here says what a finding is, when one may
 be raised, what rank it carries or what closes it -- those differ because the
 subjects differ, and they are the half koine has never had an opinion about.
-[`docs/findings-record.md`](../docs/findings-record.md) is the definition, and
+[`docs/findings-record.md`](docs/findings-record.md) is the definition, and
 where the two disagree the document is right.
 
 ## Why the format is lines of JSON
@@ -47,7 +47,7 @@ somebody in cvc5 sees when they open a page is one nobody should adopt.
 
 ## Calling it
 
-    from koine import findings
+    import koine_findings as findings
 
     record = findings.read("docs/reports/findings.jsonl")
     problems = findings.check(record)
@@ -58,8 +58,8 @@ somebody in cvc5 sees when they open a page is one nobody should adopt.
     findings.write(record, "docs/reports/findings.jsonl")
     print("\n".join(findings.render(record.findings, ANOIEU_COLUMNS)))
 
-`report` prints and returns a count, the way `koine.drift.report` and
-`koine.postmortem.report` do, so a customer's test runner calls all three alike.
+`report` prints and returns a count, the way `koine_drift.report` and
+`koine_postmortem.report` do, so a customer's test runner calls all three alike.
 """
 
 from __future__ import annotations
@@ -133,7 +133,7 @@ class Landing:
 
     anoieu writes this into a verdict cell as `awaiting landing: <project>
     <branch> <commit>` and reads it back out with a regex, and `tests/run.py`
-    fails if the sentence is reworded. It is a `koine.branch.Query` with the
+    fails if the sentence is reworded. It is a `koine_branch.Query` with the
     quotes taken off; `landings` hands the whole record to that module.
     """
     project: str
@@ -701,7 +701,7 @@ def agree(a: Record, b: Record,
 
 def landings(record: Record, checkouts: Dict[str, str],
              missing: str = "unknown") -> List[object]:
-    """Every outstanding landing, as `koine.branch.Query` values.
+    """Every outstanding landing, as `koine_branch.Query` values.
 
     This is the regex deleted. anoieu reads `awaiting landing: <project>
     <branch> <commit>` back out of a markdown cell and guards the *wording* of
@@ -709,7 +709,7 @@ def landings(record: Record, checkouts: Dict[str, str],
     project id to where it is on this machine, which stays the caller's --
     nothing here knows where anybody's clone lives.
     """
-    from koine import branch
+    import koine_branch
     out = []
     for f in record.findings:
         if f.landing is None:
@@ -717,7 +717,7 @@ def landings(record: Record, checkouts: Dict[str, str],
         repo = checkouts.get(f.landing.project)
         if repo is None:
             continue
-        out.append(branch.Query(repo=repo, ref=f.landing.commit or f.landing.branch,
+        out.append(koine_branch.Query(repo=repo, ref=f.landing.commit or f.landing.branch,
                                 label=f.id, missing=missing))
     return out
 

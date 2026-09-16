@@ -296,7 +296,7 @@ rather than a formality.
 
 ## Where the ground truth is
 
-**This page.** [`../koine/findings.py`](../koine/findings.py) implements it and
+**This page.** [`../koine_findings.py`](../koine_findings.py) implements it and
 its docstring says so; where the two disagree, this page is right and the module
 is the defect.
 

@@ -30,7 +30,7 @@ third paragraph will not notice a stale one above it.
 
 Build a `Spec` and hand it to `report`, which prints and returns a failure count:
 
-    from koine import drift
+    import koine_drift as drift
 
     SPEC = drift.Spec(
         root=ROOT,

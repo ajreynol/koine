@@ -35,7 +35,10 @@ import tempfile
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.dirname(HERE))
 
-from koine import branch, drift, findings, postmortem  # noqa: E402
+import koine_branch as branch          # noqa: E402
+import koine_drift as drift            # noqa: E402
+import koine_findings as findings      # noqa: E402
+import koine_postmortem as postmortem  # noqa: E402
 
 SWEEP = "-- or, for the sweep form --"
 BLOCKS = "-- or, for every block --"

@@ -99,7 +99,7 @@ needs no network.
 ```python
 import sys
 sys.path.insert(0, "/tmp/koine")
-from koine import drift
+import koine_drift as drift
 ```
 
 There is no package, no install step and no second thing to pin. That is

@@ -4,7 +4,7 @@
 how did it come out, and what did we learn?**
 
 Four questions, one shape, and a program that can read the answers back. This
-page is the definition; [`../koine/postmortem.py`](../koine/postmortem.py) is the
+page is the definition; [`../koine_postmortem.py`](../koine_postmortem.py) is the
 implementation, and where the two disagree this page is right.
 
 koine has [volunteered to maintain this](discussion.md), which is a request
@@ -191,7 +191,7 @@ choice costs nothing today; it closes an evasion that nobody has used yet.
 ## What the tooling does
 
 ```python
-from koine import postmortem
+import koine_postmortem as postmortem
 
 log      = postmortem.read(path)          # wherever the log lives
 problems = postmortem.check(log, level=postmortem.PROTOCOL, registry=ids)
@@ -219,7 +219,7 @@ point where a protocol can be kept before the fact rather than audited after.
 
 ## Where the ground truth is
 
-**This page.** [`../koine/postmortem.py`](../koine/postmortem.py) implements it and its
+**This page.** [`../koine_postmortem.py`](../koine_postmortem.py) implements it and its
 docstring says so; where the two disagree, this page is right and the module is
 the defect.
 

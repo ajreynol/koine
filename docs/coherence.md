@@ -15,10 +15,10 @@ The convention is anoieu's, and so is the name.
 
 | what | where | who else it binds |
 | --- | --- | --- |
-| the prompt-drift check | [`../koine/drift.py`](../koine/drift.py), [`drift.md`](drift.md) | anoieu and dokimasia, when each drops their copy |
-| the branch-state reporter | [`../koine/branch.py`](../koine/branch.py), [`branch.md`](branch.md) | anoieu and dokimasia, when each drops their copy |
-| **the postmortem protocol** | [`postmortem-protocol.md`](postmortem-protocol.md), [`../koine/postmortem.py`](../koine/postmortem.py) | **proposed**: a shape both keep today, offered here instead |
-| the findings record | [`findings-record.md`](findings-record.md), [`../koine/findings.py`](../koine/findings.py) | anoieu, who asked for it in `D25`; dokimasia, whose registers it was checked against before it was built |
+| the prompt-drift check | [`../koine_drift.py`](../koine_drift.py), [`drift.md`](drift.md) | anoieu and dokimasia, when each drops their copy |
+| the branch-state reporter | [`../koine_branch.py`](../koine_branch.py), [`branch.md`](branch.md) | anoieu and dokimasia, when each drops their copy |
+| **the postmortem protocol** | [`postmortem-protocol.md`](postmortem-protocol.md), [`../koine_postmortem.py`](../koine_postmortem.py) | **proposed**: a shape both keep today, offered here instead |
+| the findings record | [`findings-record.md`](findings-record.md), [`../koine_findings.py`](../koine_findings.py) | anoieu, who asked for it in `D25`; dokimasia, whose registers it was checked against before it was built |
 | the evidence that adoption is free | [`../tests/customers.py`](../tests/customers.py) | nobody, and it is the reason anybody should believe the other rows |
 
 The bold row is bold because it is different in kind. The drift check and the
@@ -31,6 +31,25 @@ theirs.
 is also a document other repositories would follow, and it was **asked for**, by
 name, with the choice of format handed over explicitly. It is the first row here
 that arrived that way.
+
+### Why the modules are `koine_*.py` at the root, and not a package
+
+The maintainer asked for this on 2026-09-16, and the reason they gave is the
+first one: **a directory named `koine` inside a repository named `koine` reads
+as a second thing**, and a reader opening the tree has to work out that it is
+not one.
+
+There is a second reason, and it is the one that would make this hard to undo.
+A customer adopts koine by putting **the repository root** on `sys.path` — there
+is no package and no install step, deliberately. Anything at that root is
+therefore a name claimed inside somebody else's process, and `drift`, `branch`
+and `findings` are names another project may well want. `koine_drift` cannot
+collide with anything, and says whose it is at the point of use rather than at
+the point of import.
+
+So: **one module per piece, at the root, named `koine_<piece>.py`.** The examples
+in the documents write `import koine_drift as drift`, which shows the real name
+and keeps the call sites short.
 
 ## The supervision division
 
@@ -258,7 +277,7 @@ made almost entirely of copies of other people's shapes:
 The first two are why the customer harness exists and is runnable by a reader.
 **The third still has no guard, and this repository has now grown its fourth
 piece** — [`branch.md`](branch.md) describes four states and a default that
-`koine/branch.py` implements, and nothing compares the two. That was named here
+`koine_branch.py` implements, and nothing compares the two. That was named here
 as the thing to build at exactly this point, and it has not been built; it is
 recorded rather than quietly dropped. The findings record arrives with the same
 gap in one place and without it in another: `tests/test_findings.py` fails on
@@ -404,7 +423,7 @@ true of every protocol anywhere, and that is not a reason for koine to hold
 them.**
 
 Until `D8` is answered, **write no parser for `board.md` or `roles.md`**, and add
-no second `Kind:` vocabulary beside the one in `koine/postmortem.py`. What *is*
+no second `Kind:` vocabulary beside the one in `koine_postmortem.py`. What *is*
 open to build meanwhile is the branch-state reporter and then the reply finder —
 pieces two and three of the four-piece inventory both customers already asked
 for, needing nothing from `D8`.

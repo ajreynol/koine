@@ -9,7 +9,7 @@ not here at all?* It is pure git, it is asked about a checkout of somebody
 else's project, and **both customers had written it before this existed**. It is
 the second of the four pieces, asked for in that order.
 
-[`../koine/branch.py`](../koine/branch.py) is the whole of it.
+[`../koine_branch.py`](../koine_branch.py) is the whole of it.
 
 ## What it answers, and what it refuses to
 
@@ -73,7 +73,7 @@ dokimasia's reading.
 
 ```python
 import sys; sys.path.insert(0, "/tmp/koine")
-from koine import branch
+import koine_branch as branch
 
 failures = branch.report([
     # a branch somebody was asked to work on: not here is an answer

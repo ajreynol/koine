@@ -24,7 +24,7 @@ import tempfile
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.dirname(HERE))
 
-from koine import branch  # noqa: E402
+import koine_branch as branch  # noqa: E402
 
 FAILURES = []
 

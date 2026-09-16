@@ -75,7 +75,7 @@ about.
 Build `Query` values and hand them to `report`, which prints and returns the
 number that could not be answered:
 
-    from koine import branch
+    import koine_branch as branch
 
     failures = branch.report([
         # a branch somebody was asked to work on: not here is an answer
