@@ -7,10 +7,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # No dependencies, no network, no customer checked out: everything runs
-      # against tests/fixtures/customer/.
-      - run: python3 tests/run.py
-      - run: python3 tests/test_postmortem.py
-      - run: python3 tests/test_findings.py
-      # Builds its own git repository under a temporary directory.
-      - run: python3 tests/test_branch.py
+      # No dependencies, no network, nothing to install: the suite drives the
+      # real script against files it writes in a temporary directory.
+      - run: python3 tests/test_append_db.py

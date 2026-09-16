@@ -1,246 +1,168 @@
 # koine
 
-A tool in the Eunoia ecosystem raises findings about projects that are not its
-own: [anoieu](https://github.com/ajreynol/anoieu) reads somebody else's Eunoia
-signature, [dokimasia](https://github.com/ajreynol/dokimasia) reads somebody
-else's proof-production C++, and each has to get what it found to the people who
-own it. The trip is always the same shape. A script runs in the project the
-finding is about and leaves a question; somebody answers it in a file; a second
-script runs back at home and reads the answer; and a check confirms that the
-wording the scripts use still matches the document that defines it.
+**koine maintains the tooling that nobody else wants to maintain.**
 
-**koine is where that trip is defined and checked.** It is the shared half of
-the reporting loop — the part that is identical no matter which tool is at one
-end or which project is at the other.
+The tools in this ecosystem exist to find bugs in projects that are not their
+own. [anoieu](https://github.com/ajreynol/anoieu) reads somebody else's Eunoia
+signatures and asks whether a signature and its semantics agree;
+[dokimasia](https://github.com/ajreynol/dokimasia) reads cvc5's proof-production
+C++ and asks whether the solver can reach a conclusion no proof step covers.
+Finding the bug is the work those tools were built for, and it is the part worth
+their attention.
 
-Not *held once instead of once per tool*, which is how this page used to put it
-and is wrong. **Redundancy is a feature; ambiguity about which copy is right is
-the defect.** A protocol is read where somebody is working, not where it is
-decided, so the copies should exist — a script still carries the prompt it sends,
-and should. What makes a copy safe is that the document says which one is the
-ground truth and something mechanical compares the rest to it. **koine's job is
-to be the ground truth and the comparison, never to be the only copy**, and a
-member holds its own copy and keeps working when this repository is unreachable.
-[`docs/maintaining.md`](docs/maintaining.md) is the practice in full.
+Then there is the other half, which nobody built a tool to do and everybody
+needs done: keeping the list. Not losing the bug found in March. Not filing it
+again in September under a new name. Not letting this week's run quietly
+overwrite last week's record, or leaving two half-written files behind because a
+job was interrupted. It is unglamorous, it is fiddly, it is the same in every
+tool that has it, and it is exactly the kind of thing that gets written three
+times badly because writing it once well was nobody's job.
 
-## The question it answers
+**It is ours.** koine does not find bugs, does not decide whether a bug is real,
+and has no opinion about what should be done with one. Those belong to the tool
+that raised it, and they stay there. We keep the list, and we keep it properly,
+so that nobody else has to think about it again.
 
-*How does a finding get from the tool that raised it to the people it is about,
-and an answer back, in a form both ends read the same way?*
+## What it does
 
-That is a narrow, mechanical question, and it is the whole of the job. Two tools
-in this ecosystem have now built the loop separately and arrived at the same
-code for these parts — not similar code, the same code. They overlap in nothing
-else: different inputs, different questions, no dependency in either direction.
-The loop is the entire intersection, and koine exists because the second one had
-to be written at all.
+One script.
 
-## Its two customers
-
-**anoieu and dokimasia.** Not *tools in the ecosystem* — those two, by name,
-today. anoieu reads `.eo` and `.eos` files and asks whether a signature and its
-semantics agree; dokimasia reads cvc5's proof-production C++ and asks whether
-the solver can reach a conclusion no proof step covers. Different subjects,
-different questions, no shared line of code. Both run the same reporting loop,
-and that is the only reason this repository has a subject at all.
-
-**We supply the tooling; they run it and own what comes out.** koine does not
-maintain anybody's report and does not hold anybody's ledger. A customer's
-record stays in the customer's tree, under their name, settled by them, and what
-counts as a finding or as an answer stays theirs to decide. This is the boundary
-that makes koine cheap to depend on: adopting it costs a tool nothing it would
-have to argue about later.
-
-**They decide what gets built.** This repository takes its work from the two
-tools that use it and invents nothing on its own. A feature neither has asked
-for is a guess about somebody else's needs — likely wrong, and more expensive to
-withdraw than it was to write. There is no third party whose hypothetical use
-would justify guessing on their behalf.
-[`docs/discussion.md`](docs/discussion.md) is where an ask arrives.
-
-**One thing here was not asked for, and it is named rather than blended in.**
-koine has volunteered to maintain the [postmortem
-protocol](docs/postmortem-protocol.md) — a record neither customer requested and
-anoieu explicitly declined to ask for. That is this repository inventing, against
-the paragraph above it, and the case for the exception is put where it can be
-refused: `D4` in the discussion file. If anoieu says no, the page becomes a
-proposal into their document and the code stays available to whoever wants it.
-
-It is the **one** exception, and the boundary below is what keeps it one. Two
-larger asks have already been narrowed or withdrawn for crossing it.
-
-**It is plumbing, and means to stay plumbing.** Small, fixed, and correct, with
-no property a reader would notice except that nothing went wrong. A clever koine
-would be a worse koine.
-
-**It is a servant for the protocols nobody else wants to maintain**, and that is
-the whole of its claim. koine does not own the documentation of how protocols
-work in this ecosystem, and the higher-level ones are not available to it:
-**membership and joining, the discussion protocol and its safety gate, the
-inventory of who is in the ecosystem, the procedure by which a role changes
-hands, and every position about what may be published.** Those are kanon's, which
-took the ecosystem's governance over from anoieu on 2026-09-15, and not because of
-seniority — they are the ones somebody is already maintaining, and the ones where
-being wrong reaches people who did not sign up. What is left is
-the low-level end: the shape of a reply, the shape of a postmortem entry, the
-check that a script still says what its document says.
-
-So the test for anything proposed here is **not *is this a protocol*** — it is
-**is anybody else maintaining this, and would they want to.** The
-[ground-truth principle](docs/maintaining.md) is true of every protocol anywhere,
-which makes it tempting to conclude that koine should hold them; it does not
-follow, and this repository has already been wrong about that once. A useful rule
-and a narrow job are different things.
-
-## The question it does not answer
-
-*Whether the finding is any good.*
-
-koine has no opinion on what is worth reporting, what makes a report correct,
-or what settles one. Those belong to the tool that raised it, and they differ
-because the subjects differ — the analyzer's questions are not the
-scrutineer's. koine carries the envelope and never writes the letter.
-
-The name invites a larger reading, so it is worth refusing in the open: koine
-is not a shared standard for how members track issues, keep registers, or agree
-on what counts as a problem. Those formats are still being discovered, and
-fixing them now would fix them before anybody has evidence about which is
-right. Nor does using koine enrol a repository in anything; a tool somebody
-depends on is not thereby a member of this ecosystem.
-
-**The findings record does not walk that back**, and the distinction is one a
-reader should be able to check rather than take. It holds the shape of a *record*
-— the fields a row is written in, so that two producers writing the same row
-write the same bytes. It says nothing about what a finding is, when one may be
-raised, what rank it carries or what closes it; `rank` and `kind` are carried
-through and never read, and the vocabulary of states is the producer's.
-[`docs/findings-record.md`](docs/findings-record.md) ends with the list of what
-is not decided there, which is the part to hold it to.
-
-## The open question
-
-**The goal is that a reporting structure stays cheap to change.** A tool learns
-what its record needs by keeping one: a field it did not know it wanted, a state
-that turned out to be two, a view somebody actually has to read. That learning
-is expensive today, because the ledger, the reply format and the scripts that
-read them were each written once by hand and drift apart the moment any of them
-moves. Making those changes cheap is the job.
-
-**The hypothesis, which is open and may be wrong: a reporting record is better
-kept in the tree than exported to an issue tracker.** Files under version
-control have properties a tracker does not — the record is reviewed in a diff,
-it is pinned to a commit, it arrives with a clone, and a program can decide
-things about it with no network and no account. Against that, a tracker has what
-files do not: notification, search across projects, a stable public URL, and a
-way for somebody who will never clone the repository to reply.
-
-This is a low-level technical question rather than a position, and it is the
-first one this repository has. What would settle it is a customer running both
-and saying which cost them less. If the answer is the tracker, koine is the tool
-that should say so first.
-
-**The findings record is the layer under both answers**, which is anoieu's
-argument rather than ours and is the reason building one does not settle the
-question: the row is the body of an issue, the id is the key, and an issue number
-is one more column the format carries and does not read. What it changes is that
-moving to a tracker would be a migration rather than a rewrite — which is also
-what would let a customer run both and hand us the evidence.
-
-## Running it
-
-**One piece of the loop is built: the prompt-drift check.** A script that carries
-a copy of a prompt still says what the document defining that prompt says it
-says. It is the piece anoieu asked for first, on the ground that it is the one
-guaranteed to rot — it exists to catch divergence, and it was two copies with
-nothing watching either. [`docs/drift.md`](docs/drift.md) is the whole of it.
-
-There is no package and no install step. A customer pins a commit, clones it, and
-puts the directory on `sys.path` — the same mechanism this ecosystem already uses
-to share a policy checker, and the reason adopting this costs one clone and
-abandoning it costs restoring a file you already had.
-
-```python
-import sys; sys.path.insert(0, "/tmp/koine")
-import koine_drift as drift
-
-failures = drift.report(SPEC)      # SPEC is data; docs/drift.md has both customers'
+```
+koine_append_db <new bugs> <bug database>
 ```
 
-Both customers' specs are written out there verbatim, and
-`python3 tests/customers.py ~/src/anoieu ~/src/dokimasia` runs them against the
-real trees: they reproduce all four of anoieu's cases and all six of dokimasia's,
-with no case, form or line of coverage lost. That is a claim worth being able to
-re-run rather than take on our word, which is the only reason it is a script. What each would see
-change on adopting it is listed in the same document, in full, because a shared
-implementation that quietly alters somebody's behaviour is the thing this
-repository exists to prevent.
+A tool runs and dumps what it found this time. The database is every bug it has
+ever found. This puts the first into the second.
 
-`python3 tests/run.py` is koine's own suite. It needs no dependency, no network
-and no customer checked out: everything runs against a miniature repository under
-`tests/fixtures/`, and every part of the comparison is tested against a script
-that has drifted as well as one that has not.
+### A worked example
 
-**The second piece is the postmortem protocol**, and it is offered rather than
-owed: *a significant thing happened to this repository — what happened, who was
-involved, how did it come out, and what did we learn?* Both customers keep a log
-of that shape today and each checks it with its own copy of the same code; the
-copies have already lost a field and diverged in behaviour.
-[`docs/postmortem-protocol.md`](docs/postmortem-protocol.md) is the definition,
-`koine_postmortem.py` reads a log, checks it at either of two levels, and derives
-what the log knows — every lesson with the incident that produced it, and every
-debt booked and not yet discharged. The same harness measures the adoption cost:
-both customers' logs pass the lower level untouched.
+anoieu runs and writes `run1.json`:
 
-**The third piece is the branch-state reporter**, and it is the cheapest of the
-four to take: *what became of the branch a reply names* — landed, ahead, absent,
-or a question that could not be put at all. It asks nothing of a customer, since
-a caller that can name a checkout and a ref can call it, and it writes nothing
-anywhere. [`docs/branch.md`](docs/branch.md) is the whole of it, including the
-one place the two customers genuinely disagree — what a ref that is not in the
-checkout means — which running both implementations against one repository is
-what turned up.
+```json
+[
+  {"bug": "EO0031-ArithExt-17", "tool": "anoieu",
+   "description": "`@arith_vts_delta` is declared twice with the type Real"},
+  {"bug": "DOC0011-Strings-202", "tool": "anoieu",
+   "description": "program `$re_ac_merge` takes 3 arguments, docstring lists 5"}
+]
+```
 
-**The fourth piece is the findings record**, and it is the first thing here
-that a customer asked for in so many words rather than koine offering it. A
-finding's row lives in a markdown table at both customers, and in both of them
-the *state* of a row is a field nowhere — it is which file the row is filed in,
-qualified in prose. anoieu's `D25` asks for a machine-readable record under that
-table, written by more than one producer, and asks koine to choose the format
-rather than inherit theirs. [`docs/findings-record.md`](docs/findings-record.md)
-is the definition and says why it is lines of JSON;
-[`koine_findings.py`](koine_findings.py) reads one, writes it canonically, merges
-two of them with conflicts reported rather than resolved, and says per id whether
-two producers agreed. The condition their topic sets is that the page a reader is
-pointed at must not change, so the harness reads both of their real ledgers into
-a record and renders them back: 39 rows and 43 rows, byte for byte.
+There is no database yet, so one is made:
 
-**One of the four shared pieces is left** — the reply finder, asked for third.
-It is not started, and it is the one to be careful with: it reads a file written
-in a project that is not a member, and what it decides about that file feeds a
-verdict about somebody's code.
+```console
+$ koine_append_db run1.json bugs.json
+-- 2 new bug(s), 0 already known, 0 conflict(s)
+-- the database holds 2 bug(s) from 1 tool(s): anoieu 2
+-- wrote bugs.json (created)
+```
+
+Months later anoieu runs again. It finds the first bug still there, one new one,
+and dokimasia adds one of its own:
+
+```console
+$ koine_append_db run2.json bugs.json
+-- 2 new bug(s), 1 already known, 0 conflict(s)
+-- the database holds 4 bug(s) from 2 tool(s): anoieu 3, dokimasia 1
+-- wrote bugs.json
+```
+
+`bugs.json` now holds all four, with the March bug still carrying March:
+
+```json
+{
+  "bugs": [
+    {
+      "bug": "EO0031-ArithExt-17",
+      "tool": "anoieu",
+      "description": "`@arith_vts_delta` is declared twice with the type Real",
+      "first_seen": "2026-03-04",
+      "last_seen": "2026-09-16"
+    },
+    {
+      "bug": "DOC0011-Strings-202",
+      "tool": "anoieu",
+      "description": "program `$re_ac_merge` takes 3 arguments, docstring lists 5",
+      "first_seen": "2026-03-04",
+      "last_seen": "2026-05-01"
+    }
+  ]
+}
+```
+
+The second bug's `last_seen` is May because the September run did not mention
+it. That is a fact worth having and the script records it; it does **not**
+conclude that the bug was fixed, because a run that did not look and a run that
+found nothing are not the same thing and nothing in these two files tells them
+apart.
+
+### The one rule that makes it a database
+
+**A bug is added once.** It is identified by its `tool` and its `bug` together,
+or by an `id` where the tool mints one. Run the same dump twice and the second
+run adds nothing.
+
+That is the property that lets this be wired into a job instead of remembered.
+Re-running is free, so a run that half-failed can simply be run again.
+
+### What it will not do
+
+- **It never edits a bug already in the database, and never removes one.** If a
+  later run describes a known bug differently, that is printed as a conflict and
+  the database keeps what it has. A record of what was found over time is worth
+  having only if nothing quietly rewrites it, and deciding that the new wording
+  is the better one is a person's call.
+- **Nothing is written unless the whole dump is readable.** One malformed entry
+  and the run writes nothing at all, so a half-applied dump is not a state the
+  database can be in.
+- **It does not write anything anywhere else**, fetch anything, or need a
+  network. It reads two files and replaces one of them, and the replacement is
+  atomic, so an interrupted run leaves the old database intact.
+
+### The two files
+
+They are the same shape, so a database can be fed back in as a dump:
+
+```json
+{"bugs": [{"bug": "...", "tool": "...", "description": "..."}]}
+```
+
+A bare JSON list is accepted as well, since that is what a tool's first dump
+usually looks like. `bug`, `tool` and `description` are what a bug is; **a tool
+may carry any other fields it likes** — a path, a line, a rank, a URL — and they
+are kept exactly as they arrive. koine adds `first_seen` and `last_seen` and
+nothing else. There is no schema to agree on beyond the key.
+
+### Running it
+
+```console
+$ python3 tests/test_append_db.py
+```
+
+No dependencies, no network, nothing to install. `--dry-run` says what would
+change and writes nothing; `--date` records a run under a date other than today.
+
+## What else is in this tree
+
+[`docs/`](docs/README.md) is two pages: [`coherence.md`](docs/coherence.md), for
+an agent working here, and [`discussion.md`](docs/discussion.md), the channel to
+the rest of the ecosystem. **No agent acts on the discussion file unbidden** —
+the rule is at the top of it.
+
+[`tools/epidosis/`](tools/epidosis/README.md) is a child project: unadvertised,
+depended on by nobody, deletable without consequence.
+
+**An earlier version of this repository was a reporting-loop library** — a
+prompt-drift check, a branch-state reporter, a postmortem protocol and a findings
+record. It was deleted on 2026-09-16 when the repository was pointed at the job
+described above. It is in git history, nothing depends on it, and it is mentioned
+here only so that a reader who finds a reference to it knows where it went.
 
 ## The name
 
-κοινή — *koinē*, the common dialect. The Greek that spread after Alexander and
+κοινή — *koinē*, the common dialect: the Greek that spread after Alexander and
 became the tongue people whose Greek differed used to understand each other. It
-is here because what two tools running this loop actually share is not code but
-a dialect they must both speak; the code is only what keeps them speaking it. It
-was also the plain register rather than the literary one, which is the right
-ambition for plumbing.
-
-The objection, which belongs in the same paragraph as the claim: κοινή is a
-word about communication in general, fastened to a tool about reporting in
-particular, and a reader can fairly hear it as *the common one* — the drawer
-where shared odds and ends go. That reading is wrong today and would become
-right the moment this repository accepts its first piece of code that is merely
-shared rather than spoken by both ends of a report. The name is a test as much
-as a label, and it can be failed.
-
-`koine` was reserved in the ecosystem's
-[register of names](https://github.com/ajreynol/kanon/blob/main/tools/ynoia/names.md)
-and approved on 2026-08-31 as proposal `P1`, awaiting a repository. This is the
-repository. Taking the name commits this repository to the description written
-there, or to changing it.
+was the plain register rather than the literary one, which is the right ambition
+for a script that appends to a file.
 
 ## How this repository is maintained
 

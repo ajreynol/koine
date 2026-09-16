@@ -52,9 +52,8 @@ something only from outside it.
 **And because koine already does this shape of work.** koine's subject is a
 document, the thing that is supposed to say what the document says, and a
 comparison that runs — the prompt-drift check is exactly that, and the
-discipline it taught is in [`../../docs/maintaining.md`](../../docs/maintaining.md):
-a copy is safe when the ground truth is declared and something mechanical
-compares the rest to it. **This is that discipline pointed at a record instead
+discipline it taught is that a copy is safe when the ground truth is declared
+and something mechanical compares the rest to it. **This is that discipline pointed at a record instead
 of a prompt**, and the parts it borrows are named where they are used rather
 than imported: nothing here imports koine and koine imports nothing here.
 

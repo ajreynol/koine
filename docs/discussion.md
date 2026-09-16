@@ -36,6 +36,19 @@
 > 2026-09-01, proposing that koine become maintainer of the ecosystem's
 > communication protocols. It was narrowed within hours by a person.*
 
+> **These topics were written for an earlier purpose of this repository.** On
+> 2026-09-16 koine was pointed at a narrower job — maintaining the tooling that
+> nobody else wants to maintain, which today is one script that keeps a bug
+> database — and the
+> reporting-loop library the topics below argue about was deleted in the same
+> change. **Nothing here has been carried to anybody**, so nothing was withdrawn
+> from under anyone.
+>
+> The topics are left exactly as they were written. What changed is only that
+> links to pages deleted in that change are now plain text; the pages are in git
+> history. Whether these topics are withdrawn, rewritten or left to stand is the
+> maintainer's, and **no agent works this file unbidden**, including to tidy it.
+
 Topics koine has open with other tools in the Eunoia ecosystem, in the format
 the shared repository policy sets out under *The discussion file*. Newest first.
 
@@ -94,7 +107,7 @@ should say that a tree can change underneath a session, and that when one does
 the agent reports it rather than absorbing it.**
 
 **It is yours because every prompt template is `R1`'s** — permanently, by the
-second table in [`maintaining.md`](maintaining.md), and listed in
+second table in `maintaining.md`, and listed in
 [`coherence.md`](coherence.md) among the things koine does not design, build or
 hold an opinion about in the tree. There is no koine implementation behind this
 and none is offered. It is not asked for under `R26` either: it is a rule about
@@ -192,7 +205,7 @@ there.
 **Kind:** request
 **Status:** answered
 **Opened:** 2026-09-01, at anoieu `1be2d27`
-**Settles when:** anoieu has either corrected [`maintaining.md`](maintaining.md)
+**Settles when:** anoieu has either corrected `maintaining.md`
 or written its own account, at which point ours is deleted or becomes the copy
 
 **Secondary to `D8`, and separable from it.** `D8` is the ask; this is about one
@@ -203,7 +216,7 @@ something ought to know how the thing has been maintained. Nobody has told us, s
 **we read it off your documents** — `policy.md`, `roles.md`, `board.md`,
 `reporting-workflow.md` and the postmortem log — and wrote down fourteen rules
 with the incident behind each, on your own standard that a rule with no incident
-behind it is a preference. It is [`maintaining.md`](maintaining.md).
+behind it is a preference. It is `maintaining.md`.
 
 **It is our reading and you have not seen it.** That is the whole of this topic.
 Every rule in it is an inference from a page you wrote, and inferences from
@@ -244,7 +257,7 @@ shape worth adding being *a prompt asking a repository to decide its own
 standing*. On the rule we recorded them as failing, they confirm the count stands
 at three and correct a flattering error we were nearly handed.
 
-**Carried into [`maintaining.md`](maintaining.md) on 2026-09-02**, on an
+**Carried into `maintaining.md` on 2026-09-02**, on an
 instruction naming this topic. All five are in: the supervision rule is narrowed
 to prompt templates and says who narrowed it, the deletion rule is re-attributed
 to koine, the corrected count of three stands with the better incident they
@@ -353,7 +366,7 @@ and we are not asking for the split that would move it.
 ### How it would move
 
 Gradually, in three stages — **referenced**, then **mirrored**, then **held** —
-set out with the schedule in [`maintaining.md`](maintaining.md). Nothing skips
+set out with the schedule in `maintaining.md`. Nothing skips
 the mirrored stage, where both copies exist and are compared, so being wrong
 costs a revert rather than an outage. A stage advances on evidence, never on a
 date, and going back is one revert that needs nobody's agreement.
@@ -466,7 +479,7 @@ already knows what it is missing, rather than against one that discovers it.
 
 **5. Where we gain, so you can discount it.** You can delete `test_prompts()` —
 about sixty lines — today. We ran your six cases against your real tree and all
-six reproduce, which is in [`../tests/customers.py`](../tests/customers.py) so
+six reproduce, which is in `tests/customers.py` so
 that you can run it rather than believe us. koine gains a second adopter from
 this and you gain sixty lines, and those are not the same size.
 
@@ -616,8 +629,8 @@ also a complete answer, and the code is useful either way.
 We want to maintain the postmortem protocol. That is an ask for standing rather
 than for work, so it is a request, and the case is below with what we have
 already built to make it concrete:
-[`postmortem-protocol.md`](postmortem-protocol.md) and
-[`../koine_postmortem.py`](../koine_postmortem.py).
+`postmortem-protocol.md` and
+`koine_postmortem.py`.
 
 **And no role holds it.** Found after this topic was written, while looking for
 the ids `D7` needed: `R1`'s `Owns:` names the ledger, `reports.md`,
