@@ -16,6 +16,7 @@ The convention is anoieu's, and so is the name.
 | what | where | who else it binds |
 | --- | --- | --- |
 | the prompt-drift check | [`../koine/drift.py`](../koine/drift.py), [`drift.md`](drift.md) | anoieu and dokimasia, when each drops their copy |
+| the branch-state reporter | [`../koine/branch.py`](../koine/branch.py), [`branch.md`](branch.md) | anoieu and dokimasia, when each drops their copy |
 | **the postmortem protocol** | [`postmortem-protocol.md`](postmortem-protocol.md), [`../koine/postmortem.py`](../koine/postmortem.py) | **proposed**: a shape both keep today, offered here instead |
 | the evidence that adoption is free | [`../tests/customers.py`](../tests/customers.py) | nobody, and it is the reason anybody should believe the other rows |
 
@@ -45,17 +46,23 @@ depends on either — decide it, do it, say what you did. Asking about these is 
 caution; it is passing a decision to somebody with less context than you, and it
 is slower for everybody.
 
-**The scope of that is member-only traffic.** anoieu, dokimasia, eudaimonia and
-koine are members: they have joined, they read diffs, and a mistake between them
-is corrected in a commit by somebody who was already going to read it. cvc5,
-ethos and logos are not — at anoieu `2172a1b`, read 2026-09-02, cvc5 is
-`foundation` and ethos and logos are `candidate` with `proposed: associate` in
-[`ecosystem.json`](https://github.com/ajreynol/anoieu/blob/main/tools/ecosystem.json),
+**The scope of that is member-only traffic.** anoieu, dokimasia, eudaimonia,
+epikrisis, logos and koine are members, and kanon is president: they have joined,
+they read diffs, and a mistake between them is corrected in a commit by somebody
+who was already going to read it. cvc5 and ethos are not — at kanon `4c4a78a`,
+read 2026-09-16, cvc5 is `foundation` and ethos is `candidate` with
+`proposed: associate` in
+[`ecosystem.json`](https://github.com/ajreynol/kanon/blob/main/scripts/ecosystem/ecosystem.json),
 and what reaches them reaches people who did not sign up for this. **Anything
 that will be read outside the island is not a low-level detail**, whatever else
 it is: an outbound prompt, a finding, a claim about somebody's code. The
 ecosystem's own rule is the same one — everything that reaches a person who did
 not ask for it is sent by a person.
+
+**The island grew since the last refresh, and that loosens rather than tightens.**
+logos and epikrisis are members now, where this page had logos outside; kanon is
+new and is president. Nothing that was inside has moved out, so no traffic this
+page previously treated as internal has become external.
 
 ### And the structure is protected
 
@@ -101,7 +108,7 @@ one of these lists, and the list says what to do — not what to weigh.
 | | state |
 | --- | --- |
 | the prompt-drift check | built, `R16` |
-| the branch-state reporter | asked for by both customers, not started |
+| the branch-state reporter | built, `R16` |
 | the reply finder | asked for by both customers, not started |
 | the postmortem entry shape | built; offered in `D4` |
 
@@ -114,12 +121,13 @@ list.
 | | whose | why not |
 | --- | --- | --- |
 | **epochs** | the maintainer's | **THE DESIGN OF EPOCHS IS NOT KOINE'S TO DECIDE.** It is a high-level protocol; koine holds low-level ones and carries **no knowledge of how epochs are implemented** |
-| global announcements, and who is told | `R4` | the same reason, one level down |
-| membership, joining, the repository policy | `R4` | it decides who is in |
-| the discussion protocol and its safety gate | `R4` | being wrong here reaches people who did not sign up |
-| the inventory, and the entity ids | `R6` | koine *references* the vocabulary; owning it would be owning membership |
-| the channel model — who has a wire at all | unowned, anoieu's to claim | a membership rule wearing a format's clothes |
-| the role handoff procedure | **anoieu's, and now claimed** — a seven-step procedure in their `roles.md`, and a second protocol in their `coherence.md` for a role that crosses to another project | governance, not a shape |
+| global announcements, and who is told | `R4`, **kanon's** | the same reason, one level down |
+| membership, joining, the repository policy | `R4`, **kanon's** | it decides who is in |
+| the discussion protocol and its safety gate | `R4`, **kanon's** | being wrong here reaches people who did not sign up |
+| the inventory, and the entity ids | `R6`, **kanon's** | koine *references* the vocabulary; owning it would be owning membership |
+| the channel model — who has a wire at all | unowned, kanon's to claim | a membership rule wearing a format's clothes |
+| the role handoff procedure | **kanon's, and claimed** — the procedure and the role register are theirs since the handoff | governance, not a shape |
+| the policy checker itself | `R31`, **anoieu's** | it stayed behind when the documents moved, and our CI pins it |
 | every prompt template; every position on publishing | `R1` | a position is what somebody signs |
 
 **The test that puts something here:** somebody else maintains it, **or** being
@@ -217,22 +225,14 @@ overlap, not the safer half. Say where they differ and wait.
 last place a change that binds another repository can be caught.
 
 **And when a commit is taken while the work is still moving, say so in one
-line.** The convention is anoieu's, read off their `coherence.md` at anoieu
-`12c2015` on 2026-09-01. Committing mid-stream is nobody's fault and will keep
+line.** The convention was read off anoieu's `coherence.md` at anoieu `12c2015`
+on 2026-09-01; that page is kanon's now, and the convention went with it.
+Committing mid-stream is nobody's fault and will keep
 happening; what it costs is that the commit's message stops describing its
 contents, and a reader looking for a change finds it filed under a subject it
 has nothing to do with. The remedy is deliberately small — **one line naming the
 commit and what it actually carries.** Anyone may write it, anyone may delete
 it, at any time, without asking: it is a note about the record, not a record.
-
-> **Noted 2026-09-01, and removable.** `2c8886a` — *"Preparation for
-> deployment"* — was taken mid-stream by a second agent instance running in this
-> same working directory, and its subject names the intent rather than the
-> contents. What it carries: anoieu's replies recorded against `D9` (their
-> `D13`) and against `D8` (`R26` named in their `roles.md` and deliberately not
-> granted); the re-check of `D5`'s four defects, and of `D1`, `D2` and `D6`,
-> against anoieu `9794f31` and dokimasia `99cf6e1`; and one factual correction
-> in this file — cvc5's footing is `foundation`, where we had said `served`.
 
 ## What coherence means here
 
@@ -247,80 +247,116 @@ made almost entirely of copies of other people's shapes:
   reverse.
 
 The first two are why the customer harness exists and is runnable by a reader.
-The third has no guard yet, and is the first thing to build if this grows a
-third piece.
+**The third still has no guard, and this repository has now grown its third
+piece** — [`branch.md`](branch.md) describes four states and a default that
+`koine/branch.py` implements, and nothing compares the two. That was named here
+as the thing to build at exactly this point, and it has not been built; it is
+recorded rather than quietly dropped.
 
 ## The refresh, and what it found
 
 **A member makes its copy of the shared arrangements current before relying on
-them**, which is anoieu's protocol and not ours; what is ours is doing it and
-writing down the date. Run **2026-09-02**, against a checkout of anoieu at
-`2172a1b` and dokimasia at `f9a5bd7`.
+them**, which is the ecosystem's protocol and not ours; what is ours is doing it
+and writing down the date. Run **2026-09-16**, against checkouts of anoieu at
+`442bb67`, dokimasia at `f9a5bd7` and kanon at `4c4a78a`.
 
-**We were 145 commits behind.** The pin in
-[`../.github/workflows/anoieu.yml`](../.github/workflows/anoieu.yml) is `5668c20`,
-dated 2026-08-31; their tip that day was two days newer.
+**The governance moved to another repository, and that is the whole of this
+refresh.** On 2026-09-15, in anoieu `ca58216` and kanon `7eb9973`, the shared
+policy, the vision, the laws, the board, the role register, the inventory, the
+installer and the joining prompts left anoieu for **kanon**, which is now
+president. **anoieu kept the analyzer, the fuzzer, the findings system and the
+policy checker** — and the checker moved within their tree, from
+`tools/policy_check.py` to `scripts/policy_check.py`.
 
-**The pin did not move, and the reason is the interesting half.** A member may
-only bump to a commit where their build was green, and **not being able to find
-out is a refusal rather than a pass** — their own `bump_check.py`, run from this
-tree, could not reach the API that answers it and returned a refusal. So the pin
-stays where it is, which costs nothing: this tree passes the policy check at
-their tip as well, so nothing here is waiting on the bump.
+**Nothing about koine's job changed, and nothing this repository holds moved.**
+`R16` is still ours and is now recorded in kanon's register. What changed is
+**who to ask**, which is most of what this page is for.
+
+**dokimasia has not moved since the last refresh.** Their tip is still `f9a5bd7`.
+
+**The pin did not move, for the same reason as last time.** A member may only
+bump to a commit where the checker's build was green, and **not being able to
+find out is a refusal rather than a pass** — that check needs an API this tree
+cannot reach. So the pin in
+[`../.github/workflows/anoieu.yml`](../.github/workflows/anoieu.yml) stays at
+`5668c20`, which costs nothing: this tree passes the policy check at anoieu's tip
+as well, with `0` failures, so nothing here is waiting on the bump. **The pin and
+the path are coupled now** — `tools/policy_check.py` is correct at `5668c20` and
+wrong at the tip, so whoever moves the pin moves the path in the same commit. The
+workflow says so beside the pin.
 
 **What moved that touches this repository.**
 
 | what | where it stands here |
 | --- | --- |
-| **both customers moved their prompt scripts** | anoieu's are at `prompts/`, dokimasia's under `scripts/prompts/`. Our spec followed the old paths and reported ten failures that were ours, not theirs — corrected, and the harness is back to `0` against both real trees |
-| **the protocols acquired ids** | anoieu now keeps a register of them, `PROTO-n`, scattered across the pages that own each. Two bind every member rather than only them: the one that says an agent tells a person to take a break outside the hours they set, and the one that says every response names the tool it is acting for and the AI answering. **Neither changes a file here** |
-| **the role handoff stopped being unowned** | it is theirs, written down twice — the seven steps in their roles register, and a second protocol for a role that crosses to another project |
-| **a stretch is now deployed against a written policy** | it is addressed to the president and to nobody else, and no member is held to any of it |
-| **a publishing stance is owed** | by every member and by every child project in its tree. koine has not stated one — see the open work below |
+| **the policy, and where we say we follow it** | kanon's `docs/policy.md`. The front page's maintenance note pointed at anoieu's copy, which no longer exists — corrected, and it now names kanon for the policy and anoieu for the program that decides it |
+| **the inventory** | kanon's `scripts/ecosystem/ecosystem.json`. Two links here and in [`postmortem-protocol.md`](postmortem-protocol.md) followed the old path — corrected. The entity ids themselves did not change |
+| **the register of names** | kanon's tree, under `ynoia`. The front page's link to it was dead — corrected |
+| **the island got bigger** | logos and epikrisis are members; kanon is president. Nothing left the island, so nothing this page treated as internal is now external |
+| **`R4` and `R6` changed hands** | both are kanon's. The *Not ours* table named anoieu — corrected. The ids are unchanged |
+| **the checker acquired a role of its own** | `R31`, anoieu's, listed in the *Not ours* table because our CI pins it and it is not ours to move |
+| **both customers' prompt scripts** | unmoved since the last refresh. `tests/customers.py` reproduces all four of anoieu's cases and all six of dokimasia's, `0` failures against both real trees |
+| **a publishing stance is still owed** | by every member and by every child project in its tree. koine has not stated one — see the open work below |
 
-**This section is a copy, and nothing compares it.** The register of protocols is
-anoieu's and is the ground truth; what is above is our reading of which of them
-reach us, written down because a member that has not read them is complying with
-a version nobody publishes any more. **Where their page and this one disagree,
-theirs is right.**
+**This section is a copy, and nothing compares it.** kanon's pages are the ground
+truth; what is above is our reading of which of them reach us, written down
+because a member that has not read them is complying with a version nobody
+publishes any more. **Where their page and this one disagree, theirs is right.**
 
 ## The open work
 
-**One answer is owed to anoieu and it is not an agent's to give.** A publishing
-stance, owed by this repository and by every child project in its tree — whether
-there is a paper in the work, or a plan for one, or nothing worth writing up.
-**All three are answers**, the third is the commonest, and which one it is is a
-position somebody signs rather than a detail an agent settles. **Asked on
+**One answer is owed and it is not an agent's to give.** A publishing stance,
+owed by this repository and by every child project in its tree — whether there is
+a paper in the work, or a plan for one, or nothing worth writing up. **All three
+are answers**, the third is the commonest, and which one it is is a position
+somebody signs rather than a detail an agent settles. **Asked by anoieu on
 2026-09-02 and left unstated**, which is where it stays until somebody states it.
+The requirement itself is now kanon's page rather than anoieu's, and it moved
+with the rest of the policy; the answer owed is the same one.
 
 *Their correction of our reading of their practice was carried on 2026-09-02 and
 is no longer outstanding — [`maintaining.md`](maintaining.md) marks what came
 from them.*
 
-**Two of the four shared pieces are not built.** The inventory is in
-[`drift.md`](drift.md#what-is-not-here): the **branch-state reporter** — what
-became of the branch a reply names, which is pure git and identical in both — and
-the **reply finder**, which locates and splits a reply file in somebody else's
-checkout. Both were asked for, in that order. Neither is started.
+**One of the four shared pieces is left.** The inventory is in
+[`drift.md`](drift.md#what-is-not-here). The **branch-state reporter** was built
+on 2026-09-16 — [`branch.md`](branch.md) — leaving the **reply finder**, which
+locates and splits a reply file in somebody else's checkout.
 
 **The reply finder is the one to be careful with.** It reads a file written in a
 project that is not a member, and what it decides about that file feeds a verdict
 about somebody's code. By the division above it is not a low-level detail.
+
+**Building the branch reporter turned up something neither document said.** The
+two customers disagree about what a ref that is not in the checkout means —
+anoieu holds a commit and reads it as a stale checkout, dokimasia holds a branch
+name and reads it as *nothing has been answered on it*. Both are right, nothing
+in a repository tells them apart, and `Query.missing` carries the difference
+rather than koine choosing. **Only running both implementations against one
+repository showed it**, which is an argument for the customer harness doing that
+for every piece rather than only for the ones with specs.
 
 **The protocol has no adopter.** It is checked against both customers' logs and
 neither has been asked to run it. Until one does, everything on
 [`postmortem-protocol.md`](postmortem-protocol.md) is a design nobody has tested
 against a second opinion.
 
-**A second role is proposed and nothing for it is to be built.** `D8` asks
-anoieu to record `R26` — *the low-level communication protocols of the reporting
-loop* — beside `R16`: three shapes that two tools both write and no role holds.
-**koine wants that role**, and `D8` says so plainly rather than hedging; what it
-declines to ask for is listed there and in [`maintaining.md`](maintaining.md). **One reply has come back** — their answer
-to `D9`, recorded under that topic — **and `D8` is not it**, so the role is still
-unagreed. Two of their topics ask something of us and neither has been worked: a
-publishing stance, owed by every member and by every child project in its tree,
-and a pin that may only move to a commit where their CI was green.
+**A second role is proposed and nothing for it is to be built.** `D8` asks for
+`R26` — *the low-level communication protocols of the reporting loop* — beside
+`R16`: three shapes that two tools both write and no role holds. **koine wants
+that role**, and `D8` says so plainly rather than hedging; what it declines to
+ask for is listed there and in [`maintaining.md`](maintaining.md). **One reply
+has come back** — the answer to `D9`, recorded under that topic — **and `D8` is
+not it**, so the role is still unagreed. Two topics ask something of us and
+neither has been worked: a publishing stance, and a pin that may only move to a
+commit where the checker's CI was green.
+
+**`D8` is addressed to anoieu and the register it asks about is now kanon's.**
+Their role page still says `R26` is deliberately unallocated because koine's
+request is open, so the ask has not been lost — but the repository that would
+grant it has changed since the topic was written. **Re-addressing a topic is
+acting on the discussion file, which no agent does unbidden**, so this is left
+for a person to redirect or restate.
 
 **The scope test is the working rule, and it is not the one to reach for first.**
 Ask **is anybody else maintaining this, and would they want to** — not *is this a
@@ -341,9 +377,10 @@ pieces two and three of the four-piece inventory both customers already asked
 for, needing nothing from `D8`.
 
 **And if `R26` is granted, the clause that matters is `Not this role:`.** koine
-holds the shape of a message; anoieu keeps every constraint on whether it may be
-sent — the STOP gate, *nothing crosses a repository boundary automatically*,
-*touch no issue tracker*. A grant without that clause is worse than no grant, and
+holds the shape of a message; the constraints on whether it may be sent are
+somebody else's — the STOP gate, *nothing crosses a repository boundary
+automatically*, *touch no issue tracker*, which sit in kanon's policy and vision
+pages since the handoff. A grant without that clause is worse than no grant, and
 `D8` says so to them in those words.
 
 **Nothing generates anything yet.** `lessons()` and `open_debts()` return records
@@ -358,8 +395,9 @@ Run everything first; it takes seconds and needs nothing.
 ```bash
 python3 tests/run.py                                    # the drift check
 python3 tests/test_postmortem.py                        # the protocol
+python3 tests/test_branch.py                            # the branch reporter
 python3 tests/customers.py ~/src/anoieu ~/src/dokimasia  # both, against real trees
-python3 /path/to/anoieu/tools/policy_check.py --root .   # the ecosystem policy
+python3 /path/to/anoieu/scripts/policy_check.py --root .  # the ecosystem policy
 ```
 
 Then read [`../README.md`](../README.md) for what this is for, and

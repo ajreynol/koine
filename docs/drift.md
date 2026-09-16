@@ -206,5 +206,10 @@ became of the branch a reply names — pure git, and identical in both), the
 checkout), and the **postmortem-shape check** (one field block per run, and a
 summary short enough to stay one).
 
-None of them is built, and the last of them has not been asked for. koine takes
-its work from its customers and this piece is what was asked for first.
+Two of those are now built: the branch-state reporter is
+[`branch.md`](branch.md), and the postmortem-shape check is
+[`postmortem-protocol.md`](postmortem-protocol.md), which was not asked for and
+is offered rather than owed. **The reply finder is the one still outstanding**,
+and it is the one to be careful with: it reads a file written in a project that
+is not a member. koine takes its work from its customers, and this piece is what
+was asked for first.

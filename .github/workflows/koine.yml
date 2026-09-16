@@ -11,3 +11,5 @@ jobs:
       # against tests/fixtures/customer/.
       - run: python3 tests/run.py
       - run: python3 tests/test_postmortem.py
+      # Builds its own git repository under a temporary directory.
+      - run: python3 tests/test_branch.py

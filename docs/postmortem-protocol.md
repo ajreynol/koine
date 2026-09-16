@@ -94,10 +94,11 @@ subject: a checker taking somebody's build down involves two repositories and
 neither is *the tool*.
 
 **Ids come from the ecosystem's own list** —
-[`tools/ecosystem.json`](https://github.com/ajreynol/anoieu/blob/main/tools/ecosystem.json),
-which is what `docs/board.md` already uses for the same purpose. The checker
-takes the registry as an argument and does not go looking for it, so nothing here
-depends on anoieu's file existing.
+[`scripts/ecosystem/ecosystem.json`](https://github.com/ajreynol/kanon/blob/main/scripts/ecosystem/ecosystem.json),
+which is what the ecosystem's board already uses for the same purpose. The
+checker takes the registry as an argument and does not go looking for it, so
+nothing here depends on that file existing — which is what made the list's move
+from anoieu to kanon on 2026-09-15 cost this page a link and nothing else.
 
 ### The kinds
 

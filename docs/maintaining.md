@@ -7,7 +7,10 @@
 >
 > Nobody handed this over to begin with. It was read off `policy.md`, `roles.md`,
 > `board.md`, `reporting-workflow.md` and the postmortem log, because a repository
-> asking to be handed formats ought to know how they have been maintained.
+> asking to be handed formats ought to know how they have been maintained. **The
+> first three of those moved to kanon on 2026-09-15**, with the rest of the
+> governance; what is below was read before the move and the move does not change
+> it, but a reader chasing the sources will find three of them in another tree.
 > **anoieu's own account is still the ground truth and this is still the copy** —
 > a corrected copy is not an authority. Where a rule below is wrong, it is wrong
 > because we inferred it, and the ones marked **theirs** are the ones that are not

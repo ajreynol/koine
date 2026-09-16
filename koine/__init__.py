@@ -14,7 +14,7 @@ import it; the package is pure standard library and reads nothing but the files
 a caller hands it.
 
     import sys; sys.path.insert(0, "/tmp/koine")
-    from koine import drift
+    from koine import branch, drift, postmortem
 """
 
-__all__ = ["drift", "postmortem"]
+__all__ = ["branch", "drift", "postmortem"]

@@ -20,13 +20,17 @@ The specs below are the ones written out in `docs/drift.md`, and if the two
 disagree the document is the one that is right.
 """
 
+import importlib.util
 import os
+import shutil
+import subprocess
 import sys
+import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.dirname(HERE))
 
-from koine import drift, postmortem  # noqa: E402
+from koine import branch, drift, postmortem  # noqa: E402
 
 SWEEP = "-- or, for the sweep form --"
 BLOCKS = "-- or, for every block --"
@@ -140,6 +144,131 @@ def check_log(root, rel):
     return len(bad)
 
 
+def _git(repo, *args):
+    subprocess.run(["git", "-C", repo, *args], check=True, capture_output=True, text=True)
+
+
+def _rev(repo):
+    return subprocess.run(["git", "-C", repo, "rev-parse", "HEAD"],
+                          capture_output=True, text=True).stdout.strip()
+
+
+def _fixture(root):
+    """A checkout with a landed branch, an unlanded one, and a name for neither.
+
+    Built rather than committed: what is being compared is what git says, and a
+    git repository cannot be committed inside one without becoming a submodule.
+    """
+    repo = os.path.join(root, "project")
+    os.makedirs(repo)
+    _git(repo, "init", "-q", "-b", "main")
+    _git(repo, "config", "user.email", "t@example.invalid")
+    _git(repo, "config", "user.name", "t")
+    open(os.path.join(repo, "one"), "w").write("1")
+    _git(repo, "add", "one"); _git(repo, "commit", "-q", "-m", "one")
+    first = _rev(repo)
+    _git(repo, "checkout", "-q", "-b", "merged")
+    open(os.path.join(repo, "two"), "w").write("2")
+    _git(repo, "add", "two"); _git(repo, "commit", "-q", "-m", "two")
+    merged = _rev(repo)
+    _git(repo, "checkout", "-q", "main"); _git(repo, "merge", "-q", "--ff-only", "merged")
+    _git(repo, "checkout", "-q", "-b", "pending", first)
+    open(os.path.join(repo, "three"), "w").write("3")
+    _git(repo, "add", "three"); _git(repo, "commit", "-q", "-m", "three")
+    pending = _rev(repo)
+    _git(repo, "checkout", "-q", "main")
+    return repo, merged, pending
+
+
+def _anoieu_says(root, repo, commit):
+    """anoieu's real `landing.ask`, on our fixture. Their vocabulary, unchanged."""
+    path = os.path.join(root, "scripts", "landing.py")
+    if not os.path.isfile(path):
+        return None
+    spec = importlib.util.spec_from_file_location("_landing", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    item = mod.Outstanding("id", "project", "branch", commit)
+    mod.ask(item, repo)
+    return item.state
+
+
+def _dokimasia_says(root, repo, ref):
+    """dokimasia's real `--status`, on our fixture. Read back off their output."""
+    script = os.path.join(root, "scripts", "prompts", "process_dokimasia")
+    if not os.path.isfile(script):
+        return None
+    p = subprocess.run(["bash", script, "--status", "--branch", ref, repo],
+                       capture_output=True, text=True, timeout=60)
+    text = p.stdout
+    if "merged into" in text:
+        return "landed"
+    if "does not have" in text:
+        return "ahead"
+    if "is not here" in text:
+        return "absent"
+    return "unknown"
+
+
+def check_branch(roots):
+    """Both customers' branch-state code, and koine's, asked the same questions.
+
+    This is the piece's version of the claim the other two make: the answers are
+    theirs, not ours. Their two implementations disagree in one place on purpose
+    -- what a ref that is not in the checkout means -- and `Query.missing` is how
+    a caller says which reading it wants. Both readings are checked here.
+    """
+    print("the branch-state reporter, against both customers' own code:")
+    root = tempfile.mkdtemp(prefix="koine-customers-")
+    failures = 0
+    try:
+        repo, merged, pending = _fixture(root)
+        # `None` means the customer does not ask that question, and is not
+        # consulted about it. The last two cases are exactly that: a missing
+        # commit is anoieu's question and a missing branch is dokimasia's, which
+        # is the disagreement `Query.missing` exists to carry.
+        cases = [
+            # name, ref, commit, koine, missing, anoieu, dokimasia
+            ("a landed branch", "merged", merged,
+             branch.LANDED, branch.UNKNOWN, "landed", "landed"),
+            ("an unlanded branch", "pending", pending,
+             branch.AHEAD, branch.UNKNOWN, "not yet", "ahead"),
+            ("a commit that is not here", "0" * 40, "0" * 40,
+             branch.UNKNOWN, branch.UNKNOWN, "unknown", None),
+            ("a branch that is not here", "never-pushed", None,
+             branch.ABSENT, branch.ABSENT, None, "absent"),
+        ]
+        for name, ref, commit, want, missing, want_a, want_d in cases:
+            got = branch.ask(branch.Query(repo=repo, ref=ref, missing=missing)).state
+            if got != want:
+                print(f"  FAIL {name}: koine says {got!r}, expected {want!r}")
+                failures += 1
+                continue
+            agreed = []
+            if want_a is not None and "anoieu" in roots:
+                said = _anoieu_says(roots["anoieu"], repo, commit)
+                if said is not None:
+                    if said != want_a:
+                        print(f"  FAIL {name}: anoieu says {said!r}, koine says {got!r}")
+                        failures += 1
+                        continue
+                    agreed.append("anoieu")
+            if want_d is not None and "dokimasia" in roots:
+                said = _dokimasia_says(roots["dokimasia"], repo, ref)
+                if said is not None:
+                    if said != want_d:
+                        print(f"  FAIL {name}: dokimasia says {said!r}, koine says {got!r}")
+                        failures += 1
+                        continue
+                    agreed.append("dokimasia")
+            who = " and ".join(agreed) if agreed else "nobody else asks this"
+            print(f"  ok   {name} -- {got}, and so says {who}")
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+    print()
+    return failures
+
+
 def main(argv):
     roots, positional = {}, []
     i = 0
@@ -184,6 +313,8 @@ def main(argv):
         failures += result.failures
         failures += check_log(root, log_rel)
         print()
+
+    failures += check_branch(roots)
 
     print(f"-- the customers: {failures} failure(s)")
     return 1 if failures else 0

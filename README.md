@@ -78,9 +78,10 @@ the whole of its claim. koine does not own the documentation of how protocols
 work in this ecosystem, and the higher-level ones are not available to it:
 **membership and joining, the discussion protocol and its safety gate, the
 inventory of who is in the ecosystem, the procedure by which a role changes
-hands, and every position about what may be published.** Those are anoieu's, and
-not because of seniority — they are the ones somebody is already maintaining, and
-the ones where being wrong reaches people who did not sign up. What is left is
+hands, and every position about what may be published.** Those are kanon's, which
+took the ecosystem's governance over from anoieu on 2026-09-15, and not because of
+seniority — they are the ones somebody is already maintaining, and the ones where
+being wrong reaches people who did not sign up. What is left is
 the low-level end: the shape of a reply, the shape of a postmortem entry, the
 check that a script still says what its document says.
 
@@ -174,9 +175,19 @@ what the log knows — every lesson with the incident that produced it, and ever
 debt booked and not yet discharged. The same harness measures the adoption cost:
 both customers' logs pass the lower level untouched.
 
-**Two of the four shared pieces are not built** — the branch-state reporter and
-the reply finder. Both were asked for, in that order, after the drift check.
-Neither is started.
+**The third piece is the branch-state reporter**, and it is the cheapest of the
+four to take: *what became of the branch a reply names* — landed, ahead, absent,
+or a question that could not be put at all. It asks nothing of a customer, since
+a caller that can name a checkout and a ref can call it, and it writes nothing
+anywhere. [`docs/branch.md`](docs/branch.md) is the whole of it, including the
+one place the two customers genuinely disagree — what a ref that is not in the
+checkout means — which running both implementations against one repository is
+what turned up.
+
+**One of the four shared pieces is left** — the reply finder, asked for third.
+It is not started, and it is the one to be careful with: it reads a file written
+in a project that is not a member, and what it decides about that file feeds a
+verdict about somebody's code.
 
 ## The name
 
@@ -196,7 +207,7 @@ shared rather than spoken by both ends of a report. The name is a test as much
 as a label, and it can be failed.
 
 `koine` was reserved in the ecosystem's
-[register of names](https://github.com/ajreynol/anoieu/blob/main/tools/ynoia/names.md)
+[register of names](https://github.com/ajreynol/kanon/blob/main/tools/ynoia/names.md)
 and approved on 2026-08-31 as proposal `P1`, awaiting a repository. This is the
 repository. Taking the name commits this repository to the description written
 there, or to changing it.
@@ -204,8 +215,10 @@ there, or to changing it.
 ## How this repository is maintained
 
 This repository is part of the **Eunoia ecosystem** and follows its shared
-repository policy, kept by [anoieu](https://github.com/ajreynol/anoieu) in
-[`docs/policy.md`](https://github.com/ajreynol/anoieu/blob/main/docs/policy.md).
+repository policy, kept by [kanon](https://github.com/ajreynol/kanon) in
+[`docs/policy.md`](https://github.com/ajreynol/kanon/blob/main/docs/policy.md).
+The program that decides it stays in
+[anoieu](https://github.com/ajreynol/anoieu), and that is what CI here pins.
 
 **Written by AI agents, under light human supervision.** A human directs the
 work, decides what this repository is for, and reads what is published here;
