@@ -108,6 +108,15 @@ fixing them now would fix them before anybody has evidence about which is
 right. Nor does using koine enrol a repository in anything; a tool somebody
 depends on is not thereby a member of this ecosystem.
 
+**The findings record does not walk that back**, and the distinction is one a
+reader should be able to check rather than take. It holds the shape of a *record*
+— the fields a row is written in, so that two producers writing the same row
+write the same bytes. It says nothing about what a finding is, when one may be
+raised, what rank it carries or what closes it; `rank` and `kind` are carried
+through and never read, and the vocabulary of states is the producer's.
+[`docs/findings-record.md`](docs/findings-record.md) ends with the list of what
+is not decided there, which is the part to hold it to.
+
 ## The open question
 
 **The goal is that a reporting structure stays cheap to change.** A tool learns
@@ -129,6 +138,13 @@ This is a low-level technical question rather than a position, and it is the
 first one this repository has. What would settle it is a customer running both
 and saying which cost them less. If the answer is the tracker, koine is the tool
 that should say so first.
+
+**The findings record is the layer under both answers**, which is anoieu's
+argument rather than ours and is the reason building one does not settle the
+question: the row is the body of an issue, the id is the key, and an issue number
+is one more column the format carries and does not read. What it changes is that
+moving to a tracker would be a migration rather than a rewrite — which is also
+what would let a customer run both and hand us the evidence.
 
 ## Running it
 
@@ -183,6 +199,20 @@ anywhere. [`docs/branch.md`](docs/branch.md) is the whole of it, including the
 one place the two customers genuinely disagree — what a ref that is not in the
 checkout means — which running both implementations against one repository is
 what turned up.
+
+**The fourth piece is the findings record**, and it is the first thing here
+that a customer asked for in so many words rather than koine offering it. A
+finding's row lives in a markdown table at both customers, and in both of them
+the *state* of a row is a field nowhere — it is which file the row is filed in,
+qualified in prose. anoieu's `D25` asks for a machine-readable record under that
+table, written by more than one producer, and asks koine to choose the format
+rather than inherit theirs. [`docs/findings-record.md`](docs/findings-record.md)
+is the definition and says why it is lines of JSON;
+[`koine/findings.py`](koine/findings.py) reads one, writes it canonically, merges
+two of them with conflicts reported rather than resolved, and says per id whether
+two producers agreed. The condition their topic sets is that the page a reader is
+pointed at must not change, so the harness reads both of their real ledgers into
+a record and renders them back: 39 rows and 43 rows, byte for byte.
 
 **One of the four shared pieces is left** — the reply finder, asked for third.
 It is not started, and it is the one to be careful with: it reads a file written

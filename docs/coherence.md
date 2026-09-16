@@ -18,12 +18,19 @@ The convention is anoieu's, and so is the name.
 | the prompt-drift check | [`../koine/drift.py`](../koine/drift.py), [`drift.md`](drift.md) | anoieu and dokimasia, when each drops their copy |
 | the branch-state reporter | [`../koine/branch.py`](../koine/branch.py), [`branch.md`](branch.md) | anoieu and dokimasia, when each drops their copy |
 | **the postmortem protocol** | [`postmortem-protocol.md`](postmortem-protocol.md), [`../koine/postmortem.py`](../koine/postmortem.py) | **proposed**: a shape both keep today, offered here instead |
+| the findings record | [`findings-record.md`](findings-record.md), [`../koine/findings.py`](../koine/findings.py) | anoieu, who asked for it in `D25`; dokimasia, whose registers it was checked against before it was built |
 | the evidence that adoption is free | [`../tests/customers.py`](../tests/customers.py) | nobody, and it is the reason anybody should believe the other rows |
 
-The second row is in bold because it is different in kind. The drift check is
-*code two repositories had written twice*; the protocol is **a document other
-repositories would follow**, and koine has asked for it rather than been given
-it. Until anoieu answers, the shape is still theirs.
+The bold row is bold because it is different in kind. The drift check and the
+branch reporter are *code two repositories had written twice*; the postmortem
+protocol is **a document other repositories would follow**, and koine has asked
+for it rather than been given it. Until anoieu answers, the shape is still
+theirs.
+
+**The findings record is the other way round**, which is why it is not bold: it
+is also a document other repositories would follow, and it was **asked for**, by
+name, with the choice of format handed over explicitly. It is the first row here
+that arrived that way.
 
 ## The supervision division
 
@@ -111,6 +118,7 @@ one of these lists, and the list says what to do — not what to weigh.
 | the branch-state reporter | built, `R16` |
 | the reply finder | asked for by both customers, not started |
 | the postmortem entry shape | built; offered in `D4` |
+| the findings record | built; asked for in anoieu's `D25`, 2026-09-16 |
 
 **The test that puts something here:** two tools already write it, no role holds
 it, and it is a **shape** rather than a decision. All three, or it is not on this
@@ -164,6 +172,7 @@ finding it is what it was asked to do.
 | --- | --- |
 | does koine hold the postmortem shape at all | `D4`, unanswered |
 | does `R26` exist | `D8`, unanswered |
+| does the record's format suit a second ledger | partly answered by running it: dokimasia's registers read into it, and the one place it does not fit is their retraction table, which has no id space. `D25` settles when they say so |
 | is our reading of anoieu's practice right | `D9`, **answered and carried** — *substantially right*, corrected in five places, 2026-09-02 |
 | should a record live in the tree or in a tracker | a customer running both and saying which cost less — the open question on the front page |
 | where the line between a format and a governance rule falls | judgement; we put the channel model on the wrong side once and were corrected |
@@ -247,11 +256,16 @@ made almost entirely of copies of other people's shapes:
   reverse.
 
 The first two are why the customer harness exists and is runnable by a reader.
-**The third still has no guard, and this repository has now grown its third
+**The third still has no guard, and this repository has now grown its fourth
 piece** — [`branch.md`](branch.md) describes four states and a default that
 `koine/branch.py` implements, and nothing compares the two. That was named here
 as the thing to build at exactly this point, and it has not been built; it is
-recorded rather than quietly dropped.
+recorded rather than quietly dropped. The findings record arrives with the same
+gap in one place and without it in another: `tests/test_findings.py` fails on
+every rule the document states, and `tests/customers.py` re-derives every number
+the document quotes about the two real registers — but the field *table* on the
+page and the `FIELDS` tuple in the module are still two copies with nothing
+comparing them.
 
 ## The refresh, and what it found
 
@@ -322,6 +336,25 @@ from them.*
 [`drift.md`](drift.md#what-is-not-here). The **branch-state reporter** was built
 on 2026-09-16 — [`branch.md`](branch.md) — leaving the **reply finder**, which
 locates and splits a reply file in somebody else's checkout.
+
+**The findings record was built on 2026-09-16, on anoieu's `D25`.** It is the
+first piece here a customer asked for in so many words, and `D25` hands koine the
+choice of format explicitly. What was decided, and is an agent's to decide under
+the division above: lines of JSON, the state of a row as a field with the
+producer's own word in it, runs carried beside rows so an absence can be told
+from an unread file, a merge that reports conflicts instead of resolving them,
+and a per-id comparison of two producers.
+[`findings-record.md`](findings-record.md) ends with what is *not* decided there
+— what counts as a finding, what closes a row, what a rank means, the id scheme —
+and that list is the part to hold a grant of this to.
+
+**The check `D25` asked to have run first was run first**, and it is in the
+document: 51 rows out of dokimasia's eight registers, against 82 of anoieu's, and
+the two share `id`, `what`, `code`, `state` and `verdict` and nothing else
+reliably. Every other field is optional because of that measurement rather than
+by design. **`D25` is not thereby settled.** It settles when anoieu says the
+format is theirs or is not, and saying so is a person carrying it — nothing here
+replies to a topic.
 
 **The reply finder is the one to be careful with.** It reads a file written in a
 project that is not a member, and what it decides about that file feeds a verdict
@@ -395,6 +428,7 @@ Run everything first; it takes seconds and needs nothing.
 ```bash
 python3 tests/run.py                                    # the drift check
 python3 tests/test_postmortem.py                        # the protocol
+python3 tests/test_findings.py                          # the findings record
 python3 tests/test_branch.py                            # the branch reporter
 python3 tests/customers.py ~/src/anoieu ~/src/dokimasia  # both, against real trees
 python3 /path/to/anoieu/scripts/policy_check.py --root .  # the ecosystem policy

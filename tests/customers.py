@@ -9,7 +9,10 @@ piece costs a customer nothing on the first day. `docs/drift.md` says koine
 reproduces the prompt check each repository already had, with no case, form or
 line of coverage lost; `docs/postmortem-protocol.md` says a log that passed the
 old shape check still passes `SHAPE`, and prints what moving to `PROTOCOL` would
-cost. Both are claims that nobody can re-run unless this exists.
+cost; `docs/findings-record.md` says a ledger read into a record and rendered
+back is the same page, byte for byte, and prints what the record would then be
+able to ask that the table cannot. All three are claims that nobody can re-run
+unless this exists.
 
 It is **not** part of CI and nothing depends on it. It needs a checkout of
 somebody else's repository, which `tests/run.py` deliberately does not, and it
@@ -20,8 +23,10 @@ The specs below are the ones written out in `docs/drift.md`, and if the two
 disagree the document is the one that is right.
 """
 
+import collections
 import importlib.util
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -30,7 +35,7 @@ import tempfile
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.dirname(HERE))
 
-from koine import branch, drift, postmortem  # noqa: E402
+from koine import branch, drift, findings, postmortem  # noqa: E402
 
 SWEEP = "-- or, for the sweep form --"
 BLOCKS = "-- or, for every block --"
@@ -142,6 +147,255 @@ def check_log(root, rel):
     else:
         print("  ok   it already keeps PROTOCOL")
     return len(bad)
+
+
+# -- the findings record ------------------------------------------------------
+
+#: anoieu's two ledgers, and how their columns map onto the record's fields.
+#: The mapping is **theirs** -- these are the headings on their page, and the
+#: record is fitted to the ledger rather than the ledger to the record.
+ANOIEU_LEDGERS = (
+    # file, the last column's heading, whether rows there are ruled on
+    ("docs/reports/open-findings.md", "notes", False),
+    ("docs/reports/closed-findings.md", "verdict", True),
+)
+
+#: dokimasia's registers. Eight tables across two files, of which six are rows;
+#: `issues.md` also carries a legend and a metrics table, which are not.
+DOKIMASIA_REGISTERS = (
+    # file, the table's headings, {field: heading}, defaults
+    ("docs/issues.md", ("#", "what", "found by", "what would settle it"),
+     {"id": "#", "what": "what", "code": "found by"}, {"rank": "2"}),
+    ("docs/issues.md", ("#", "what", "found by"),
+     {"id": "#", "what": "what", "code": "found by"}, {"rank": "3"}),
+    ("docs/issues.md", ("#", "ask", "kind", "why", "where argued"),
+     {"id": "#", "what": "ask", "kind": "kind"}, {}),
+    ("docs/issues.md", ("#", "what"), {"id": "#", "what": "what"}, {}),
+    ("docs/issues.md", ("#", "what we suspected", "what settled it"),
+     {"id": "#", "what": "what we suspected", "verdict": "what settled it"},
+     {"settled": True}),
+    ("docs/issues.md", ("#", "what", "where"),
+     {"id": "#", "what": "what", "where": "where"}, {}),
+    ("docs/findings.md", ("#", "what", "kind", "rank", "state"),
+     {"id": "#", "what": "what", "kind": "kind", "rank": "rank",
+      "state": "state"}, {}),
+    ("docs/findings.md", ("#", "what we claimed", "what was true"),
+     {"id": "#", "what": "what we claimed", "verdict": "what was true"},
+     {"settled": True, "state": "retracted"}),
+)
+
+_ROW = re.compile(r"^\|\s*`[0-9a-f]{16}`\s*\|")
+
+
+def _table(text, headings):
+    """The one table in a document with exactly these headings."""
+    got = [t for t in findings.tables(text) if tuple(t.headings) == tuple(headings)]
+    return got[0] if len(got) == 1 else None
+
+
+def _anoieu_ledger(root, rel, last, settled):
+    """One of their ledgers, read faithfully: every cell kept as it is written."""
+    path = os.path.join(root, rel)
+    if not os.path.isfile(path):
+        return None, None, None
+    text = open(path, encoding="utf-8").read()
+    table = _table(text, ("id", "owner", "code", "where", "what", last))
+    if table is None:
+        return None, None, None
+    rows = findings.from_table(
+        table,
+        {"id": "id", "owner": "owner", "code": "code", "where": "where",
+         "what": "what", last: last},
+        defaults={"settled": True} if settled else None)
+    return rows, [l for l in text.splitlines() if _ROW.match(l)], last
+
+
+def _columns(last):
+    return [findings.Column("id", "id", code=True),
+            findings.Column("owner", "owner"),
+            findings.Column("code", "code"),
+            findings.Column("where", "where", code=True),
+            findings.Column("what", "what"),
+            findings.Column(last, last)]
+
+
+def _marker(root):
+    """anoieu's own `awaiting landing:` regex, borrowed for the migration.
+
+    Their parser is what converts their prose, once. After the conversion
+    nothing needs it -- which is the argument for the field, and is why this
+    imports theirs instead of koine growing a regex for somebody's sentence.
+    """
+    path = os.path.join(root, "scripts", "landing.py")
+    if not os.path.isfile(path):
+        return None, None
+    spec = importlib.util.spec_from_file_location("_landing2", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod.MARKER, mod
+
+
+def check_findings_anoieu(root):
+    """anoieu's real ledgers, read into a record and rendered back.
+
+    Two readings, and the pair is the whole of the evidence. The **faithful**
+    one keeps every cell as it is written, and is what proves the claim their
+    topic makes a condition: rendering the record back reproduces the page, so
+    nobody in cvc5 sees anything change. The **typed** one splits the verdict
+    word out of its reason and lifts the landing promise out of its sentence,
+    and is the migration -- printing what it costs and what it buys is the point,
+    exactly as the postmortem harness prints the move to `PROTOCOL`.
+    """
+    print("  the findings record, against their two ledgers:")
+    record = findings.Record(path=os.path.join(root, "docs/reports"))
+    failures = 0
+    ledgers = []
+    for rel, last, settled in ANOIEU_LEDGERS:
+        rows, original, _ = _anoieu_ledger(root, rel, last, settled)
+        if rows is None:
+            print(f"  skip {rel} -- no such ledger, or its columns have moved")
+            return 0
+        rendered = findings.render(rows, _columns(last))[2:]
+        if rendered != original:
+            bad = next(i for i, (a, b) in enumerate(zip(rendered, original))
+                       if a != b)
+            print(f"  FAIL {rel}: rendering row {bad + 1} back does not "
+                  f"reproduce it\n       got {rendered[bad][:110]}\n"
+                  f"       was {original[bad][:110]}")
+            failures += 1
+        else:
+            print(f"  ok   {rel}: {len(rows)} row(s) read and rendered back "
+                  "byte for byte -- the page does not change")
+        record.findings.extend(rows)
+        ledgers.append((rel, last, rows))
+
+    todo = findings.check(record)
+    kinds = collections.Counter(
+        "settled, and the state is which file the row is in"
+        if "inferred from where it is filed" in p.message else p.message
+        for p in todo)
+    print(f"  -- reading them faithfully leaves {len(todo)} thing(s) the record "
+          "cannot yet be asked:")
+    for message, n in kinds.most_common():
+        print(f"     {n} x {message}")
+
+    # The typed reading: the word out of the verdict, the promise out of the
+    # sentence. Nothing here decides what a verdict means -- `split_verdict`
+    # takes the separator off, and their own regex takes the marker out.
+    marker, mod = _marker(root)
+    typed = findings.Record(path=record.path)
+    words, spellings = collections.Counter(), collections.Counter()
+    for rel, last, rows in ledgers:
+        for row in rows:
+            new = findings.Finding(**{n: getattr(row, n) for n in findings.FIELDS},
+                                   extra=dict(row.extra), line=row.line)
+            cell = getattr(row, last)
+            if row.settled and cell:
+                spellings["--" if re.search(r"\s--\s", cell) else "em dash"] += 1
+                word, reason = findings.split_verdict(cell)
+                new.state, new.verdict, new.notes = word, reason, ""
+                words[word] += 1
+                if marker is not None:
+                    hit = marker.search(cell)
+                    if hit:
+                        new.landing = findings.Landing(*hit.group(
+                            "project", "branch", "commit"))
+            typed.findings.append(new)
+
+    left = findings.check(typed)
+    if left:
+        print(f"  FAIL the typed reading still leaves {len(left)} problem(s)")
+        for p in left[:4]:
+            print(f"       {p}")
+        failures += 1
+    else:
+        print(f"  ok   typed, it checks clean: {len(typed.settled())} settled "
+              f"row(s) carry one of {len(words)} verdict word(s) as a field, "
+              f"where the ledger spells the separator "
+              f"{' and '.join(f'{n} {k}' for k, n in spellings.most_common())}")
+
+    if mod is not None and hasattr(mod, "read_ledger"):
+        theirs = [o.id for o in mod.read_ledger(
+            os.path.join(root, "docs/reports/closed-findings.md"))]
+        ours = [q.label for q in findings.landings(
+            typed, {p: "." for p in {f.landing.project for f in typed.findings
+                                     if f.landing}})]
+        if sorted(theirs) == sorted(ours):
+            print(f"  ok   the {len(ours)} outstanding landing(s) a typed field "
+                  "finds are the ones their regex finds -- and a typed field "
+                  "cannot be reworded out of the audit")
+        else:
+            print(f"  FAIL landings differ: theirs {sorted(theirs)}, "
+                  f"ours {sorted(ours)}")
+            failures += 1
+
+    unscanned = sum(1 for f in record.findings
+                    if record.covers(f.owner, f.where) is None)
+    print(f"  -- and {unscanned} row(s) sit in a record with no run declared, "
+          "so nothing there can yet tell a file nobody reported on from one "
+          "nobody read")
+    return failures
+
+
+def check_findings_dokimasia(root):
+    """dokimasia's registers, against the same record.
+
+    This is the check their topic asked for **before** anything was built: the
+    two customers' registers differ more than their two postmortem logs did, and
+    a format written for one ledger is a guess about the other. What it finds is
+    printed whether or not it is flattering -- a result is worth more than a
+    schema that fits one customer.
+    """
+    print("  the findings record, against their registers:")
+    record = findings.Record(path=os.path.join(root, "docs"))
+    seen, missed = 0, []
+    for rel, headings, mapping, defaults in DOKIMASIA_REGISTERS:
+        path = os.path.join(root, rel)
+        if not os.path.isfile(path):
+            missed.append((rel, headings))
+            continue
+        table = _table(open(path, encoding="utf-8").read(), headings)
+        if table is None:
+            missed.append((rel, headings))
+            continue
+        rows = findings.from_table(table, mapping, defaults=defaults)
+        record.findings.extend(rows)
+        seen += 1
+    for rel, headings in missed:
+        print(f"  -- {rel}: no table headed {' | '.join(headings)} any more; "
+              "their register has moved and this map is stale")
+    print(f"  ok   {len(record)} row(s) read out of {seen} register(s), "
+          "against column names that are theirs and not ours")
+
+    fields = {n: sum(1 for f in record if f.get(n))
+              for n in ("owner", "code", "where", "what", "state", "rank",
+                        "kind", "verdict")}
+    print("  -- what their rows actually fill, out of "
+          f"{len(record)}: "
+          + ", ".join(f"{n} {c}" for n, c in fields.items() if c))
+    print("     every one of those is optional in the record, which is the "
+          "result rather than the design: `where` and `owner` are anoieu's "
+          "and nearly absent here, `rank` and `kind` are theirs and absent "
+          "there")
+
+    todo = findings.check(record)
+    kinds = collections.Counter(
+        "an id with whitespace -- these rows have no id space, and an id is "
+        "carried and never minted here" if "whitespace" in p.message
+        else "settled, and the state is which table the row is in"
+        if "inferred from where it is filed" in p.message else p.message
+        for p in todo)
+    print(f"  -- and {len(todo)} thing(s) the record cannot yet be asked:")
+    for message, n in kinds.most_common():
+        print(f"     {n} x {message}")
+    return 0
+
+
+#: name -> what its real records are worth checking against
+RECORDS = {
+    "anoieu": check_findings_anoieu,
+    "dokimasia": check_findings_dokimasia,
+}
 
 
 def _git(repo, *args):
@@ -312,6 +566,7 @@ def main(argv):
             failures += 1
         failures += result.failures
         failures += check_log(root, log_rel)
+        failures += RECORDS[name](root)
         print()
 
     failures += check_branch(roots)

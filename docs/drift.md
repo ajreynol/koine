@@ -213,3 +213,9 @@ is offered rather than owed. **The reply finder is the one still outstanding**,
 and it is the one to be careful with: it reads a file written in a project that
 is not a member. koine takes its work from its customers, and this piece is what
 was asked for first.
+
+**A fifth piece arrived after that inventory was written**, and is not in it
+because nobody had thought of it then: the [findings
+record](findings-record.md), asked for in anoieu's `D25` on 2026-09-16. It is not
+part of the trip a finding takes — it is the shape of the row underneath one —
+which is why it sits beside the inventory rather than inside it.
