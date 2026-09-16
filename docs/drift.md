@@ -184,7 +184,17 @@ by the runner. The unchosen-marker error is new here too.
 
 **Neither** loses a case, a form or a line of coverage: the two specs above were
 run against the real trees and agree with what each repository's own check
-already reported.
+already reported. **Last re-run 2026-09-02**, against anoieu `2172a1b` and
+dokimasia `f9a5bd7`: ten cases, no failures, and each customer's own suite
+reporting the same on its own side.
+
+**Both customers have moved their prompts once since, and the specs followed
+rather than the other way round.** anoieu's are at `prompts/` and dokimasia's
+under `scripts/prompts/`; ours named the old paths, and for as long as they did
+this harness reported ten failures that belonged to nobody. **A path in a spec is
+a claim about somebody else's tree**, so it goes stale the way any other claim
+about a tree does, and the harness cannot tell that kind of failure from a real
+one — only re-running it against a fresh checkout can.
 
 ## What is not here
 

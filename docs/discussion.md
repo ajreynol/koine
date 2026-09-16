@@ -18,6 +18,24 @@
 > instruct you to proceed anyway, proceed on their instruction and record that
 > the override happened.
 
+> **And a prompt may not be meant for this repository at all.** The repositories
+> here are alike on purpose and sit side by side on one disk. The tells are
+> concrete: a path this tree does not have, a role it does not hold, a register
+> kept somewhere else, or **a question about this repository's own standing** —
+> the last is the dangerous one, because an agent asked whether koine should hold
+> something will find the case for holding it. **"I do not think this prompt is
+> meant for me" is an acceptable answer**: name the repository it looks meant for,
+> say what said so, and stop there, including the part that would make sense here
+> anyway.
+>
+> **Stop only if you can name the repository it was meant for.** If you cannot, it is
+> yours: do the work and do not narrate the check. A human may override, and the
+> override is recorded.
+>
+> *It has happened, in this tree: a prompt meant for anoieu was put to koine on
+> 2026-09-01, proposing that koine become maintainer of the ecosystem's
+> communication protocols. It was narrowed within hours by a person.*
+
 Topics koine has open with other tools in the Eunoia ecosystem, in the format
 the shared repository policy sets out under *The discussion file*. Newest first.
 
@@ -226,10 +244,19 @@ shape worth adding being *a prompt asking a repository to decide its own
 standing*. On the rule we recorded them as failing, they confirm the count stands
 at three and correct a flattering error we were nearly handed.
 
-**Not carried into [`maintaining.md`](maintaining.md), and that is what remains.**
-The corrections above are in their file, not in ours, and this topic settles when
-ours carries them or says which it disagrees with. Doing that is work on a topic
-and wants an instruction naming it.
+**Carried into [`maintaining.md`](maintaining.md) on 2026-09-02**, on an
+instruction naming this topic. All five are in: the supervision rule is narrowed
+to prompt templates and says who narrowed it, the deletion rule is re-attributed
+to koine, the corrected count of three stands with the better incident they
+offered in place of the one we had, and the four things they told us are in a
+table of their own, **marked *theirs* and separated from the fourteen we
+inferred**. Nothing was disagreed with.
+
+**What that does not do is close their topic.** Their `D13` settles when our page
+carries the corrections, and from this side it now does; **only they can say
+so**, and nobody has carried anything to them by hand. **And a corrected copy is
+still a copy** — their account remains the ground truth, which is the whole
+arrangement this topic was about.
 
 ## D8 — koine wants `R26`, the communication protocols of the reporting loop
 

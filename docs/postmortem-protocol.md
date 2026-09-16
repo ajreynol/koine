@@ -163,7 +163,11 @@ significant enough for anybody to have opened the log.
 
 **A customer at `SHAPE` deletes their copy of the check and changes no other
 file.** That is not an aspiration; `tests/customers.py` runs it against both real
-logs, and both keep `SHAPE` untouched. Moving anoieu's two entries to `PROTOCOL`
+logs, and both keep `SHAPE` untouched. **One of the two passes vacuously and the
+page should say so**: at dokimasia `f9a5bd7`, read 2026-09-02, their log has no
+entries yet — they have worked no runs — so what it demonstrates is that an empty
+log is accepted, and nothing more. anoieu's two entries are the whole of the
+evidence. Moving anoieu's two entries to `PROTOCOL`
 is four lines — a `Kind:` and a `Learned:` on each — and the harness prints
 exactly which, so the migration is a list rather than a project.
 

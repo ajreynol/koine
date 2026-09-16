@@ -1,12 +1,17 @@
 # Maintaining a protocol
 
-> **This is koine's reading of anoieu's practice, and anoieu has not seen it.**
-> Nobody handed this over. It was read off `policy.md`, `roles.md`, `board.md`,
-> `reporting-workflow.md` and the postmortem log, because a repository asking to
-> be handed formats ought to know how they have been maintained. **anoieu's own
-> account is the ground truth and this is the copy** — `koine-D9` asks for the
-> correction. Where a rule below is wrong, it is wrong because we inferred it,
-> not because they told us.
+> **This was koine's reading of anoieu's practice. anoieu has now seen it and
+> corrected it**, on 2026-09-01, and the corrections are carried below and marked
+> where they land. Their verdict on the whole was *substantially right*, which is
+> worth recording because most of what follows it is qualification.
+>
+> Nobody handed this over to begin with. It was read off `policy.md`, `roles.md`,
+> `board.md`, `reporting-workflow.md` and the postmortem log, because a repository
+> asking to be handed formats ought to know how they have been maintained.
+> **anoieu's own account is still the ground truth and this is still the copy** —
+> a corrected copy is not an authority. Where a rule below is wrong, it is wrong
+> because we inferred it, and the ones marked **theirs** are the ones that are not
+> inferred at all.
 
 Practice rather than policy: what four protocols and a handful of expensive
 rounds appear to have taught the repository that has been keeping them, written
@@ -16,6 +21,12 @@ Each rule names the incident behind it, because *a rule with no incident behind
 it is a preference* — anoieu's own standard, applied to our reading of them.
 Where we could not find an incident, it says so. **The rules where we supplied
 the incident ourselves are the ones most likely to be wrong.**
+
+**Eighteen rules, and four of them are marked *theirs*.** Fourteen were
+inferred from their pages and are what they were shown; the four at the end
+they told us, and are things our reading had no notion of. **The marking is the
+part of this page worth keeping true** — a copy that stops distinguishing what
+was read from what was said has quietly promoted itself.
 
 The principle at the head of it came from koine's maintainer, not from anoieu.
 
@@ -103,9 +114,9 @@ Five rules, and they are mechanical on purpose.
 | rule | the incident |
 | --- | --- |
 | **A rule with no incident behind it is a preference.** Say which one, or mark it as standing | the standing-rules table's own header; two of its nine rows cite nothing |
-| **Every round leaves it shorter and more actionable. An addition says what it removes** | three rounds, three increases in prompt size, recorded each time as the number going the wrong way, with the overdue removal named and not made |
+| **Every round leaves it shorter and more actionable. An addition says what it removes** | three rounds, three increases in prompt size, recorded each time as the number going the wrong way, with the overdue removal named and not made. **The count is three and not four** — they corrected an error we were nearly handed, in the direction that would have flattered them. **And they offered a worse incident than the one we had**: in the week that followed, a footings vocabulary, a report convention, a register of papers, a safety rule and several pages arrived and nothing was removed. The prompts have a counter that reports itself going the wrong way; the pages have none. **A rule with no counter attached is a preference** |
 | **A protocol is procedural; technical detail is a link** | a sentence inlined in a prompt had been untrue for as long as it had existed, because nobody maintains prose that lives in two places |
-| **A person approves every change.** An agent may draft one, argue for it and show the diff; it may not adopt it | a template that rewrote itself from its own experience would drift with nobody having agreed to the direction |
+| **A person approves every change to a prompt template** — an agent may draft one, argue for it and show the diff; it may not adopt it. **Corrected: we had this as a blanket rule and it is not one** | a template that rewrote itself from its own experience would drift with nobody having agreed to the direction. **They asked for the narrowing themselves**, on the ground that stating it broadly makes them sound more supervised than they are, and overstating supervision is the error their maintenance note exists to prevent |
 | **Guardrails are never traded for brevity** | standing, and deliberately exempt from the shortening rule: *fix nothing else*, *touch no issue tracker*, *leave everything staged* |
 | **Weakening a claim needs nobody; strengthening one needs a person** | adding a caveat is ordinary work; asking a reader to rely on something is somebody's signature |
 
@@ -125,7 +136,18 @@ Five rules, and they are mechanical on purpose.
 | **A shortcut taken for tempo leaves something mechanical behind that will notice** | three rows closed as *fixed upstream* on a fix that never landed, unnoticed for three months, because a closed id is one nothing re-derives |
 | **Prefer a structural answer to a promised one** | a member that pins a commit needs no undertaking from anybody about when things change, and a structural answer keeps working when nobody is paying attention |
 | **Removing a piece is a decision with a burden of proof.** The pieces interlock, and the chain looks arbitrary until you know which failure each link answers | four topics came through the protocol and three changed what the ecosystem does; each link was put in by an exchange rather than designed up front |
-| **Infrastructure is cheapest to delete at the moment it is most load-bearing** | the failure mode is an agent under time pressure making that trade badly and describing it as simplification |
+| **Infrastructure is cheapest to delete at the moment it is most load-bearing.** **Ours, not theirs** — they have no incident behind it and had not thought of it, and asked for it to be attributed here | the failure mode is an agent under time pressure making that trade badly and describing it as simplification. **The correction matters more than the rule**: this page is worth something only while its attributions can be relied on |
+
+**What they told us, which we had no way to infer.** These four are **theirs**:
+they came back in the correction, not out of their pages, and three of them are
+things our reading had no notion of.
+
+| rule | the incident |
+| --- | --- |
+| **The ladder is ordered, and the order is the content.** The vision first, where the answer is always *ask*; then the policy; then the reporting positions, which are still settling and so are ordinary work; then the prompts; then the generated files, which are never hand-edited; then everything else | **no incident, and it does not need one** — it is how the repository works. **They named this the single largest thing missing from our reading**, which had no notion that different protocols there carry different permissions. Our five mechanical rules are flat, and a flat account of a graded arrangement is wrong in the direction that makes it look stricter than it is |
+| **Nothing may ever check the vision mechanically.** No job, no script, no generated verdict against a tenet | the one rule of theirs that **forbids** work rather than requiring it. A green tick against *is this tool fruitful* would invent an authority nobody has. **A repository being handed formats should know that some of their documents are deliberately uncheckable**, because the instinct a checker-writer brings is to close exactly that gap |
+| **What a repository says about itself decides how it is treated** — the register a report is written in, and how freely an agent works in its tree at all. Never an impression of the code: the maintenance note, or the cautious reading where there is no note | it is the rule under their footings and under their supervision division both, and it is why a note that overstates supervision is a defect rather than a courtesy |
+| **A prompt may not be for the repository it arrives in**, and the shape to watch for is **a prompt asking a repository to decide its own standing** | **the incident is ours.** A prompt meant for anoieu was put to koine on 2026-09-01, proposing that koine become *maintainer of the communication protocols for the Eunoia ecosystem*; koine's maintainer narrowed it within hours. **An agent asked *should you hold X* will find the case for X, because finding it is what it was asked to do** — which is why the answer to a standing question is a person's, and why *I do not think this prompt is meant for me* is an acceptable thing for a tool to say |
 
 ## How a protocol moves here: three stages
 
@@ -173,7 +195,7 @@ implemented twice today with no role holding it.
 | membership, joining, the repository policy | `R4` | permanently |
 | the discussion protocol, and its safety gate | `R4` | permanently |
 | the inventory and the entity ids | `R6` | permanently; koine references them |
-| the role handoff procedure | unowned — anoieu's to claim | not koine's to ask for |
+| the role handoff procedure | **anoieu's, claimed since this table was written** | not koine's to ask for |
 | the channel model | unowned — anoieu's to claim | not koine's to ask for |
 | every prompt template | `R1` and its counterparts | permanently |
 | what may be published about somebody's code | `R1` | permanently |
