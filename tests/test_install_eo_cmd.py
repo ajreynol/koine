@@ -85,6 +85,7 @@ def test_install():
 
         out = run(tmp, "--prefix", prefix, "--dry-run")
         ok("a dry run counts what it would do", "would install 2" in out.stdout)
+        ok("a dry run names the verb per row", "cp " in out.stdout)
         ok("a dry run names the operation and both paths",
            f"cp eo_cmd/eo_join  {os.path.join(prefix, 'eo_join')}" in out.stdout)
         ok("a dry run says it is a copy and not a move",
@@ -115,7 +116,12 @@ def test_install():
             handle.write("#!/bin/sh\necho theirs\n")
         out = run(tmp)
         ok("a file we did not install is skipped", "1 skipped" in out.stdout)
-        ok("and the skip is explained", "did not put it there" in out.stderr)
+        # The reason sits in the plan beside the file it applies to, rather
+        # than on stderr away from the row it explains.
+        ok("and the skip is explained in the plan",
+           "exists and is not ours" in out.stdout)
+        ok("and every command is listed, not only the changed ones",
+           out.stdout.count("eo_join") >= 1 and out.stdout.count("eo_init") >= 1)
         check("and the run reports it", out.returncode, 1)
         check("and the file is untouched",
               open(os.path.join(prefix, "eo_join")).read(), "#!/bin/sh\necho theirs\n")
@@ -127,6 +133,28 @@ def test_install():
         check("--force replaces it", out.returncode, 0)
         check("and the file is ours again",
               open(os.path.join(prefix, "eo_join")).read(), "#!/bin/sh\necho one\n")
+    finally:
+        shutil.rmtree(tmp)
+
+
+def test_a_dry_run_with_nothing_to_do_still_says_what_it_would_do():
+    """The run somebody makes to find out what the command does.
+
+    Listing only what would change meant that on an up-to-date machine a dry
+    run printed a count and nothing else -- least informative exactly when it
+    was most likely to be asked.
+    """
+    print("a dry run with nothing to do")
+    tmp = tempfile.mkdtemp()
+    try:
+        prefix = sandbox(tmp)
+        run(tmp, "--prefix", prefix)
+        out = run(tmp, "--dry-run")
+        ok("it reports nothing to install", "would install 0" in out.stdout)
+        ok("and still lists every command", out.stdout.count("skip ") == 2)
+        ok("saying why each is skipped", "already current" in out.stdout)
+        ok("and naming both paths",
+           os.path.join(prefix, "eo_join") in out.stdout)
     finally:
         shutil.rmtree(tmp)
 
@@ -160,7 +188,9 @@ def test_uninstall():
 
 
 def main():
-    for test in (test_install, test_uninstall):
+    for test in (test_install,
+                 test_a_dry_run_with_nothing_to_do_still_says_what_it_would_do,
+                 test_uninstall):
         test()
     print()
     if FAILS:

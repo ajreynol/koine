@@ -202,8 +202,15 @@ def do_uninstall(prefix, origin, config, dry_run):
 
 
 def do_install(prefix, origin, config, dry_run, force):
+    """Install, and say in full what that means.
+
+    **Every command is listed every time**, with the verb that applies to it.
+    A dry run that printed only what would change said nothing at all once a
+    machine was up to date, which is exactly when somebody runs it to find out
+    what the command does.
+    """
     installed = dict(config.get("installed", {}))
-    written, skipped, current = [], [], []
+    plan, copied, current, skipped = [], 0, 0, 0
 
     for cmd in commands(origin):
         name = cmd["name"]
@@ -214,37 +221,41 @@ def do_install(prefix, origin, config, dry_run, force):
                   "installed", file=sys.stderr)
             return 1
         want = digest(read_text(src))
+
+        verb, why = "cp", "new"
         if os.path.exists(dest):
             there = digest(read_text(dest))
-            if there == want:
-                current.append(name)
-                installed[name] = there
-                continue
             ours = installed.get(name) == there
-            if not ours and not force:
-                skipped.append(name)
-                continue
-            why = "replacing the copy this script installed" if ours \
-                else "replacing a file this script did not install, --force"
-        else:
-            why = "new"
-        written.append((f"cp {rel(src)}", dest, why))
-        if not dry_run:
-            install_file(src, dest)
-            installed[name] = want
-
-    for name in skipped:
-        print(f"-- {name}: {os.path.join(prefix, name)} exists and this script "
-              "did not put it there -- left alone; --force replaces it",
-              file=sys.stderr)
+            if there == want:
+                verb, why = "skip", "already current"
+                current += 1
+                installed[name] = there
+            elif ours:
+                why = "replacing the copy this script installed"
+            elif force:
+                why = "replacing a file this script did not install, --force"
+            else:
+                verb, why = "skip", "exists and is not ours; --force replaces it"
+                skipped += 1
+        plan.append((verb, rel(src), dest, why))
+        if verb == "cp":
+            copied += 1
+            if not dry_run:
+                install_file(src, dest)
+                installed[name] = want
 
     verb = "would install" if dry_run else "installed"
-    print(f"-- {verb} {len(written)}, {len(current)} already current, "
-          f"{len(skipped)} skipped  ->  {prefix}")
-    plan_lines(written)
-    if written:
-        print("-- a copy, not a move: eo_cmd/ keeps every file, and each one is "
-              "written")
+    print(f"-- {verb} {copied}, {current} already current, {skipped} skipped"
+          f"  ->  {prefix}")
+    verbs = max((len(row[0]) for row in plan), default=0)
+    width = max((len(row[1]) for row in plan), default=0)
+    dests = max((len(row[2]) for row in plan), default=0)
+    for v, src, dest, why in plan:
+        print(f"   {v:<{verbs}} {src:<{width}}  {dest:<{dests}}   ({why})")
+
+    if copied:
+        print("-- a copy, not a move: the source keeps every file, and each one "
+              "is written")
         print("   to a temporary file beside the target, made executable, and "
               "renamed over")
         print("   it, so an interrupted run leaves the old file in place")

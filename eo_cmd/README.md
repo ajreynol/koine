@@ -34,6 +34,42 @@ installed out of it.
 **Read one before running it** — every form takes `--show-prompt`, which prints
 exactly what it would hand an assistant and does nothing else.
 
+## Installing them
+
+```console
+$ ../scripts/install_eo_cmd --prefix ~/bin   # install, and remember the directory
+$ ../scripts/install_eo_cmd                  # later runs need no arguments
+$ ../scripts/install_eo_cmd --status         # what is installed, and whether it is current
+$ ../scripts/install_eo_cmd --uninstall      # remove what it installed
+```
+
+**`--dry-run` lists every command with the verb that applies to it**, so a run
+on a machine that is already up to date still says what the command does —
+which is when somebody is most likely to be asking:
+
+```console
+$ ../scripts/install_eo_cmd --dry-run
+-- would install 1, 1 already current, 1 skipped  ->  /home/you/bin
+   skip eo_cmd/eo_join    /home/you/bin/eo_join     (already current)
+   cp   eo_cmd/eo_status  /home/you/bin/eo_status   (new)
+   skip eo_cmd/eo_bump    /home/you/bin/eo_bump     (exists and is not ours; --force replaces it)
+-- a copy, not a move: the source keeps every file, and each one is written
+   to a temporary file beside the target, made executable, and renamed over
+   it, so an interrupted run leaves the old file in place
+-- dry run: nothing was written, and /home/you/bin is unchanged
+```
+
+A real run prints the same rows under `installed` rather than `would install`,
+so the two are compared by reading them. **It never overwrites a file it did
+not install** — that row is skipped and says so, and `--force` is a person's
+decision because the file being replaced is theirs. The chosen directory is
+remembered in `install_eo_cmd.local.json`, which the repository ignores.
+
+**Each command is installed as one file**, so nothing here may import anything
+from beside it in this tree. `eo_status` did for an afternoon on 2026-09-17 and
+broke the moment somebody ran the installed copy; `tests/test_eo_cmd.py` now
+runs every command from a directory with none of this tree in it.
+
 ## What koine may change here, and what it may not
 
 koine maintains these under **`R35`** in
