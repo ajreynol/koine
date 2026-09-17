@@ -17,8 +17,11 @@ here find bugs in projects that are not their own; koine keeps the list of what
 they found. It does not find bugs, does not decide whether one is real, and has
 no opinion about what should be done with one.
 
-Today that is one script, [`../koine_append_db`](../koine_append_db), and
-[`../README.md`](../README.md) is the whole of what it does.
+Today that is two scripts: [`../koine_append_db`](../koine_append_db) keeps the
+bug database, and [`../koine_history`](../koine_history) supports review of the
+ecosystem's history record. It reports mechanical signals and preserves human
+readings in [`history-ledger.md`](history-ledger.md); it does not decide verdicts
+or write to the source record. [`../README.md`](../README.md) introduces both.
 
 **This replaced an earlier direction on 2026-09-16**, at the maintainer's
 instruction. koine had been the shared half of a reporting loop: a prompt-drift
@@ -26,6 +29,14 @@ check, a branch-state reporter, a postmortem protocol and a findings record, wit
 a document for each. All of it was deleted in the same change. **It is in git
 history and nothing depends on it**; if something there turns out to be wanted,
 recover it from there rather than rebuilding it from memory.
+
+**The maintainer also asked to fold the history review child project into Koine
+on 2026-09-16.** Its script, tests, review standard, and ledger now live in the
+normal Koine layout. There is no separate child project or lifecycle. The
+[review design](history-review.md) retains its useful decisions: keep evidence
+separate from judgement, preserve earlier readings, read the source without
+editing it, and leave external communication to a person. The tool is part of
+Koine's test suite; the reviews remain advisory.
 
 ### Naming
 
@@ -164,8 +175,8 @@ withdraw than it was to write.
 
 Two things are outstanding and neither is an agent's to settle:
 
-- **A publishing stance**, owed by this repository and by every child project in
-  its tree — whether there is a paper in the work, or a plan for one, or nothing
+- **A publishing stance**, owed by this repository — whether there is a paper
+  in the work, or a plan for one, or nothing
   worth writing up. **All three are answers**, the third is the commonest, and
   which one it is is a position somebody signs. Asked by anoieu on 2026-09-02 and
   left unstated.
@@ -178,7 +189,8 @@ Two things are outstanding and neither is an agent's to settle:
 ## Where to start
 
 ```bash
-python3 tests/test_append_db.py                           # the whole suite
+python3 tests/test_append_db.py                          # bug database
+python3 tests/test_history.py                            # history review
 python3 /path/to/anoieu/scripts/policy_check.py --root .  # the ecosystem policy
 ```
 

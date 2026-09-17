@@ -8,5 +8,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       # No dependencies, no network, nothing to install: the suite drives the
-      # real script against files it writes in a temporary directory.
+      # scripts against files and a git repository it creates in temporary directories.
       - run: python3 tests/test_append_db.py
+      - run: python3 tests/test_history.py

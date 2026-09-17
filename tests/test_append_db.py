@@ -13,6 +13,7 @@ nothing.** **Nothing already in the database is edited or removed.** And **a dum
 with one bad entry writes nothing at all**, so there is no half-applied state.
 """
 
+import importlib.machinery
 import importlib.util
 import json
 import os

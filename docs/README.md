@@ -6,6 +6,8 @@ front page and the whole of what anything below may assume has been read.
 
 | document | its job |
 | --- | --- |
+| [`history-review.md`](history-review.md) | **reviewing the history record**: how to run `koine_history`, the design decisions, the two review axes, and the limits of its signals |
+| [`history-ledger.md`](history-ledger.md) | **the retained reviews**: one row per recorded change, with mechanical signals and handwritten verdicts; the generator only appends |
 | [`coherence.md`](coherence.md) | **the maintenance entry point**: what koine is for, the division between what an agent decides alone and what is asked first, what is not koine's at all, and the open work. Not linked from the front page, by the same convention that keeps it out of a reader's way |
 | [`discussion.md`](discussion.md) | **the standing channel to the rest of the ecosystem**: anything that is not a bug report — a request, a proposal, a question about somebody's intent, a notice that something here is moving under them. It opens with the rule that no agent acts on it unbidden. **Its topics were written for an earlier purpose of this repository** and none was ever carried |
 

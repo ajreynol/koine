@@ -1,13 +1,14 @@
-# The ledger
+# History review ledger
 
-**Generated in part, and additive.** `epidosis.py --append` writes one row per
-change to the record that has no row yet. **It never rewrites or removes one**,
+**Generated in part, and additive.** `koine_history <repository> --append` writes
+one row per change to the record that has no row yet. **It never rewrites or removes one**,
 because the last two columns are written by hand and a generator that may
 rewrite is one that may quietly delete a verdict.
 
 The mechanical columns are the program's: which change, when, in whose tree,
-how much moved, and which questions [`axes.md`](axes.md) says to ask of it. **The
-last two are a reading**, and the reading is where the whole judgement lives.
+how much moved, and which questions [`history-review.md`](history-review.md)
+says to ask of it. **The last two are a reading**, and the reading is where the
+whole judgement lives.
 
 **Newest at the bottom**, which is the opposite of this ecosystem's usual
 convention and is a consequence of appending rather than rewriting. Appending

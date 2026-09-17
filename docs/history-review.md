@@ -1,6 +1,51 @@
-# The two axes
+# Reviewing the history record
 
-**The standard this project holds a change to.** It is not the law — the laws
+[`koine_history`](../koine_history) reads every change to a repository's
+`docs/history.md`, reports what changed, and flags questions for a reviewer.
+With `--append`, it adds unreviewed changes to Koine's
+[`history-ledger.md`](history-ledger.md). A person, or an agent a person set to
+work, supplies the verdict. The script never supplies one.
+
+## Running it
+
+From the Koine repository root:
+
+```bash
+./koine_history /path/to/record-repository
+./koine_history /path/to/record-repository --since <sha> --append
+./koine_history /path/to/record-repository --file history.md
+python3 tests/test_history.py
+```
+
+The repository is a local Git checkout. `--since` excludes that commit and reads
+through `HEAD`; `--file` selects a different record path within the checkout.
+Without `--append`, the script only prints its report. With it, rows go to
+`docs/history-ledger.md` in the Koine checkout containing the script, regardless
+of the current working directory. No network or third-party Python packages are
+needed; Git must be installed.
+
+## Design decisions
+
+**Keep the record and its review separate.** The repository that holds the
+record is an argument, so the review can live in Koine while the record moves
+between repositories. The script never writes to the source record and never
+produces proposed edits to it.
+
+**Preserve earlier readings.** Each commit gets a row only once. Rows are
+appended oldest first, and a repeated run leaves existing rows, including their
+handwritten verdicts, untouched. Reviews from earlier repositories remain in the
+same ledger when a later run reads another tree.
+
+**Separate mechanical evidence from judgement.** Signals identify such things
+as figures without nearby evidence, removed failure language, and changes to
+earlier entries. They are questions to investigate, not findings of wrongdoing.
+The review is advisory: it does not gate deployments, amend the record's rules,
+claim an office, or evaluate the projects described in the record. Nothing sends
+the ledger anywhere; a person may carry a reading through the ordinary channel.
+
+## The two axes
+
+**The standard Koine uses when reviewing the record.** It is not the law — the laws
 governing `history.md` are the president's, kept in the tree that holds the
 record, and nothing here amends them or is binding on anybody. This is a second
 reading, and where the two disagree the laws are right.
@@ -15,7 +60,7 @@ deviates from both.**
 | **meaning** | does a reader who was not there now learn, or now check, something they could not before? |
 | **progress** | does the record now hold technical progress that actually happened? |
 
-A change landing on either is an **epidosis**. A change landing on neither is a
+A change landing on either is an **improvement**. A change landing on neither is a
 **deviation**, and deviations are named by kind rather than counted.
 
 ## The inversion, which is the first thing to get right
@@ -37,7 +82,7 @@ once** — it costs meaning, because a reader loses the thing they could not hav
 reconstructed from the commits, and it fakes progress, because the news improved
 while the work did not.
 
-**A change that adds a failure to the record is an epidosis on the meaning
+**A change that adds a failure to the record is an improvement on the meaning
 axis.** It is the commonest one worth recording, and a register that could not
 say so would be measuring the wrong thing.
 
@@ -100,3 +145,29 @@ tree that holds it. A verdict here is a reading somebody may take or ignore.
 **It may not decide a verdict on its own.** The signals below the line are
 mechanical; the verdict is written by a person or by an agent a person set to
 work, and the generator never overwrites one that has been written.
+
+## Limits and evidence
+
+The signals are heuristics, and no automatic check proves that they implement
+every rule above. Where they disagree, the written standard is the authority.
+Renames are followed when enumerating commits, but content is read only at the
+requested path. A change the script cannot read under that path is flagged
+`unreadable`. Reading a new repository does not recover history absent from that
+checkout; it preserves the rows already in the ledger.
+
+The tests construct a temporary Git repository and check the signals, repeated
+appends, preservation of written verdicts, and the command's ledger location.
+They run as part of Koine's normal test suite and CI; CI does not judge the
+ecosystem's actual record.
+
+This work began on 2026-09-02 as the child project **epidosis**, at a person's
+instruction. The maintainer chose its name and its home in Koine. On 2026-09-16,
+the maintainer asked to fold it into Koine and remove the child project. Its
+review standard and existing ledger are retained here.
+
+The first review covered twenty changes and recorded one deviation: procedure
+had been added to the history record, then removed eleven changes later by the
+repository itself. It also noted that figures about outside projects preceded
+their caveat banner by four changes. These are retrospective readings preserved
+in the ledger, not evidence of usefulness before a change is made. That first
+pass did not establish a basis for a paper or a deployment gate.

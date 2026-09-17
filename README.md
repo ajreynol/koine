@@ -21,11 +21,16 @@ times badly because writing it once well was nobody's job.
 **It is ours.** koine does not find bugs, does not decide whether a bug is real,
 and has no opinion about what should be done with one. Those belong to the tool
 that raised it, and they stay there. We keep the list, and we keep it properly,
-so that nobody else has to think about it again.
+so that nobody else has to think about it again. We also maintain a history
+review tool: it lists changes and preserves reviewers' readings, with the
+judgement left to the reviewer.
 
 ## What it does
 
-One script.
+Two scripts: `koine_append_db` keeps the bug database, and `koine_history`
+supports review of the ecosystem's history record.
+
+## Keeping the bug database
 
 ```
 koine_append_db <new bugs> <bug database>
@@ -141,15 +146,34 @@ $ python3 tests/test_append_db.py
 No dependencies, no network, nothing to install. `--dry-run` says what would
 change and writes nothing; `--date` records a run under a date other than today.
 
+## Reviewing the history record
+
+```console
+$ ./koine_history /path/to/record-repository
+$ ./koine_history /path/to/record-repository --append
+```
+
+`koine_history` reads changes to `docs/history.md` in a local Git checkout and
+reports what each change touched, added, and removed, along with questions for a
+reviewer. `--append` adds changes not yet recorded to
+[`docs/history-ledger.md`](docs/history-ledger.md) in this Koine checkout. It
+preserves every existing row and handwritten verdict. Without `--append`, it
+only prints the report; it never writes to the source record.
+
+The [review standard and design decisions](docs/history-review.md) distinguish
+checkable meaning from technical progress. The script supplies signals, and a
+reviewer supplies the judgement. This is advisory and does not gate a deployment.
+
+Both tools keep earlier records, separate evidence from decisions, and work
+locally without a network. The history tool also needs Git. Run its tests with
+`python3 tests/test_history.py`; both test scripts run in Koine's CI.
+
 ## What else is in this tree
 
-[`docs/`](docs/README.md) is two pages: [`coherence.md`](docs/coherence.md), for
-an agent working here, and [`discussion.md`](docs/discussion.md), the channel to
-the rest of the ecosystem. **No agent acts on the discussion file unbidden** —
-the rule is at the top of it.
-
-[`tools/epidosis/`](tools/epidosis/README.md) is a child project: unadvertised,
-depended on by nobody, deletable without consequence.
+[`docs/`](docs/README.md) holds the history review standard and ledger, the
+maintenance entry point, and [`discussion.md`](docs/discussion.md), the channel
+to the rest of the ecosystem. **No agent acts on the discussion file unbidden**
+— the rule is at the top of it.
 
 **An earlier version of this repository was a reporting-loop library** — a
 prompt-drift check, a branch-state reporter, a postmortem protocol and a findings

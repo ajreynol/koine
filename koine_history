@@ -1,21 +1,23 @@
 #!/usr/bin/env python3
-"""Read every change made to a record, and say what is mechanically true of it.
+"""koine_history -- read changes to a history record and report review signals.
 
-    python3 epidosis.py ~/src/anoieu
-    python3 epidosis.py ~/src/anoieu --since 5668c20 --append
+    koine_history /path/to/record-repository
+    koine_history /path/to/record-repository --since <sha> --append
+    koine_history /path/to/record-repository --file docs/history.md
 
 The record is one file -- `docs/history.md` by default -- and it travels with
 the office that keeps it, so the tree it lives in is an argument and never a
 constant here. Point this at whichever repository holds it today.
 
 **This program has no opinion.** It reports signals: what a change touched, what
-it added and removed, and which of the mechanical questions in `axes.md` a
+it added and removed, and which of the questions in `docs/history-review.md` a
 reader should ask about it. **The verdict is not its to write.** A person, or an
-agent a person set to work, writes the verdict into `ledger.md`, and `--append`
-adds rows for changes that have none and never touches a row that does.
+agent a person set to work, writes the verdict into `docs/history-ledger.md` in
+this koine checkout. `--append` adds rows for changes that have none and never
+touches a row that does. Without it, nothing is written.
 
-Where the signals and `axes.md` disagree, the document is right and this is the
-copy. Nothing compares them, and saying so is cheaper than implying otherwise.
+Where the signals and `docs/history-review.md` disagree, the document is right
+and this is the copy. Nothing compares them automatically.
 
 The one limit worth knowing before trusting a run: a change made under a
 different filename is followed for enumeration and not for content, so a
@@ -29,7 +31,8 @@ import subprocess
 import sys
 
 RECORD = "docs/history.md"
-LEDGER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ledger.md")
+LEDGER = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                      "docs", "history-ledger.md")
 
 EVIDENCE = re.compile(r"\]\(|\b[0-9a-f]{7,40}\b|\b20\d\d-\d\d-\d\d\b|#\d+")
 FIGURE = re.compile(r"\b\d{2,}\b|\d%|\b\d+%")
@@ -114,7 +117,7 @@ def _hunks(diff):
 
 
 def _signals(hunks, headings, latest, unreadable):
-    """The mechanical questions `axes.md` asks. Flags, never verdicts."""
+    """Mechanical questions from `docs/history-review.md`. Flags, never verdicts."""
     added = [l for _, a, _ in hunks for l in a]
     removed = [l for _, _, r in hunks for l in r]
     flags = {}

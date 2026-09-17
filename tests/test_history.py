@@ -1,25 +1,29 @@
 #!/usr/bin/env python3
 """The signals, against a record built here rather than described.
 
-    python3 test_epidosis.py
+    python3 tests/test_history.py
 
 It builds a small git repository in a temporary directory, changes the record
-in the ways `axes.md` names, and asserts what comes back. No network, no
-checkout of anybody's tree, nothing left behind.
-
-**It is not in koine's test suite and must not be.** This directory is an island
-in that tree: nothing there imports it, nothing there runs it, and deleting the
-directory changes nothing about what koine does. Run it by hand.
+in the ways `docs/history-review.md` names, and asserts what comes back. No
+network, no checkout of anybody's tree, nothing left behind.
 """
 
+import importlib.machinery
+import importlib.util
 import os
 import shutil
 import subprocess
 import sys
 import tempfile
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import epidosis  # noqa: E402
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SCRIPT = os.path.join(ROOT, "koine_history")
+
+_spec = importlib.util.spec_from_loader(
+    "koine_history",
+    importlib.machinery.SourceFileLoader("koine_history", SCRIPT))
+history = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(history)
 
 FAILS = 0
 
@@ -80,10 +84,10 @@ def build(tmp):
 
 
 def main():
-    tmp = tempfile.mkdtemp(prefix="epidosis-")
+    tmp = tempfile.mkdtemp(prefix="koine-history-")
     try:
         repo = build(tmp)
-        items = epidosis.changes(repo)
+        items = history.changes(repo)
 
         print("reading a record:")
         check("every change is read", len(items), 5)
@@ -109,25 +113,59 @@ def main():
         print("\nthe ledger is additive:")
         ledger = os.path.join(tmp, "ledger.md")
         open(ledger, "w").write("| change | date |\n| --- | --- |\n")
-        check("rows are added", epidosis.append(items, "record", ledger), 5)
+        check("rows are added", history.append(items, "record", ledger), 5)
         with open(ledger) as fh:
             body = fh.read()
-        hand = body.replace("| | |\n", "| epidosis | by hand |\n", 1)
+        hand = body.replace("| | |\n", "| meaning | by hand |\n", 1)
         open(ledger, "w").write(hand)
         check("a second run adds nothing",
-              epidosis.append(items, "record", ledger), 0)
+              history.append(items, "record", ledger), 0)
         check("a written verdict survives",
               "by hand" in open(ledger).read(), True)
         commit(repo, open(os.path.join(repo, "docs", "history.md")).read()
                + "\nOne more line.\n", "later")
         check("a new change is added and the rest left alone",
-              epidosis.append(epidosis.changes(repo), "record", ledger), 1)
+              history.append(history.changes(repo), "record", ledger), 1)
         check("the hand-written row is still there",
               "by hand" in open(ledger).read(), True)
 
         print("\nit refuses what it cannot read:")
         check("a missing record reads as no changes",
-              epidosis.changes(repo, "docs/nowhere.md"), [])
+              history.changes(repo, "docs/nowhere.md"), [])
+
+        print("\nthe command uses koine's documentation ledger from any directory:")
+        checkout = os.path.join(tmp, "koine")
+        os.makedirs(os.path.join(checkout, "docs"))
+        script = shutil.copy2(SCRIPT, checkout)
+        cli_ledger = os.path.join(checkout, "docs", "history-ledger.md")
+        shutil.copy2(ledger, cli_ledger)
+        before = open(cli_ledger).read()
+        record_path = os.path.join(repo, "docs", "history.md")
+        record_before = open(record_path).read()
+        commit(repo, record_before + "\nA later review.\n", "for the command")
+        record_before = open(record_path).read()
+
+        result = subprocess.run([sys.executable, script, repo], cwd=tmp,
+                                capture_output=True, text=True)
+        check("the command succeeds", result.returncode, 0)
+        check("it reports every change", "7 change(s) read" in result.stdout, True)
+        check("reading does not change the ledger", open(cli_ledger).read(), before)
+
+        result = subprocess.run([sys.executable, script, repo, "--append"], cwd=tmp,
+                                capture_output=True, text=True)
+        check("appending succeeds", result.returncode, 0)
+        check("only the new change is appended",
+              "1 row(s) added to the ledger; 6 already recorded" in result.stdout, True)
+        after = open(cli_ledger).read()
+        check("all existing readings survive intact", after.startswith(before), True)
+        check("the source record is untouched", open(record_path).read(), record_before)
+        check("nothing is written beside the command",
+              os.path.exists(os.path.join(checkout, "ledger.md")), False)
+
+        result = subprocess.run([sys.executable, script, repo, "--append"], cwd=tmp,
+                                capture_output=True, text=True)
+        check("a repeated command succeeds", result.returncode, 0)
+        check("a repeated command preserves the whole ledger", open(cli_ledger).read(), after)
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 
