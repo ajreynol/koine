@@ -21,6 +21,15 @@
 #        also silently narrowed the job to whatever the paraphrase happened to
 #        name. `tests/test_eo_cmd.py` holds it under five hundred words now.
 #
+# **IT PULLS BEFORE IT JUDGES.** Every question a run asks -- is this
+#        documentation true of the tree, has anybody answered this topic, does
+#        CI pass -- is asked of a checkout, and a checkout that is behind answers
+#        all three wrong: work already done reads as outstanding, and work done
+#        here comes back to somebody as a merge. So the goal paragraph opens on
+#        `git pull` and on stopping if it will not fast-forward. `--report` pulls
+#        too: a report of what is stale, computed from a stale checkout, is the
+#        defect this command was sent to find.
+#
 # **THE DISCUSSION WORK RUNS UNDER A STANDING OVERRIDE, and the prompt says so
 #        in as many words.** Every discussion file opens with a banner that is
 #        the ecosystem's one build-failing rule: an agent answers a topic only
@@ -53,13 +62,16 @@ usage() {
 eo_housekeeping -- read the standard the president keeps, then bring this
 repository up to date.
 
-Run it at the root of the repository being tidied. Its goal is documentation
-that is true of the tree, the topics other tools of the Eunoia ecosystem have
-addressed to you answered, bugs in your own tooling fixed, and CI green.
+Run it at the root of the repository being tidied. It brings the checkout up to
+date first, because every question it asks is asked of a tree. Its goal is then
+documentation that is true of the tree, the topics other tools of the
+Eunoia ecosystem have addressed to you answered, bugs in your own tooling fixed,
+and CI green.
 
 usage: eo_housekeeping [--report] [--codex] [--print] [--show-prompt]
 
-  --report        say what you would do; change nothing. The cautious first pass
+  --report        say what you would do; change nothing beyond the pull. The
+                  cautious first pass
   --codex         run codex instead of claude
   --print         run non-interactively and print the result
   --show-prompt   print the prompt and exit, running nothing
@@ -207,7 +219,7 @@ else
 fi
 
 if [ "$REPORT" = 1 ]; then
-  CLOSE="**Change nothing**: write what you would have done to \`housekeeping.local.md\`
+  CLOSE="**Change nothing** beyond that pull: write what you would have done to \`housekeeping.local.md\`
 at the root instead, unstaged, and say whether CI passes here."
 else
   CLOSE="**Ensure CI passes here as a final step.**"
@@ -221,7 +233,11 @@ agents under light human supervision. $STANDARD Read both, and this repository's
 own \`README.md\` and \`docs/\` for the conventions that are its own; this prompt
 restates none of it. $MECHANICAL $NEARBY
 
-**Based on those, your goal is to bring this repository's documentation up to
+**Begin with \`git pull\`.** A checkout that is behind makes true documentation
+read as stale and stale documentation read as true, and makes anything you write
+here a merge for somebody else; if it will not fast-forward cleanly, say so and
+stop rather than untangling somebody else's merge to get started. **Then, based
+on those pages, your goal is to bring this repository's documentation up to
 date, answer the discussion items other tools have raised with us, and fix any
 bugs in our own tooling**, opening a topic in \`docs/discussion.md\` for any
 request to another tool that arises. The maintainer instructs the discussion work

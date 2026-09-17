@@ -52,7 +52,7 @@
     },
     {
       "name": "eo_housekeeping",
-      "what": "bring a repository up to date: documentation made true of the tree, the topics other tools addressed to it answered, bugs in its own tooling fixed, and CI green. Two paragraphs that name where the rules are rather than paraphrasing them",
+      "what": "bring a repository up to date: the checkout pulled first, documentation made true of the tree, the topics other tools addressed to it answered, bugs in its own tooling fixed, and CI green. Two paragraphs that name where the rules are rather than paraphrasing them",
       "forms": [
         "eo_housekeeping",
         "eo_housekeeping --report"

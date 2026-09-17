@@ -183,6 +183,12 @@ Run it at the root of **your** repository, naming the tool whose discussion file
 carries the topic. Their tree is read and never written; anything this changes is
 changed in your tree and left staged.
 
+**It pulls first.** What it stages has to apply to what is current, or the patch
+is a merge for whoever reviews it — so the prompt opens on `git pull`, and on
+stopping rather than untangling somebody else's merge to get started. Their tree
+it reads as it stands: pulling there would be writing in a tree that is not
+yours.
+
 **The topic is required, and that is the gate.** The ecosystem's one
 build-failing rule is that an agent answers a topic only where a human
 instructed it and **named which topic** — and this refuses in argv rather than
@@ -209,17 +215,27 @@ committed.
 
 ```console
 $ eo_housekeeping             # bring the repository up to date, and stage it
-$ eo_housekeeping --report    # say what it would do, changing nothing
+$ eo_housekeeping --report    # say what it would do, changing nothing else
 ```
 
 Run it at the root of the repository being tidied. **Two paragraphs.** The first
 is nothing but pointers: what the ecosystem is, **who the president is** and so
 where `docs/policy.md` and `docs/vision.md` are, this repository's own README and
 `docs/`, the checker, and the other tools checked out on this machine. The second
-is the goal — documentation made true of the tree, the topics other tools
-addressed to us answered, bugs in our own tooling fixed, a topic opened in
-`docs/discussion.md` for anything needing somebody else, and **CI green as the
-final step.**
+is the work: `git pull` first, then the goal — documentation made true of the
+tree, the topics other tools addressed to us answered, bugs in our own tooling
+fixed, a topic opened in `docs/discussion.md` for anything needing somebody
+else, and **CI green as the final step.**
+
+**It pulls before it judges.** Every question a run asks — is this documentation
+true of the tree, has anybody answered this topic, does CI pass — is asked of a
+checkout, and a checkout that is behind answers all three wrong: work already
+done reads as outstanding, and work done here comes back to somebody as a merge.
+The pull is in the prompt rather than in front of the command because an agent
+that cannot fast-forward is told to **say so and stop**, which a `git pull &&`
+could not do. **`--report` pulls too** — a report of what is stale, computed from
+a stale checkout, is the defect this command was sent to find — and that is the
+one change it makes.
 
 **The president is looked up, never written down.** The register names who holds
 the office and lives in the office's tree, so finding the file is finding the

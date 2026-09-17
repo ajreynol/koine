@@ -364,6 +364,36 @@ def test_housekeeping_says_the_discussion_gate_is_overridden():
        "eo_respond" in notes)
 
 
+def test_the_working_prompts_pull_before_they_work():
+    """Both commands judge a tree, so both start by making the tree current.
+
+    Every question housekeeping asks -- is this documentation true, has anybody
+    answered this topic, does CI pass -- is asked of a checkout, and a checkout
+    that is behind answers all three wrong: work already done reads as
+    outstanding, and work done in it comes back to somebody as a merge. The same
+    applies to what `eo_respond` stages, which has to apply to what is current.
+
+    So the pull is in the prompt rather than in the shell: an agent that cannot
+    fast-forward is told to say so and stop, which a `git pull ||` in front of
+    the command could not do. `--report` pulls too -- a report of what is stale,
+    computed from a stale checkout, is the defect the command was sent to find --
+    so what is checked there is that it still forbids everything else.
+    """
+    print("the tree is made current before it is judged")
+    for command, args in (("eo_housekeeping", []),
+                          ("eo_housekeeping", ["--report"]),
+                          ("eo_respond", ["kanon", "D14"])):
+        label = " ".join([command, *args])
+        flat = " ".join(show(command, *args).stdout.split())
+        ok(f"{label} opens the work on a pull", "Begin with `git pull`" in flat)
+        ok(f"{label} stops rather than resolving somebody else's merge",
+           "fast-forward cleanly, say so and stop" in flat)
+
+    report = " ".join(show("eo_housekeeping", "--report").stdout.split())
+    ok("--report says the pull is the only change it makes",
+       "**Change nothing** beyond that pull" in report)
+
+
 def test_housekeeping_names_the_president_it_was_told_of():
     """Who holds the office is read, never written in.
 
@@ -480,6 +510,7 @@ def main():
                  test_housekeeping_points_at_the_standard_rather_than_restating_it,
                  test_housekeeping_states_the_goal_and_ends_on_ci,
                  test_housekeeping_says_the_discussion_gate_is_overridden,
+                 test_the_working_prompts_pull_before_they_work,
                  test_housekeeping_names_the_president_it_was_told_of,
                  test_help_says_why_and_where,
                  test_runs_as_an_installed_copy):
