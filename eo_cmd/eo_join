@@ -1,0 +1,251 @@
+#!/usr/bin/env bash
+# eo_join -- join the Eunoia ecosystem, from inside the repository that is joining.
+#
+# Run it in a checkout of the repository you want to join. It
+# starts an assistant with a short fixed prompt that points at the instructions
+# and at the checker; it does not carry the instructions itself.
+#
+#   eo_join                 # do it
+#   eo_join --soft          # the maintenance note only, joining nothing
+#   eo_join --soft --affiliated
+#                           # the same, for a repository happy to be named
+#   eo_join --show-prompt   # print the prompt and exit
+#   eo_join --print         # run non-interactively and print the result
+#
+# **Whose repository is it?** Joining writes a declaration onto a README, which
+# is a claim made on that project's front page in its own voice. Where the
+# repository has one owner and you are them, that is yours to make. **Where it
+# is shared -- an organisation, a community, other maintainers -- it is not**,
+# however much commit access you have. Commit access is capability; a front page
+# is somebody's public voice, and the two are not the same thing.
+#
+# So for a shared tree, the sequence is agreement first and this command second,
+# and plain `--soft` is what to reach for meanwhile: a maintenance note that
+# names no other project at all -- no membership, no workflow, no policy link,
+# and not our name either. `--affiliated` puts *our* name on somebody else's
+# front page, which on a tree we do not own is a second thing to ask for rather
+# than a gentler version of the first. logos reached exactly this conclusion from the other side, reversing a
+# membership commit it had already pushed, on the ground that a declaration it
+# could not write without naming somebody else's repositories was a declaration
+# it should not write at all.
+#
+# **"I think I already complied with this" is a normal answer, and it is not the
+# same as compliance.** Run this on a tree that already has the shape and an
+# agent will often say so and stop, which is correct behaviour: the request is
+# idempotent and a second run should change nothing. But the claim is about a
+# state the agent did not create, and it cannot tell three cases apart -- a tree
+# that ran this before, a tree that arrived at the shape independently, and a
+# tree that looks compliant while its pin is stale or points at a commit our
+# build failed. Treat it as a prompt to check the pin, not as a pass. This is
+# the same distinction `genuine` names in scripts/ecosystem/ecosystem.json: complying now
+# and having been built this way are different facts, and only the first is
+# visible from the tree.
+#
+# --soft is a different act rather than a smaller one. It adds the maintenance
+# note and stops: no membership is declared, no workflow is added and no checker
+# is run, the default claim is that people maintain the repository, and the note
+# disclaims any assessment of it published by somebody else's tooling. A
+# repository that has not agreed to this policy is better off with that note than
+# with a declaration it did not choose.
+#
+# It has two forms and they differ by one paragraph. The default is the
+# **independent** note: the repository is part of no other project's ecosystem
+# and names none. --affiliated writes the other: it names the Eunoia ecosystem as
+# one it works with and says it is not held to the policy. The second is what an
+# `associate` in scripts/ecosystem/ecosystem.json carries, and it is the only thing an
+# associate is ever asked for.
+#
+# The prompts are deliberately tiny and deliberately stable. Everything that can
+# change -- what the declaration says, which checks run, what is skipped -- lives
+# on one page in the kanon repository, and they link to it rather than repeating
+# it. If the page and this text ever disagree, the page is right.
+#
+# docs/policy.md defines the joining requirements and maintenance-note templates.
+
+set -euo pipefail
+
+AGENT=claude
+PRINT=0
+SHOW=0
+SOFT=0
+AFFIL=0
+
+usage() {
+  cat >&2 <<'USAGE'
+usage: eo_join [--soft [--affiliated]] [--codex] [--print] [--show-prompt]
+
+  --soft          add the maintenance note only: no membership declared, no
+                  workflow, no checker run. The note says the repository is
+                  independent and names no other project's ecosystem
+  --affiliated    with --soft: the note names the Eunoia ecosystem as one this
+                  repository works with, and says it is not held to its policy
+  --codex         run codex instead of claude
+  --print         run non-interactively and print the result
+  --show-prompt   print the prompt and exit, running nothing
+
+Run this in the repository that is joining.
+USAGE
+  exit 2
+}
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --soft) SOFT=1; shift ;;
+    --affiliated) AFFIL=1; shift ;;
+    --codex) AGENT=codex; shift ;;
+    --claude) AGENT=claude; shift ;;
+    --print) PRINT=1; shift ;;
+    --show-prompt) SHOW=1; shift ;;
+    -h|--help) usage ;;
+    *) echo "eo_join: unknown option $1" >&2; usage ;;
+  esac
+done
+
+read -r -d '' PROMPT <<'PROMPT_END' || true
+**First, one question, and stop if the answer is no.** Is this repository solely
+the runner's to speak for? Joining writes a declaration onto its README, in the
+repository's own voice, on its front page. If the tree is shared -- an
+organisation, a community, other maintainers with a say -- **that declaration is
+not the runner's alone to make, and commit access does not make it so.** In that
+case: change nothing, say which repository this looks like and who else would
+have to agree, and suggest **`join_eo --soft`**, which writes a maintenance note
+naming **no other project at all** — no membership, no workflow, no policy link,
+and not our name either. `--affiliated` names this ecosystem, and on a tree
+somebody else owns that is a second thing to get agreement for rather than a
+softer version of the first. Saying *this is not mine to declare* is a correct
+outcome of this command.
+
+This repository is joining the Eunoia ecosystem. One page says how, and it is
+the authority:
+
+  https://github.com/ajreynol/kanon/blob/main/docs/policy.md#joining-the-eunoia-ecosystem
+
+Read it, then do what it says, here:
+
+1. Declare membership at the top of the README's "How this repository is
+   maintained" section, creating that section if there is not one.
+2. Add the CI workflow the page gives.
+3. Run the same checker revision and command the workflow uses, and fix what it
+   reports. The checker is maintained in anoieu; read its instructions at the
+   chosen revision. Report which revision you checked. Do not substitute the
+   latest checkout for a pinned revision or claim a local run establishes CI.
+
+Change nothing the check does not ask for, and add no file it does not ask for.
+Where the page and this prompt disagree, the page is right.
+
+Leave the work staged and not committed: `git add` what you changed and stop
+there, so a maintainer reviews a diff rather than a history. Then say, in one
+paragraph: what you changed, what
+the check still reports, and anything the page asked for that does not fit this
+repository -- that last one is worth more to us than a clean run.
+PROMPT_END
+
+read -r -d '' SOFT_PROMPT <<'SOFT_PROMPT_END' || true
+*Produced by `join_eo --soft`, a command kept in the kanon repository. **That
+script is the authority for what this prompt asks**, and it can be read without
+running anything:*
+
+  https://github.com/ajreynol/kanon/blob/main/prompts/join_eo
+
+*`join_eo --soft --show-prompt` prints exactly this text and does nothing else,
+so anybody handed this can check it against what the command actually says.*
+
+This repository is adopting one convention and joining nothing. One page defines
+the convention, and it is the authority for what the note must say:
+
+  https://github.com/ajreynol/kanon/blob/main/docs/policy.md#the-soft-form-the-note-without-the-membership
+
+Read it, then do this here, and nothing else:
+
+1. Add a "How this repository is maintained" section as the last section of
+   README.md, creating it if there is not one, from the template that page
+   gives.
+2. State who maintains this repository. The default is that it is written and
+   maintained by people; depart from that only where the tree itself shows
+   otherwise. Say what the supervision does not cover.
+3. Keep the paragraph declaring this repository independent: it is part of no
+   other project's ecosystem, it adopts nobody else's repository conventions,
+   and an assessment of it published by another project's tooling is that
+   project's own and not this repository's.
+
+Add no workflow file, run no checker, declare membership of nothing, and change
+no file other than README.md. This repository is not joining the Eunoia
+ecosystem and the section must not say or imply that it is. Where the page and
+this prompt disagree, the page is right.
+
+Leave the work staged and not committed: `git add README.md` and stop there, so
+a maintainer reviews a diff rather than a history. Then say, in one paragraph:
+what the section now claims about who maintains this repository, and what you
+could not establish from the tree and left for a person to write.
+SOFT_PROMPT_END
+
+read -r -d '' AFFIL_PROMPT <<'AFFIL_PROMPT_END' || true
+*Produced by `join_eo --soft --affiliated`, a command kept in the kanon
+repository. **That script is the authority for what this prompt asks**, and it
+can be read without running anything:*
+
+  https://github.com/ajreynol/kanon/blob/main/prompts/join_eo
+
+*`join_eo --soft --affiliated --show-prompt` prints exactly this text and does
+nothing else, so anybody handed this can check it against what the command
+actually says.*
+
+This repository is adopting one convention and joining nothing. One page defines
+the convention, and it is the authority for what the note must say:
+
+  https://github.com/ajreynol/kanon/blob/main/docs/policy.md#the-soft-form-the-note-without-the-membership
+
+Read it, then do this here, and nothing else:
+
+1. Add a "How this repository is maintained" section as the last section of
+   README.md, creating it if there is not one, from the **affiliating** template
+   that page gives.
+2. State who maintains this repository. The default is that it is written and
+   maintained by people; depart from that only where the tree itself shows
+   otherwise. Say what the supervision does not cover.
+3. Keep the paragraph that names the Eunoia ecosystem as one this repository
+   works with and says this repository is **not held to** its policy: it is not
+   checked against it, it adopts none of it, and an assessment of this repository
+   published by a tool in that ecosystem is that tool's own and not this
+   repository's.
+
+Add no workflow file, run no checker, declare membership of nothing, and change
+no file other than README.md. This repository is **not** joining the Eunoia
+ecosystem, and the section must not say or imply that it is: naming it and
+joining it are different claims, and only the first is being made. Where the page
+and this prompt disagree, the page is right.
+
+Leave the work staged and not committed: `git add README.md` and stop there, so
+a maintainer reviews a diff rather than a history. Then say, in one paragraph:
+what the section now claims about who maintains this repository, and what you
+could not establish from the tree and left for a person to write.
+AFFIL_PROMPT_END
+
+if [ "$SOFT" = 1 ]; then PROMPT=$SOFT_PROMPT; fi
+if [ "$SOFT" = 1 ] && [ "$AFFIL" = 1 ]; then PROMPT=$AFFIL_PROMPT; fi
+if [ "$SOFT" = 0 ] && [ "$AFFIL" = 1 ]; then
+  echo "eo_join: --affiliated is a form of --soft; pass both" >&2; exit 2
+fi
+
+if [ "$SHOW" = 1 ]; then printf '%s\n' "$PROMPT"; exit 0; fi
+
+command -v "$AGENT" >/dev/null 2>&1 || {
+  echo "eo_join: $AGENT is not on PATH" >&2; exit 127; }
+
+if ! ROOT=$(git rev-parse --show-toplevel 2>/dev/null); then
+  echo "eo_join: not in a git repository -- run this in a checkout of the" >&2
+  echo "         repository that is joining." >&2
+  exit 2
+fi
+
+WHAT=joining
+if [ "$SOFT" = 1 ]; then WHAT="the note only, independent"; fi
+if [ "$SOFT" = 1 ] && [ "$AFFIL" = 1 ]; then WHAT="the note only, affiliated"; fi
+echo "-- eo_join: $(basename "$ROOT") ($ROOT), $WHAT, via $AGENT" >&2
+
+cd "$ROOT"
+if [ "$AGENT" = codex ]; then
+  if [ "$PRINT" = 1 ]; then exec codex exec "$PROMPT"; else exec codex "$PROMPT"; fi
+else
+  if [ "$PRINT" = 1 ]; then exec claude -p "$PROMPT"; else exec claude "$PROMPT"; fi
+fi

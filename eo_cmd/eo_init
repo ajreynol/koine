@@ -1,0 +1,257 @@
+#!/usr/bin/env bash
+# eo_init -- start a tool: give it a README that says what it is for.
+#
+# Run it in the new repository. It is the first of three and the only one with
+# nothing to comply with:
+#
+#   eo_init new                    # name it, and write the README
+#   eo_init from-child <path>      # the same, for work that already exists
+#   eo_join                        # later, when there is something to join with
+#   check_join_eo <id>             # run from kanon, to see where it stands
+#
+# **Two ways a tool starts here, and they are not the same job.** The mode is
+# required rather than defaulted, because the wrong one produces a confident
+# README about the wrong thing and nothing downstream catches it:
+#
+#   new           a repository with nothing in it. The person chose a name and
+#                 scope; the glossary records names already in use.
+#
+#   from-child    the work exists already, as `tools/<name>/` in some other
+#                 repository in this ecosystem, and a person has decided it
+#                 graduates. There is a charter, an account, and a record of
+#                 what it delivered -- and that record is the reason this
+#                 repository exists, so the README is written *from* it rather
+#                 than from the register.
+#
+# `<path>` is the child project's directory on this machine, wherever the parent
+# is checked out. It is read and never written.
+#
+#   eo_init new --show-prompt
+#   eo_init from-child ../anoieu/tools/x --show-prompt
+#
+# Nothing here is required of the repository and nothing is checked. A new tool
+# with a clear purpose and no policy is worth more than a compliant one with
+# nothing to say, and the order matters: knowing what you are building is what
+# makes the rest of it decidable later.
+#
+# It briefly carried the ecosystem's working-hours ask as well. That was removed:
+# it has no bearing on starting a repository, and a bootstrap prompt is not the
+# place to introduce a policy whose whole content is *tell the person to take a
+# break in the evening*.
+
+set -euo pipefail
+
+AGENT=claude
+PRINT=0
+SHOW=0
+
+usage() {
+  cat >&2 <<'USAGE'
+usage: eo_init new                 [--codex] [--print] [--show-prompt]
+       eo_init from-child <path>   [--codex] [--print] [--show-prompt]
+
+The two ways a tool starts. Pick the one that is true; there is no default,
+because guessing wrong produces a confident README about the wrong thing.
+
+  new                a repository with nothing in it yet. The README is written
+                     from the ecosystem's glossary and from what you say
+                     the tool is for.
+
+  from-child <path>  work that already exists as a child project in another
+                     repository here, which a person has decided graduates.
+                     <path> is that directory -- read, never written -- and the
+                     README is written from its charter and from what it
+                     actually delivered.
+
+  --codex         run codex instead of claude
+  --print         run non-interactively and print the result
+  --show-prompt   print the prompt and exit, running nothing
+
+Run this in the new repository, not in the parent.
+USAGE
+  exit 2
+}
+
+MODE=
+CHILD=
+
+case "${1:-}" in
+  new)        MODE=new; shift ;;
+  from-child) MODE=from-child; shift
+              case "${1:-}" in
+                ""|-*) echo "eo_init: from-child needs the child project's directory" >&2; usage ;;
+              esac
+              CHILD=$1; shift ;;
+  -h|--help)  usage ;;
+  "")         echo "eo_init: say which of the two this is" >&2; usage ;;
+  *)          echo "eo_init: unknown mode $1" >&2; usage ;;
+esac
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --codex) AGENT=codex; shift ;;
+    --claude) AGENT=claude; shift ;;
+    --print) PRINT=1; shift ;;
+    --show-prompt) SHOW=1; shift ;;
+    -h|--help) usage ;;
+    *) echo "eo_init: unknown option $1" >&2; usage ;;
+  esac
+done
+
+# An absolute path reads the same from wherever the agent ends up. Resolved
+# only if it is there: --show-prompt still prints what it would send.
+if [ "$MODE" = from-child ] && [ -d "$CHILD" ]; then
+  CHILD=$(cd "$CHILD" && pwd)
+fi
+
+read -r -d '' OPEN_NEW <<'PROMPT_END' || true
+This is a brand new tool in the Eunoia ecosystem: a repository with nothing in
+it yet. Write the README that says what it is for. That is the whole of the job.
+
+**The person chose the name and scope.** Read the ecosystem's authoritative
+name register before describing this repository:
+
+  https://github.com/ajreynol/kanon/blob/main/docs/glossary.md
+
+If it has an entry, use its meaning and cited source. If it identifies different
+work, stop and report the conflict. The glossary omits unused proposals, so a
+new name may not have an entry yet: check existing project trees for collisions,
+use the person's stated scope and any proposal they supplied, and report the
+new entry as owed to the president. Do not invent an etymology or treat absence
+as proof that a name is free. If the person has not supplied enough scope to
+write the README, ask for it rather than deriving it from the name alone.
+PROMPT_END
+
+read -r -d '' OPEN_CHILD <<'PROMPT_END' || true
+This tool is not a new idea. The work already exists, as a **child project** in
+another repository in this ecosystem, and a person has decided that it graduates
+into this one. Write the README that says what it is for. That is the whole of
+the job.
+
+**Read it first, all of it:**
+
+  @CHILD@
+
+Its README is a charter: the question it set out to answer, the goals in
+order, the stretch goal, and — the part that does the work — an explicit list
+of what it would *not* do. Read the rest of the directory too. If it carries a
+statement of what it delivered and of which child-project rules stopped being
+true of it, read that most carefully of all: **that list is the reason this
+repository exists.** A child project graduates because it acquired users, and
+that statement is where it said so.
+
+**Keep the child's existing name.** Check it against the authoritative glossary,
+which records its meaning and parent:
+
+  https://github.com/ajreynol/kanon/blob/main/docs/glossary.md
+
+Do not re-derive the etymology and do not improve on it. The child's own README
+explains the name in a sentence somebody can disagree with; that sentence comes
+across, and the glossary is what you check it against. If its entry is missing
+or stale, report the correction owed to the president. A genuine conflict about
+which work the name identifies needs a person's decision; do not resolve it by
+inventing a new name or rewriting the register.
+
+**Write for the repository the work is becoming.** Read what the child's front
+page actually says about its scope, maturity, users, and listing preference;
+do not assume them from its status as a child. **Claim nothing the child did
+not actually deliver** — a
+repository that opens by describing what it is going to become has taken the one
+thing graduating was supposed to prove and turned it back into a promise.
+PROMPT_END
+
+read -r -d '' BODY <<'PROMPT_END' || true
+**The README.** One screen, and a reader who has never heard of any of this
+should finish it knowing:
+
+  - what the tool is, and what question it answers;
+  - the question it does *not* answer, which is usually the larger one somebody
+    will assume;
+  - what it would take to run it, even if that is "nothing works yet";
+  - the name, and why that word — taken from what is written down already
+    rather than invented here. You may say where you think the etymology is a
+    stretch; the name stands either way.
+
+Write what it is *for*, not what it will contain. A roadmap read as a promise is
+worse than no roadmap, so where something does not exist, say so plainly in the
+present tense.
+
+**Comply with nothing.** There is a shared repository policy, and this is not
+the moment for it: no maintenance note, no discussion file, no CI, no layout, no
+documentation index. `join_eo` does that later, when there is something to join
+with, and it will tell you exactly what to add. Do not add files in
+anticipation, and do not read the policy now — knowing what you are building is
+what makes the rest of it decidable, and that order is deliberate.
+PROMPT_END
+
+read -r -d '' TAIL_NEW <<'PROMPT_END' || true
+**Leave a record of what you read.** Copy the glossary entry, if one exists, and
+any supplied proposal into `init-brief.local.md` at the root, naming their
+sources. Otherwise record the person's stated name and scope and the missing
+glossary entry. Do not stage it: `*.local.md` is the
+ecosystem's suffix for a file that is deliberately not committed. It is there so
+that if this README turns out to be wrong, somebody can see what you were working
+from instead of guessing — the register moves, and the version you read is the
+only thing that explains what you wrote.
+PROMPT_END
+
+read -r -d '' TAIL_CHILD <<'PROMPT_END' || true
+**Leave a record of what you read.** Copy, verbatim, the child project's charter
+and its statement of what it delivered, into `init-brief.local.md` at the root,
+naming the path and the parent's commit you read them at. Do not stage it:
+`*.local.md` is the ecosystem's suffix for a file that is deliberately not
+committed. The parent keeps moving and the child's directory may be retired in
+it, so the version you read is the only thing that explains what you wrote.
+
+**The parent's tree is not yours to change.** The child's directory stays where
+it is until a person retires it there, and how much of it comes across — the
+account, the ledger, the history — is a person's decision rather than yours.
+Copy nothing on your own initiative except the README you are writing.
+
+**Two things are owed elsewhere, and neither of them is yours to do.** Say so
+at the end instead. The president must update the glossary entry and inventory
+to say where the work lives now. And any role the child held in kanon's
+`docs/roles.md` moves under this repository's own heading and **keeps its id**
+— a role that changes hands keeps its number, which is what makes every
+decision recorded against it survive the move.
+PROMPT_END
+
+read -r -d '' CLOSE <<'PROMPT_END' || true
+Leave the work staged and not committed. Then say in two sentences what you took
+the scope to be, so a person can correct it before anything is built on it.
+PROMPT_END
+
+# Joined explicitly: `read` strips a heredoc's leading newline, so a blank line
+# between two sections has to be put back here rather than assumed.
+NL=$'\n\n'
+if [ "$MODE" = new ]; then
+  PROMPT="$OPEN_NEW$NL$BODY$NL$TAIL_NEW$NL$CLOSE"
+else
+  PROMPT="${OPEN_CHILD//@CHILD@/$CHILD}$NL$BODY$NL$TAIL_CHILD$NL$CLOSE"
+fi
+
+if [ "$SHOW" = 1 ]; then printf '%s\n' "$PROMPT"; exit 0; fi
+
+# A directory with no README carries no charter, so there is
+# nothing here that `eo_init new` would not do better.
+if [ "$MODE" = from-child ]; then
+  [ -d "$CHILD" ] || { echo "eo_init: $CHILD is not a directory" >&2; exit 2; }
+  [ -f "$CHILD/README.md" ] || {
+    echo "eo_init: $CHILD has no README.md, so there is no charter to write from." >&2
+    echo "         If the work has no stated scope yet, this is 'eo_init new'." >&2
+    exit 2; }
+fi
+
+command -v "$AGENT" >/dev/null 2>&1 || {
+  echo "eo_init: $AGENT is not on PATH" >&2; exit 127; }
+
+ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+echo "-- eo_init $MODE: $(basename "$ROOT") ($ROOT), via $AGENT" >&2
+[ "$MODE" = from-child ] && echo "--   from: $CHILD" >&2
+
+cd "$ROOT"
+if [ "$AGENT" = codex ]; then
+  if [ "$PRINT" = 1 ]; then exec codex exec "$PROMPT"; else exec codex "$PROMPT"; fi
+else
+  if [ "$PRINT" = 1 ]; then exec claude -p "$PROMPT"; else exec claude "$PROMPT"; fi
+fi

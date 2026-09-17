@@ -1,0 +1,442 @@
+#!/usr/bin/env python3
+"""install_eo_cmd -- put the ecosystem's commands on a person's path.
+
+    scripts/install_eo_cmd                 # install to the remembered directory
+    scripts/install_eo_cmd --prefix ~/bin  # install there, and remember it
+    scripts/install_eo_cmd --status        # what is installed, where, and whether it is current
+    scripts/install_eo_cmd --uninstall     # remove what this script installed
+
+The commands live in `eo_cmd/` beside this checkout. They are meant to be run
+from anywhere -- in the repository that is joining, in the repository being
+started -- so reaching them by path into a koine checkout is the wrong shape.
+This puts them on a path instead.
+
+## What this is, and what it is not
+
+**koine does not own what is in `eo_cmd/`.** Those files are copies, and the
+repository named in `eo_cmd/origin.json` is the authority for every word in
+them. koine provides one service and it is a boring one: keeping the copies
+honest, and installing them for a person who would otherwise be typing a path
+into somebody else's checkout.
+
+**So their content is not koine's to modify.** The only sanctioned way a file in
+`eo_cmd/` changes is `--sync`, which re-copies it from a checkout of the
+repository it came from. `--check` is the other half: it re-applies the copy
+transform to the original and compares, so "we did not modify it" is a fact a
+run can establish rather than a promise this file makes.
+
+## The copy transform
+
+A copy is the original with **one** change: the command's own name, which
+differs here because the installed names are prefixed. `join_eo` is installed as
+`eo_join`, `init_eo` as `eo_init`. The rename is applied to the script's own
+comments, usage text, error messages and banner -- and **not** to the prompt
+text it hands an assistant.
+
+That exception is the whole point of the rule. The prompts are read by somebody
+outside this ecosystem, in their own repository, and they name the command so
+that a person handed one can check it against what the command actually says.
+The name that survives that check is the one in the repository they can read,
+which is the original's. A local alias would name a command that exists on one
+machine and in no tree anywhere.
+
+Mechanically: a heredoc body opened by the shell's `read` builtin is the prompt
+and is copied byte for byte; everything else is the wrapper and is renamed.
+
+## The configuration
+
+`install_eo_cmd.local.json` at the root of this checkout, which the repository
+ignores by the ecosystem's `*.local.json` convention. It records the directory
+chosen and what was installed into it, so that a later run can tell a file it
+installed from a file somebody else's tooling put there under the same name.
+
+**It never overwrites a file it did not install.** A name already taken in the
+target directory is reported and skipped; `--force` is how a person overrides
+that, and it is a person's call because the file being replaced is theirs.
+"""
+
+import argparse
+import hashlib
+import json
+import os
+import re
+import shutil
+import stat
+import subprocess
+import sys
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+STORE = os.path.join(ROOT, "eo_cmd")
+ORIGIN = os.path.join(STORE, "origin.json")
+CONFIG = os.path.join(ROOT, "install_eo_cmd.local.json")
+
+#: Where the commands go when nobody has said otherwise. A person's own bin
+#: directory rather than anything shared: this installs somebody's tools for
+#: them, and has no business writing where another account would see it.
+DEFAULT_PREFIX = "~/bin"
+
+#: Opens a quoted heredoc. Only the ones the shell's `read` builtin opens are
+#: prompt text; `cat <<'USAGE'` is the script's own help and is renamed with the
+#: rest of the wrapper.
+HEREDOC = re.compile(r"<<-?'([A-Za-z_][A-Za-z0-9_]*)'")
+READ_LINE = re.compile(r"\s*read\b")
+
+
+def rename(text, renames):
+    """Apply the name map to one line of wrapper.
+
+    `\\b` does the work that matters: in `check_join_eo` the `join` is preceded
+    by a word character, so there is no boundary and the substring is left
+    alone. That command is run from the repository that owns it and is not
+    installed here, so a copy that renamed it would be pointing at nothing.
+    """
+    for was, now in renames.items():
+        text = re.sub(rf"\b{re.escape(was)}\b", now, text)
+    return text
+
+
+def transform(text, renames):
+    """The original, as it is stored here. Prompt heredocs pass through."""
+    out = []
+    delim = None
+    for line in text.split("\n"):
+        if delim is not None:
+            out.append(line)
+            if line == delim:
+                delim = None
+            continue
+        match = HEREDOC.search(line)
+        out.append(rename(line, renames))
+        if match and READ_LINE.match(line):
+            delim = match.group(1)
+    return "\n".join(out)
+
+
+def digest(text):
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def read_text(path):
+    with open(path, encoding="utf-8") as handle:
+        return handle.read()
+
+
+def read_json(path, missing_ok=False):
+    if missing_ok and not os.path.exists(path):
+        return {}
+    with open(path, encoding="utf-8") as handle:
+        return json.load(handle)
+
+
+def write_json(path, data):
+    """Replace a file in one step, so an interrupted run leaves the old one."""
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as handle:
+        json.dump(data, handle, indent=2, sort_keys=False)
+        handle.write("\n")
+    os.replace(tmp, path)
+
+
+def install_file(src, dest):
+    """Copy, executable, atomically."""
+    tmp = dest + ".tmp"
+    shutil.copyfile(src, tmp)
+    os.chmod(tmp, os.stat(tmp).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+    os.replace(tmp, dest)
+
+
+def commands(origin):
+    """The installable commands, in the order origin.json lists them."""
+    return origin.get("commands", [])
+
+
+def prefix_from(args, config):
+    if args.prefix:
+        return os.path.abspath(os.path.expanduser(args.prefix))
+    if config.get("prefix"):
+        return config["prefix"]
+    return os.path.abspath(os.path.expanduser(DEFAULT_PREFIX))
+
+
+def on_path(directory):
+    entries = [os.path.abspath(os.path.expanduser(p))
+               for p in os.environ.get("PATH", "").split(os.pathsep) if p]
+    return directory in entries
+
+
+def do_sync(args, origin):
+    """Re-copy every command from a checkout of the repository that owns it."""
+    source = os.path.abspath(os.path.expanduser(args.sync))
+    if not os.path.isdir(source):
+        print(f"-- refused: {source} is not a directory", file=sys.stderr)
+        return 1
+
+    renames = origin.get("renames", {})
+    updated, unchanged = [], []
+    for cmd in commands(origin):
+        src = os.path.join(source, cmd["source"]["path"])
+        if not os.path.exists(src):
+            print(f"-- refused: {src} does not exist, and nothing was written",
+                  file=sys.stderr)
+            return 1
+        original = read_text(src)
+        copied = transform(original, renames)
+        dest = os.path.join(STORE, cmd["name"])
+        was = read_text(dest) if os.path.exists(dest) else None
+        cmd["source"]["sha256"] = digest(original)
+        cmd["sha256"] = digest(copied)
+        if was == copied:
+            unchanged.append(cmd["name"])
+            continue
+        if args.dry_run:
+            updated.append(cmd["name"])
+            continue
+        tmp = dest + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as handle:
+            handle.write(copied)
+        os.chmod(tmp, os.stat(tmp).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+        os.replace(tmp, dest)
+        updated.append(cmd["name"])
+
+    head = revision(source)
+    if head:
+        for cmd in commands(origin):
+            cmd["source"]["commit"] = head
+
+    print(f"-- {len(updated)} copied, {len(unchanged)} already current, "
+          f"from {source}"
+          + (f" at {head[:7]}" if head else ""))
+    for name in updated:
+        print(f"   {name}")
+    if args.dry_run:
+        print("-- dry run: eo_cmd/ is unchanged")
+        return 0
+    write_json(ORIGIN, origin)
+    print(f"-- wrote {os.path.relpath(ORIGIN, ROOT)}")
+    return 0
+
+
+def revision(checkout):
+    """The commit the copies were taken at, for the record in origin.json."""
+    try:
+        out = subprocess.run(["git", "-C", checkout, "rev-parse", "HEAD"],
+                             capture_output=True, text=True, check=True)
+        return out.stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        return None
+
+
+def do_check(args, origin):
+    """Is what is stored here the original, plus the documented rename?"""
+    renames = origin.get("renames", {})
+    problems = 0
+
+    for cmd in commands(origin):
+        dest = os.path.join(STORE, cmd["name"])
+        if not os.path.exists(dest):
+            print(f"-- {cmd['name']}: missing from eo_cmd/", file=sys.stderr)
+            problems += 1
+            continue
+        stored = read_text(dest)
+        if digest(stored) != cmd.get("sha256"):
+            print(f"-- {cmd['name']}: edited here since it was copied -- "
+                  "eo_cmd/ is a store, not a source; --sync to restore it",
+                  file=sys.stderr)
+            problems += 1
+            continue
+        print(f"-- {cmd['name']}: matches what was copied")
+
+    if args.check is True or not args.check:
+        print("-- checked against origin.json only; pass a checkout of the "
+              "source repository to compare against the originals themselves")
+        return 1 if problems else 0
+
+    source = os.path.abspath(os.path.expanduser(args.check))
+    if not os.path.isdir(source):
+        print(f"-- refused: {source} is not a directory", file=sys.stderr)
+        return 1
+
+    for cmd in commands(origin):
+        src = os.path.join(source, cmd["source"]["path"])
+        dest = os.path.join(STORE, cmd["name"])
+        if not os.path.exists(src):
+            print(f"-- {cmd['name']}: {cmd['source']['path']} is not in "
+                  f"{source}", file=sys.stderr)
+            problems += 1
+            continue
+        expected = transform(read_text(src), renames)
+        if not os.path.exists(dest) or read_text(dest) != expected:
+            print(f"-- {cmd['name']}: differs from {source} -- the original "
+                  "moved, or this copy did; --sync takes the original",
+                  file=sys.stderr)
+            problems += 1
+        else:
+            print(f"-- {cmd['name']}: is {cmd['source']['path']} in {source}, "
+                  "renamed and otherwise unchanged")
+    return 1 if problems else 0
+
+
+def do_status(prefix, origin, config):
+    print(f"-- {prefix}" + ("" if on_path(prefix) else "  (not on PATH)"))
+    installed = config.get("installed", {})
+    for cmd in commands(origin):
+        name = cmd["name"]
+        dest = os.path.join(prefix, name)
+        stored = os.path.join(STORE, name)
+        here = digest(read_text(stored)) if os.path.exists(stored) else None
+        if not os.path.exists(dest):
+            print(f"   {name:10} not installed")
+            continue
+        there = digest(read_text(dest))
+        if there == here:
+            print(f"   {name:10} current")
+        elif name in installed and installed[name] == there:
+            print(f"   {name:10} stale -- eo_cmd/ has moved since; re-run to update")
+        else:
+            print(f"   {name:10} not ours -- a file of that name is there and "
+                  "this script did not put it")
+    return 0
+
+
+def do_uninstall(prefix, origin, config, dry_run):
+    installed = config.get("installed", {})
+    removed, left = [], []
+    for cmd in commands(origin):
+        name = cmd["name"]
+        dest = os.path.join(prefix, name)
+        if not os.path.exists(dest):
+            continue
+        if installed.get(name) != digest(read_text(dest)):
+            left.append(name)
+            continue
+        removed.append(name)
+        if not dry_run:
+            os.remove(dest)
+            installed.pop(name, None)
+
+    for name in left:
+        print(f"-- {name}: changed since this script installed it, and is left "
+              "alone", file=sys.stderr)
+    print(f"-- {len(removed)} removed from {prefix}, {len(left)} left alone")
+    for name in removed:
+        print(f"   {name}")
+    if dry_run:
+        print(f"-- dry run: {prefix} is unchanged")
+        return 0
+    config["installed"] = installed
+    write_json(CONFIG, config)
+    return 0
+
+
+def do_install(prefix, origin, config, dry_run, force):
+    installed = dict(config.get("installed", {}))
+    written, skipped, current = [], [], []
+
+    for cmd in commands(origin):
+        name = cmd["name"]
+        src = os.path.join(STORE, name)
+        dest = os.path.join(prefix, name)
+        if not os.path.exists(src):
+            print(f"-- refused: eo_cmd/{name} is missing, and nothing was "
+                  "installed", file=sys.stderr)
+            return 1
+        want = digest(read_text(src))
+        if os.path.exists(dest):
+            there = digest(read_text(dest))
+            if there == want:
+                current.append(name)
+                installed[name] = there
+                continue
+            ours = installed.get(name) == there
+            if not ours and not force:
+                skipped.append(name)
+                continue
+        written.append(name)
+        if not dry_run:
+            install_file(src, dest)
+            installed[name] = want
+
+    for name in skipped:
+        print(f"-- {name}: {os.path.join(prefix, name)} exists and this script "
+              "did not put it there -- left alone; --force replaces it",
+              file=sys.stderr)
+
+    print(f"-- {len(written)} installed, {len(current)} already current, "
+          f"{len(skipped)} skipped, into {prefix}")
+    for name in written:
+        print(f"   {name}")
+    if dry_run:
+        print(f"-- dry run: {prefix} is unchanged")
+        return 0
+
+    config["prefix"] = prefix
+    config["installed"] = installed
+    write_json(CONFIG, config)
+    print(f"-- remembered {prefix} in {os.path.relpath(CONFIG, ROOT)}")
+    if not on_path(prefix):
+        print(f"-- note: {prefix} is not on your PATH, so the commands above "
+              "are installed and not yet reachable")
+    return 1 if skipped else 0
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Put the ecosystem's commands on a person's path.")
+    parser.add_argument("--prefix", metavar="DIR",
+                        help=f"install here and remember it (default {DEFAULT_PREFIX})")
+    parser.add_argument("--status", action="store_true",
+                        help="what is installed, where, and whether it is current")
+    parser.add_argument("--uninstall", action="store_true",
+                        help="remove the files this script installed")
+    parser.add_argument("--check", nargs="?", const=True, metavar="CHECKOUT",
+                        help="verify the stored copies; with a checkout of the "
+                             "repository they came from, compare against the originals")
+    parser.add_argument("--sync", metavar="CHECKOUT",
+                        help="re-copy the commands from a checkout of the "
+                             "repository that owns them")
+    parser.add_argument("--force", action="store_true",
+                        help="replace a file of the same name this script did not install")
+    parser.add_argument("--dry-run", action="store_true",
+                        help="say what would happen and write nothing")
+    args = parser.parse_args()
+
+    try:
+        origin = read_json(ORIGIN)
+    except (OSError, ValueError) as exc:
+        print(f"-- refused: {exc}", file=sys.stderr)
+        return 1
+
+    if args.sync:
+        return do_sync(args, origin)
+    if args.check is not None:
+        return do_check(args, origin)
+
+    try:
+        config = read_json(CONFIG, missing_ok=True)
+    except ValueError as exc:
+        print(f"-- refused: {CONFIG}: {exc}", file=sys.stderr)
+        return 1
+
+    prefix = prefix_from(args, config)
+
+    if args.status:
+        return do_status(prefix, origin, config)
+    if args.uninstall:
+        return do_uninstall(prefix, origin, config, args.dry_run)
+
+    if not os.path.isdir(prefix):
+        if args.dry_run:
+            print(f"-- dry run: {prefix} does not exist and would be created")
+        else:
+            try:
+                os.makedirs(prefix)
+            except OSError as exc:
+                print(f"-- refused: {exc}", file=sys.stderr)
+                return 1
+            print(f"-- created {prefix}")
+
+    return do_install(prefix, origin, config, args.dry_run, args.force)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

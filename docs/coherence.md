@@ -17,11 +17,22 @@ here find bugs in projects that are not their own; koine keeps the list of what
 they found. It does not find bugs, does not decide whether one is real, and has
 no opinion about what should be done with one.
 
-Today that is two scripts: [`../koine_append_db`](../koine_append_db) keeps the
-bug database, and [`../koine_history`](../koine_history) supports review of the
-ecosystem's history record. It reports mechanical signals and preserves human
+Today that is three jobs. [`../koine_append_db`](../koine_append_db) keeps the
+bug database, [`../koine_history`](../koine_history) supports review of the
+ecosystem's history record, and
+[`../scripts/install_eo_cmd`](../scripts/install_eo_cmd) puts the ecosystem's
+commands on a person's path. It reports mechanical signals and preserves human
 readings in [`history-ledger.md`](history-ledger.md); it does not decide verdicts
-or write to the source record. [`../README.md`](../README.md) introduces both.
+or write to the source record. [`../README.md`](../README.md) introduces all
+three.
+
+**The third arrived on 2026-09-17, at the maintainer's instruction, and it is a
+different shape from the other two.** They are koine's own work. The installer
+is a *service*: [`../eo_cmd/`](../eo_cmd) stores commands another repository
+owns, and this repository's whole contribution is keeping the copies honest and
+installing them. See [Storing somebody else's command](#storing-somebody-elses-command)
+below, which is where the rule that keeps it from becoming ownership is written
+down.
 
 **This replaced an earlier direction on 2026-09-16**, at the maintainer's
 instruction. koine had been the shared half of a reporting loop: a prompt-drift
@@ -49,6 +60,20 @@ koine by putting **the repository root** on their path — there is no package a
 no install step, deliberately — so anything at that root is a name claimed inside
 somebody else's process. `append_db` is a name another project may well want;
 `koine_append_db` cannot collide, and says whose it is at the point of use.
+
+**Two directories are deliberately not that, and the exception is the rule
+working rather than bending.**
+
+[`../eo_cmd/`](../eo_cmd) holds commands this repository did not write. They
+carry the ecosystem's prefix — `eo_join`, `eo_init` — precisely because the root
+convention says a name claimed on somebody's path should say whose it is, and
+these are not ours to claim. A file in there named `koine_join` would be a lie
+about who to argue with.
+
+[`../scripts/`](../scripts) holds what maintains this tree rather than what the
+tree offers, and is reached by path from a checkout. Nothing in it goes on
+anybody's path, so nothing in it can collide, and the root convention has no
+work to do there.
 
 ## The supervision division
 
@@ -123,6 +148,39 @@ Do not design it, do not build it, do not have an opinion about it in the tree.
 | the policy checker itself | **anoieu's** | our CI pins it and it is not ours to move |
 | every prompt template; every position on publishing | **anoieu's and kanon's** | a position is what somebody signs |
 
+### Storing somebody else's command
+
+**Two rows above say that joining and the prompt templates are kanon's, and
+both rows still hold.** [`../eo_cmd/`](../eo_cmd) contains `eo_join` and
+`eo_init`, which are copies of two of those templates, stored here on the
+maintainer's instruction of 2026-09-17 so that
+[`../scripts/install_eo_cmd`](../scripts/install_eo_cmd) can put them on a
+person's path.
+
+**Storing is not owning, and the difference is made checkable rather than
+promised.** Their content is not koine's to modify.
+[`../eo_cmd/origin.json`](../eo_cmd/origin.json) records the source repository,
+path, role and commit for each; `--check <checkout>` re-derives the copy from
+the original and compares; `--sync <checkout>` is the only sanctioned way a
+file in there changes. An agent that improves the wording of `eo_join` has not
+improved anything — it has made a copy wrong, and the next `--check` says so.
+
+**What follows for an agent working here.** A request to change what `eo_join`
+asks, to add an option to it, to soften or harden its first question, or to add
+a third command to `eo_cmd/`, is a request to the repository that owns the
+thing. Say so and name it; `origin.json` has the id. Copying a file in does not
+move the argument about it, and this repository has no standing in that
+argument — which is the whole reason the copies are checked against an original
+instead of merely being similar to one.
+
+**The rename is the single exception, and it stops at the wrapper.** It does not
+touch the prompt text, because that text is read outside this ecosystem and
+names the command so a stranger can check it against what the command actually
+says. The name that survives that check is the one in the tree they can read.
+Making the prompts say `eo_join` would point them at a command that exists on
+one machine and in no repository anywhere, which is the failure this whole
+arrangement exists to avoid.
+
 **The test that puts something here:** somebody else maintains it, **or** being
 wrong about it reaches people who did not sign up for this. Either is enough.
 
@@ -191,6 +249,7 @@ Two things are outstanding and neither is an agent's to settle:
 ```bash
 python3 tests/test_append_db.py                          # bug database
 python3 tests/test_history.py                            # history review
+python3 tests/test_install_eo_cmd.py                     # the command store and installer
 python3 /path/to/anoieu/scripts/policy_check.py --root .  # the ecosystem policy
 ```
 

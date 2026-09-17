@@ -1,0 +1,33 @@
+{
+  "what": "Where each command in this directory came from. The repository named in `source` is the authority for every word of it; koine stores a copy and installs it, and does not modify it. `scripts/install_eo_cmd --sync <checkout>` is the only sanctioned way a file here changes, and `--check <checkout>` re-derives the copy from the original to establish that none of them has.",
+  "renames": {
+    "join_eo": "eo_join",
+    "init_eo": "eo_init"
+  },
+  "commands": [
+    {
+      "name": "eo_join",
+      "source": {
+        "repo": "kanon",
+        "url": "https://github.com/ajreynol/kanon",
+        "path": "prompts/join_eo",
+        "role": "R4",
+        "commit": "a60b78d6175b51dd23fe6195a52b0637f10d21b0",
+        "sha256": "ef59237a836f5f51e35df614f3b1bda8e6339f54b794c05dd4d117e32fd50453"
+      },
+      "sha256": "890958bd3d4f05043edafd8df51cd8a5245f04a62d739a4e8d3ff59655597ec1"
+    },
+    {
+      "name": "eo_init",
+      "source": {
+        "repo": "kanon",
+        "url": "https://github.com/ajreynol/kanon",
+        "path": "prompts/init_eo",
+        "role": "R4",
+        "commit": "a60b78d6175b51dd23fe6195a52b0637f10d21b0",
+        "sha256": "41aa7996b72a09641ac3fc4f8fbf18fb39889518a501b8b56324e51e4b8399d2"
+      },
+      "sha256": "fea2901062ade0f603521b6ae373cef62f15606f72bc8433f0f07dae5991e828"
+    }
+  ]
+}
