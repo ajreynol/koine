@@ -46,30 +46,35 @@ PRINT=0
 SHOW=0
 
 usage() {
-  cat >&2 <<'USAGE'
+  # --help is a request: stdout, exit 0. A wrong mode is a mistake: stderr, 2.
+  local out=1 code=0
+  if [ "${1:-}" = "error" ]; then out=2 code=2; fi
+  cat >&$out <<'USAGE'
+eo_init -- start a tool in the Eunoia ecosystem, with a README saying what it
+is for.
+
+Run it at the root of the NEW repository, not the parent and not in a checkout
+of the ecosystem. An assistant writes README.md there and leaves it staged.
+
+**It complies with nothing, deliberately.** No maintenance note, no CI, no
+layout, no policy -- `eo_join` does all of that later. Knowing what you are
+building is what makes the rest decidable.
+
 usage: eo_init new                 [--codex] [--print] [--show-prompt]
        eo_init from-child <path>   [--codex] [--print] [--show-prompt]
 
-The two ways a tool starts. Pick the one that is true; there is no default,
-because guessing wrong produces a confident README about the wrong thing.
+  new                an empty repository. Written from the ecosystem glossary
+                     and from what you say the tool is for
+  from-child <path>  work graduating out of another tree here. <path> is that
+                     directory, read and never written
+  --codex            run codex instead of claude
+  --print            run non-interactively and print the result
+  --show-prompt      print the prompt and exit, running nothing
 
-  new                a repository with nothing in it yet. The README is written
-                     from the ecosystem's glossary and from what you say
-                     the tool is for.
-
-  from-child <path>  work that already exists as a child project in another
-                     repository here, which a person has decided graduates.
-                     <path> is that directory -- read, never written -- and the
-                     README is written from its charter and from what it
-                     actually delivered.
-
-  --codex         run codex instead of claude
-  --print         run non-interactively and print the result
-  --show-prompt   print the prompt and exit, running nothing
-
-Run this in the new repository, not in the parent.
+The mode is required: guessing wrong produces a confident README about the
+wrong thing. --show-prompt prints exactly what an assistant would be handed.
 USAGE
-  exit 2
+  exit $code
 }
 
 MODE=
@@ -79,12 +84,12 @@ case "${1:-}" in
   new)        MODE=new; shift ;;
   from-child) MODE=from-child; shift
               case "${1:-}" in
-                ""|-*) echo "eo_init: from-child needs the child project's directory" >&2; usage ;;
+                ""|-*) echo "eo_init: from-child needs the child project's directory" >&2; usage error ;;
               esac
               CHILD=$1; shift ;;
   -h|--help)  usage ;;
-  "")         echo "eo_init: say which of the two this is" >&2; usage ;;
-  *)          echo "eo_init: unknown mode $1" >&2; usage ;;
+  "")         echo "eo_init: say which of the two this is" >&2; usage error ;;
+  *)          echo "eo_init: unknown mode $1" >&2; usage error ;;
 esac
 
 while [ $# -gt 0 ]; do
@@ -94,7 +99,7 @@ while [ $# -gt 0 ]; do
     --print) PRINT=1; shift ;;
     --show-prompt) SHOW=1; shift ;;
     -h|--help) usage ;;
-    *) echo "eo_init: unknown option $1" >&2; usage ;;
+    *) echo "eo_init: unknown option $1" >&2; usage error ;;
   esac
 done
 

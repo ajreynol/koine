@@ -46,10 +46,15 @@ def show(command, *args):
                           capture_output=True, text=True)
 
 
-def forms():
-    """Every form the manifest advertises, as argument lists."""
-    manifest = json.load(open(os.path.join(STORE, "commands.json")))
-    for entry in manifest["commands"]:
+def manifest():
+    return json.load(open(os.path.join(STORE, "commands.json")))
+
+
+def forms(kind="prompt"):
+    """Every form the manifest advertises for commands of this kind."""
+    for entry in manifest()["commands"]:
+        if entry.get("kind") != kind:
+            continue
         for form in entry["forms"]:
             parts = form.split()
             yield entry["name"], parts[0], parts[1:]
@@ -166,11 +171,43 @@ def test_the_dictated_marker_passes_the_checker():
     check("the dictated marker satisfies associate_in", problems, [])
 
 
+def test_help_says_why_and_where():
+    """--help has to answer *what is this* and *where do I stand*, on stdout.
+
+    These land on the PATH of somebody who did not install them and may not
+    know what `eo` stands for. Two details matter beyond the wording: an
+    explicit --help is a request rather than a mistake, so it belongs on
+    stdout with an exit of 0 -- until 2026-09-17 the shell commands wrote it
+    all to stderr and exited 2, which meant `eo_join --help | less` printed
+    nothing at all.
+    """
+    print("--help answers the two questions, on stdout")
+    for entry in manifest()["commands"]:
+        name = entry["name"]
+        if not name.startswith("eo_"):
+            continue
+        path = os.path.join(ROOT, entry.get("path") or os.path.join("eo_cmd", name))
+        out = subprocess.run([path, "--help"], capture_output=True, text=True)
+        check(f"{name} --help exits 0", out.returncode, 0)
+        ok(f"{name} --help writes to stdout", len(out.stdout.strip()) > 200)
+        ok(f"{name} names the ecosystem", "Eunoia ecosystem" in out.stdout)
+        ok(f"{name} says where to run it", "Run it at the root" in out.stdout)
+        head = [line for line in out.stdout.splitlines()[:4] if line.strip()]
+        ok(f"{name} says what it is for at the top",
+           any(line.startswith(f"{name} -- ") for line in head))
+
+        bad = subprocess.run([path, "--definitely-not-a-flag"],
+                             capture_output=True, text=True)
+        check(f"{name} rejects a bad flag with 2", bad.returncode, 2)
+        ok(f"{name} sends that to stderr", bad.stdout.strip() == "")
+
+
 def main():
     for test in (test_every_advertised_form_runs, test_refusals,
                  test_no_prompt_names_a_command_that_is_gone,
                  test_associate_says_what_the_footing_needs,
-                 test_the_dictated_marker_passes_the_checker):
+                 test_the_dictated_marker_passes_the_checker,
+                 test_help_says_why_and_where):
         test()
     print()
     if FAILS:

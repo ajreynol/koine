@@ -8,14 +8,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: the policy, at the commit this repository pins
-        env:
-          # Replace with a commit. `--version` on any run prints the one you got.
-          #
-          # The checker moved within anoieu's tree, from tools/ to scripts/, after
-          # this commit. The pin and the path below are therefore coupled: moving
-          # one without the other breaks this job. At 5668c20 the path is tools/.
-          ANOIEU_REV: 5668c20
+        # The pin is `anoieu.lock`, moved by `eo_bump` and never by hand. That
+        # file also records why the pin and the checker path below move
+        # together: the checker moved from tools/ to scripts/ in anoieu after
+        # the pinned commit, so bumping one without the other breaks this job.
         run: |
           git clone --quiet https://github.com/ajreynol/anoieu /tmp/anoieu
-          git -C /tmp/anoieu checkout --quiet "$ANOIEU_REV"
+          git -C /tmp/anoieu checkout --quiet "$(grep -v '^#' anoieu.lock | head -1)"
       - run: python3 /tmp/anoieu/tools/policy_check.py --root .

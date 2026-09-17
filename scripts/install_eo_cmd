@@ -102,9 +102,37 @@ def install_file(src, dest):
     os.replace(tmp, dest)
 
 
+#: Every installed command carries one of these. The name lands on somebody's
+#: PATH, so it says whose it is at the point of use, and a manifest entry
+#: without one is a mistake caught here rather than on a user's machine.
+#:
+#: `eo_` is the ecosystem's: commands that run inside a tree that is not this
+#: one. `koine_` is this repository's own work, installed under the same name it
+#: has in the tree -- one program with two names is worse than a longer name.
+PREFIXES = ("eo_", "koine_")
+
+
 def commands(origin):
     """The installable commands, in the order commands.json lists them."""
     return origin.get("commands", [])
+
+
+def source_of(cmd):
+    """Where a command's file is. `path` is relative to the checkout root.
+
+    Most live in `eo_cmd/`, but a command can be installed from anywhere in the
+    tree: `eo_append_db` is `bug_db/koine_append_db`, kept with the purpose it
+    serves and installed under the name the convention requires.
+    """
+    if cmd.get("path"):
+        return os.path.join(ROOT, cmd["path"])
+    return os.path.join(STORE, cmd["name"])
+
+
+def misnamed(origin):
+    """Manifest entries whose installed name breaks the prefix convention."""
+    return [c["name"] for c in commands(origin)
+            if not c["name"].startswith(PREFIXES)]
 
 
 def prefix_from(args, config):
@@ -127,7 +155,7 @@ def do_status(prefix, origin, config):
     for cmd in commands(origin):
         name = cmd["name"]
         dest = os.path.join(prefix, name)
-        stored = os.path.join(STORE, name)
+        stored = source_of(cmd)
         here = digest(read_text(stored)) if os.path.exists(stored) else None
         if not os.path.exists(dest):
             print(f"   {name:10} not installed")
@@ -179,10 +207,10 @@ def do_install(prefix, origin, config, dry_run, force):
 
     for cmd in commands(origin):
         name = cmd["name"]
-        src = os.path.join(STORE, name)
+        src = source_of(cmd)
         dest = os.path.join(prefix, name)
         if not os.path.exists(src):
-            print(f"-- refused: eo_cmd/{name} is missing, and nothing was "
+            print(f"-- refused: {rel(src)} is missing, and nothing was "
                   "installed", file=sys.stderr)
             return 1
         want = digest(read_text(src))
@@ -262,6 +290,13 @@ def main():
         return 1
 
     prefix = prefix_from(args, config)
+
+    bad = misnamed(origin)
+    if bad:
+        print(f"-- refused: {', '.join(bad)} start with none of "
+              + " or ".join(f"`{x}`" for x in PREFIXES)
+              + ", which every installed command carries", file=sys.stderr)
+        return 1
 
     if args.status:
         return do_status(prefix, origin, config)

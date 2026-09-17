@@ -73,25 +73,36 @@ AFFIL=0
 ASSOC=0
 
 usage() {
-  cat >&2 <<'USAGE'
+  # An explicit --help is a request, not a mistake: it goes to stdout and exits
+  # 0. A wrong flag is a mistake: stderr, exit 2. Getting this backwards makes
+  # `eo_join --help | less` print nothing, which it did until 2026-09-17.
+  local out=1 code=0
+  if [ "${1:-}" = "error" ]; then out=2 code=2; fi
+  cat >&$out <<'USAGE'
+eo_join -- declare where a repository stands with the Eunoia ecosystem.
+
+Run it at the root of the repository being declared: it writes there, not in
+any checkout of the ecosystem. An assistant edits that tree -- a README
+section, docs/maintenance.md, sometimes a CI workflow -- and leaves the work
+staged for you to review.
+
 usage: eo_join [--soft [--affiliated] | --associate]
                [--codex] [--print] [--show-prompt]
 
-  --soft          add the maintenance note only: no membership declared, no
-                  workflow, no checker run. The note says the repository is
-                  independent and names no other project's ecosystem
-  --affiliated    with --soft: the note names the Eunoia ecosystem as one this
-                  repository works with, and says it is not held to its policy
-  --associate     take the `associate` footing: the repository holds itself to
-                  the policy on its own maintenance page, owes this ecosystem
-                  nothing, and its check result is a measurement not a shortfall
+  (no flag)       join, and declare it on the front page
+  --associate     hold this tree to the policy without announcing it, on
+                  docs/maintenance.md. Owes the ecosystem nothing
+  --soft          claim nothing: a maintenance note naming no other project
+  --affiliated    with --soft: name the Eunoia ecosystem, held to none of it
   --codex         run codex instead of claude
   --print         run non-interactively and print the result
   --show-prompt   print the prompt and exit, running nothing
 
-Run this in the repository that is joining.
+The four are different claims, not amounts of one. Read before running:
+--show-prompt prints exactly what an assistant would be handed. The policy is
+the authority: https://github.com/ajreynol/kanon/blob/main/docs/policy.md
 USAGE
-  exit 2
+  exit $code
 }
 
 while [ $# -gt 0 ]; do
@@ -104,7 +115,7 @@ while [ $# -gt 0 ]; do
     --print) PRINT=1; shift ;;
     --show-prompt) SHOW=1; shift ;;
     -h|--help) usage ;;
-    *) echo "eo_join: unknown option $1" >&2; usage ;;
+    *) echo "eo_join: unknown option $1" >&2; usage error ;;
   esac
 done
 

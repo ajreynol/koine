@@ -1,0 +1,279 @@
+#!/usr/bin/env python3
+"""eo_bump -- move a pinned dependency onto a commit whose CI is green.
+
+    eo_bump --show          what is pinned, what is upstream, what is between
+    eo_bump --check         whether the upstream tip is green, and say nothing else
+    eo_bump                 move the pin, if the tip is green
+    eo_bump --force         move it anyway, and say in the run that you did
+
+Every repository in this ecosystem pins something, and moving that pin is a
+decision rather than an update: a change made in somebody else's tree turns this
+build red or green without anybody touching a file here. **So the pin moves only
+onto a commit its CI was green at.** A lock naming a commit we never passed
+against is worse than no lock, because it reads like evidence and is not.
+
+Four repositories had written this for themselves before this command existed,
+in three naming conventions and about 785 lines, and five had written nothing at
+all -- which means five members moved pins by hand with no green-at-commit check.
+This is that command, written once.
+
+## The configuration
+
+`eo_bump.json`, beside the lock it moves or at the root of the repository:
+
+    {
+      "pin":      {"file": "scripts/anoieu.lock"},
+      "upstream": {"url": "https://github.com/ajreynol/anoieu", "ref": "main"},
+      "green":    {"workflow": "policy"}
+    }
+
+`pin.file` holds one commit, and lines beginning `#` are comments -- the format
+every lock in this ecosystem already uses. `green.workflow` is the check that
+must have passed at a commit before the pin may name it. `upstream.local` may
+name a checkout on this machine, which is read and never written or fetched into.
+
+## What it will not do
+
+**It never edits anything but the lock file**, and it writes the lock only when
+the commit it names is one the check passed at. `--force` is the single
+exception, it is a person's decision, and the run says so in as many words.
+
+**It does not decide what green means.** The workflow named in the
+configuration is the one asked about, and a run that cannot reach an answer --
+no network, no such workflow, a run still going -- reports that it could not
+establish the state and changes nothing. **Unknown is not green**, and that
+distinction is the whole value of the command.
+"""
+
+import argparse
+import json
+import os
+import subprocess
+import sys
+import urllib.error
+import urllib.request
+
+CONFIG = "eo_bump.json"
+API = "https://api.github.com"
+
+
+def find_config(start):
+    """The nearest `eo_bump.json`, walking up from where the run started."""
+    here = os.path.abspath(start)
+    while True:
+        for candidate in (os.path.join(here, CONFIG),
+                          os.path.join(here, "scripts", CONFIG)):
+            if os.path.exists(candidate):
+                return candidate
+        up = os.path.dirname(here)
+        if up == here:
+            return None
+        here = up
+
+
+def read_pin(path):
+    """The commit a lock names. Comments and blank lines are not it."""
+    for line in open(path, encoding="utf-8").read().splitlines():
+        line = line.split("#", 1)[0].strip()
+        if line:
+            return line
+    return ""
+
+
+def write_pin(path, commit):
+    """Replace the commit, keeping every comment the lock carries.
+
+    The comments are why the pin is where it is, and they are usually the only
+    record of that. A rewrite that dropped them would lose the reasoning and
+    keep the number.
+    """
+    lines = open(path, encoding="utf-8").read().splitlines(keepends=True)
+    out, done = [], False
+    for line in lines:
+        bare = line.split("#", 1)[0].strip()
+        if bare and not done:
+            out.append(line.replace(bare, commit, 1))
+            done = True
+        else:
+            out.append(line)
+    if not done:
+        out.append(commit + "\n")
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as handle:
+        handle.writelines(out)
+    os.replace(tmp, path)
+
+
+def owner_repo(url):
+    return url.rstrip("/").removesuffix(".git").split("/")[-2:]
+
+
+def git(*args):
+    out = subprocess.run(["git", *args], capture_output=True, text=True)
+    return out.stdout.strip() if out.returncode == 0 else ""
+
+
+def upstream_tip(cfg):
+    """The commit at the tracked ref, from a local checkout or the remote."""
+    local = cfg["upstream"].get("local")
+    if local:
+        local = os.path.abspath(os.path.expanduser(local))
+        if os.path.isdir(os.path.join(local, ".git")):
+            tip = git("-C", local, "rev-parse", cfg["upstream"].get("ref", "HEAD"))
+            if tip:
+                return tip, f"{local} (read, never written)"
+    ref = cfg["upstream"].get("ref", "main")
+    out = git("ls-remote", cfg["upstream"]["url"], ref)
+    if out:
+        return out.split()[0], cfg["upstream"]["url"]
+    return "", ""
+
+
+def between(cfg, old, new):
+    """How many commits separate the two, where that is knowable locally."""
+    local = cfg["upstream"].get("local")
+    if not local:
+        return None
+    local = os.path.abspath(os.path.expanduser(local))
+    count = git("-C", local, "rev-list", "--count", f"{old}..{new}")
+    return int(count) if count.isdigit() else None
+
+
+def green_at(cfg, commit, token):
+    """Did the named workflow pass at this commit?
+
+    Returns (True, note), (False, note) or (None, why) -- and **None is not
+    False**. A run that could not be reached is an answer this command refuses
+    to turn into a decision.
+    """
+    owner, repo = owner_repo(cfg["upstream"]["url"])
+    want = cfg.get("green", {}).get("workflow", "")
+    url = f"{API}/repos/{owner}/{repo}/commits/{commit}/check-runs?per_page=100"
+    request = urllib.request.Request(url, headers={
+        "Accept": "application/vnd.github+json",
+        "User-Agent": "eo_bump",
+        **({"Authorization": f"Bearer {token}"} if token else {}),
+    })
+    try:
+        with urllib.request.urlopen(request, timeout=20) as response:
+            data = json.load(response)
+    except (urllib.error.URLError, OSError, ValueError) as exc:
+        return None, f"could not reach GitHub ({exc})"
+
+    runs = data.get("check_runs", [])
+    if data.get("total_count", 0) > len(runs):
+        return None, (f"{data['total_count']} checks reported and {len(runs)} "
+                      "returned, so this run did not see all of them")
+    named = [r for r in runs if want.lower() in (r.get("name") or "").lower()]
+    if not named:
+        have = ", ".join(sorted({r.get("name", "?") for r in runs})) or "none"
+        return None, f"no check named `{want}` at this commit; saw: {have}"
+    unfinished = [r for r in named if r.get("status") != "completed"]
+    if unfinished:
+        return None, f"`{want}` has not finished at this commit"
+    bad = [r for r in named if r.get("conclusion") != "success"]
+    if bad:
+        return False, f"`{want}` concluded {bad[0].get('conclusion')}"
+    return True, f"`{want}` passed at this commit"
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description="""\
+eo_bump -- move a pinned dependency onto a commit whose CI is green.
+
+Run it at the root of the repository that holds the pin -- any tree in the
+Eunoia ecosystem with an eo_bump.json. It moves your lock and reads theirs.
+
+A change in somebody else's tree turns this build red or green without anybody
+touching a file here, so moving a pin is a decision, not an update. This takes
+it onto a commit the check passed at, and no other. **Unknown is not green**: a
+run that cannot establish the state changes nothing and says so.""",
+        epilog="""\
+eo_bump.json, beside the lock or at the repository root:
+
+    {
+      "pin":      {"file": "scripts/anoieu.lock"},
+      "upstream": {"url": "https://github.com/ajreynol/anoieu", "ref": "main"},
+      "green":    {"workflow": "policy"}
+    }
+
+"upstream.local" may name a checkout on this machine, which is read and never
+written or fetched into. GITHUB_TOKEN is used for the check query if set.""")
+    parser.add_argument("--root", metavar="DIR", default=".",
+                        help="the repository to work in (default: here)")
+    parser.add_argument("--show", action="store_true",
+                        help="what is pinned, what is upstream, what is between")
+    parser.add_argument("--check", action="store_true",
+                        help="report whether the upstream tip is green, and stop")
+    parser.add_argument("--force", action="store_true",
+                        help="move the pin even where the check did not pass")
+    parser.add_argument("--dry-run", action="store_true",
+                        help="say what would happen and write nothing")
+    args = parser.parse_args()
+
+    path = find_config(args.root)
+    if not path:
+        print(f"-- refused: no {CONFIG} at or above {os.path.abspath(args.root)}",
+              file=sys.stderr)
+        print(f"   see the docstring at the top of this file for its three keys",
+              file=sys.stderr)
+        return 2
+    try:
+        cfg = json.load(open(path, encoding="utf-8"))
+        lock = os.path.join(os.path.dirname(path), cfg["pin"]["file"])
+        if not os.path.exists(lock):
+            lock = os.path.join(os.path.dirname(os.path.dirname(path)),
+                                cfg["pin"]["file"])
+        old = read_pin(lock)
+    except (OSError, ValueError, KeyError) as exc:
+        print(f"-- refused: {path}: {exc}", file=sys.stderr)
+        return 2
+
+    tip, where = upstream_tip(cfg)
+    if not tip:
+        print(f"-- refused: could not read {cfg['upstream']['url']}", file=sys.stderr)
+        return 1
+
+    print(f"-- pinned   {old[:12]}  ({os.path.relpath(lock, os.path.abspath(args.root))})")
+    print(f"-- upstream {tip[:12]}  ({where})")
+    gap = between(cfg, old, tip)
+    if gap is not None:
+        print(f"-- between  {gap} commit(s)")
+    if old == tip:
+        print("-- the pin is already at the tip; nothing to do")
+        return 0
+    if args.show:
+        return 0
+
+    ok, note = green_at(cfg, tip, os.environ.get("GITHUB_TOKEN", ""))
+    if ok is True:
+        print(f"-- green: {note}")
+    elif ok is False:
+        print(f"-- not green: {note}", file=sys.stderr)
+    else:
+        print(f"-- unknown: {note}", file=sys.stderr)
+        print("--   unknown is not green, and this command will not treat it as "
+              "green", file=sys.stderr)
+    if args.check:
+        return 0 if ok is True else 1
+
+    if ok is not True and not args.force:
+        print(f"-- refused: the pin stays at {old[:12]}, which is the commit this "
+              "build is tested against", file=sys.stderr)
+        print("--   --force moves it anyway, and that is a person's decision",
+              file=sys.stderr)
+        return 1
+    if args.dry_run:
+        print(f"-- dry run: would write {tip} to {lock}")
+        return 0
+
+    write_pin(lock, tip)
+    print(f"-- moved the pin to {tip[:12]}" + ("" if ok is True else "  (--force: the check did not pass)"))
+    print(f"-- wrote {lock}, comments kept")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

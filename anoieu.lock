@@ -1,0 +1,11 @@
+# The commit of anoieu whose policy checker this repository is checked by.
+#
+# A pin is a choice, not a fact: moving it changes what decides whether this
+# tree complies. The ecosystem's rule is that a pin only moves to a commit
+# where the other project's CI is green, which is what `eo_bump` enforces.
+#
+# COUPLED TO A PATH. The checker moved within anoieu's tree from tools/ to
+# scripts/ after this commit, so the workflow's path and this pin move
+# together. Bumping this without changing .github/workflows/anoieu.yml breaks
+# the job.
+5668c20

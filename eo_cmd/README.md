@@ -11,6 +11,23 @@ person's path.
 | --- | --- |
 | [`eo_join`](eo_join) | join the Eunoia ecosystem, from inside the repository that is joining |
 | [`eo_init`](eo_init) | start a tool: write a README saying what it is for, complying with nothing |
+| [`eo_bump`](eo_bump) | move a pinned dependency onto a commit whose CI is green, and refuse otherwise |
+| `koine_append_db` | add a run's new bugs to a database of every bug found. Installed from [`../bug_db/`](../bug_db), where it lives |
+
+**Every installed command carries a prefix saying whose it is**, because the
+name is claimed inside somebody else's process and on their PATH. `eo_` is the
+ecosystem's — commands that run inside a tree that is not this one. `koine_` is
+this repository's own work, installed under the name it already has: **one
+program with two names is worse than a longer name.** `install_eo_cmd` refuses
+anything else. A command does not have to *live* in this directory to be
+installed out of it.
+
+> **A pinned consumer must not take `koine_append_db` off PATH.** anoieu and
+> dokimasia resolve it through their own `koine.lock` into a pinned checkout,
+> and that pin is why an append-only database gets the same append semantics
+> every run. PATH gives whatever the operator installed. Installing it here is
+> for **a person at a terminal**, and it does not make those locators
+> deletable.
 
 [`commands.json`](commands.json) is what the installer reads.
 **Read one before running it** — every form takes `--show-prompt`, which prints

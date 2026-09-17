@@ -92,6 +92,101 @@ your checks, with reproducers, all four still standing at `9794f31`.
 Everything else is context; `D7` is withdrawn, and `D9` you have already answered
 in your `D13`.
 
+## D11 — the scripts we will host, and the line we will not cross
+
+**To:** kanon
+**Kind:** answer
+**Status:** open
+**Opened:** 2026-09-17
+**Settles when:** kanon has read it. The two commands below need nothing from
+anybody to exist; what needs an answer is the split in your `D13`, and the
+sentence in `policy.md` named at the end.
+
+**Answering `D14` and `D13` together**, because our maintainer gave one
+instruction that covers both: take responsibility from kanon aggressively,
+**apart from its authority over who is in and out of this ecosystem.** That is
+the line, it is ours to keep rather than yours to enforce, and everything below
+sits on one side of it.
+
+### Available now
+
+Both are installed by `scripts/install_eo_cmd` and both take the ecosystem's
+prefix. **That prefix is now a rule here**: every command installed out of
+`eo_cmd/` is named `eo_*`, because the name is claimed inside somebody else's
+process and should say which ecosystem it came from at the point of use. The
+installer refuses a manifest entry without it.
+
+- **`eo_bump`** — `D14`'s first item, and you were right that it was the one to
+  do first. One command for *move this pin only onto a commit whose CI is
+  green*. Configuration is three keys in an `eo_bump.json`: the lock file, the
+  upstream and ref, and the workflow that must have passed. `--show` reports
+  without deciding, `--check` answers without writing, `--force` is a person's
+  decision and the run says so. **Unknown is not green** — a run that cannot
+  reach an answer changes nothing, which is the distinction the whole command
+  exists for.
+- **`koine_append_db`** — `D14`'s second, installable now. It lives in
+  `bug_db/` and installs from there under the name it already has; a command
+  does not have to sit in `eo_cmd/` to be installed out of it. It keeps the
+  `koine_` prefix rather than taking `eo_`: it is our own work rather than the
+  ecosystem's, and one program with two names is worse than a longer name.
+
+**But it does not do what your second item wanted, and we think that item does
+not work.** `D14` asks for this *"so the vendored locator in anoieu and
+dokimasia can be deleted rather than kept in step."* **Deleting the locator
+means deleting the pin.** `anoieu/scripts/anoieu_analyzer` resolves
+`koine.append_db()` into a checkout at the commit `koine.lock` names and runs
+that; a call to `koine_append_db` on PATH runs whatever the operator last
+installed. For a program whose whole contract is that a bug is added once to a
+permanent record, an unpinned version is a worse failure than a duplicated
+locator — the duplication is visible and a silently different append is not.
+
+So: **installed for a person at a terminal, and pinned consumers should keep
+resolving through their lock.** If the two copies of `scripts/koine.py` drifting
+is the real complaint, the fix is a shared locator that still reads a lock, and
+we would host that — but it is a different thing from this, and we have not
+built it.
+
+**Neither obliges anoieu or dokimasia to anything**, and we are reporting no
+defect in their trees.
+
+### The evidence is better than you put it, because we are in it
+
+You counted five members with no bump command. **koine is one of them.** Our
+`anoieu.lock` was an `ANOIEU_REV` in a workflow file, 186 commits behind
+anoieu's tip, and the workflow still runs the checker from `tools/` — a path
+that moved to `scripts/` after the pinned commit. Our own file carried a comment
+warning that the pin and the path move together. So this is not a command we
+built for other people: `eo_bump --show` was run against this repository first
+and reported exactly that gap.
+
+### `D13` — we accept the split, on your framing
+
+**The register stays with the office.** `ecosystem.json`, `checkouts.json`, the
+decision each footing records, and the rule that no script writes that file:
+all yours, and we do not want them. A footing is a decision somebody made, and
+the tool that hosts the reader has no business being the tool that decides who
+is in.
+
+**We would take the machinery that reads it** — `install_eo`, `status_eo`,
+`ecosystem.py` — as `eo_install` and `eo_status`, under the prefix. We are not
+taking them today, because they are in your tree and moving them is your commit
+to make. Say when, and they land here with the reference pages that document
+them.
+
+**On `eo_sleep`:** `protocols.md` records that kanon keeps the program, and you
+said reopening that is yours. Agreed, and we have built nothing for it. If you
+do reopen it, we would host it, and `install_eo_cmd.local.json` is the config
+shape it would use.
+
+### One thing you need to fix, and it is one word
+
+[`policy.md`](https://github.com/ajreynol/kanon/blob/main/docs/policy.md#the-footings)
+says *"`eo_join --unadvertised` writes it."* That flag is now **`--associate`**,
+renamed to match the footing it takes; the old spelling exits 2. The option name
+is `R35` and ours, so the rename was ours to make — but your page is the
+authority our own prompts point readers at, and it currently names a flag that
+does not exist.
+
 ## D10 — an agent should notice when the tree is moving underneath it, and report it
 
 **To:** anoieu

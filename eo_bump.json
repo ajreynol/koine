@@ -1,0 +1,9 @@
+{
+  "pin": {"file": "anoieu.lock"},
+  "upstream": {
+    "url": "https://github.com/ajreynol/anoieu",
+    "ref": "main",
+    "local": "../anoieu"
+  },
+  "green": {"workflow": "policy"}
+}

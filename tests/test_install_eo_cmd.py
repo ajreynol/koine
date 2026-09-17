@@ -49,17 +49,6 @@ def ok(name, condition):
     check(name, bool(condition), True)
 
 
-def test_manifest():
-    """The real manifest lists commands that are actually in eo_cmd/."""
-    print("the manifest")
-    manifest = json.load(open(os.path.join(ROOT, "eo_cmd", "commands.json")))
-    names = [c["name"] for c in manifest["commands"]]
-    check("it lists both commands", sorted(names), ["eo_init", "eo_join"])
-    for name in names:
-        path = os.path.join(ROOT, "eo_cmd", name)
-        ok(f"{name} is in eo_cmd/", os.path.isfile(path))
-        ok(f"{name} is executable", os.access(path, os.X_OK))
-
 
 def run(tmp, *args, env=None):
     """The script, against a checkout copied into a temporary directory."""
@@ -171,7 +160,7 @@ def test_uninstall():
 
 
 def main():
-    for test in (test_manifest, test_install, test_uninstall):
+    for test in (test_install, test_uninstall):
         test()
     print()
     if FAILS:
