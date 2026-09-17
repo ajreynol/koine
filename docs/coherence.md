@@ -38,13 +38,14 @@ the same pair with what an agent needs added.
    below, which is where the rule that keeps it from becoming ownership is
    written down.
 
-**[`koine_history`](../scripts/koine_history) is neither of them**, and knowing
-that matters before an instruction arrives assuming it is one. It came in on
-2026-09-16 when the history review child project was dissolved into this tree.
-It reports mechanical signals and preserves human readings in
-[`history-ledger.md`](history-ledger.md); it decides no verdict and writes
-nothing to the source record. It is maintained, tested and in CI, and where it
-sits against the two purposes is [open work](#the-open-work).
+**Auditing how a repository's history changed is not koine's**, and a
+`koine_history` lived here until 2026-09-17 doing exactly that. It was removed:
+the ecosystem's register describes
+[epikrisis](https://github.com/ajreynol/epikrisis) as *audits repository
+histories against evidence*, and a second implementation of somebody's
+registered purpose is the thing this repository is least entitled to hold. Its
+[ledger](history-ledger.md) stays as a closed record because the readings in it
+are people's.
 
 Everything runnable is in [`../scripts/`](../scripts).
 
@@ -55,13 +56,16 @@ a document for each. All of it was deleted in the same change. **It is in git
 history and nothing depends on it**; if something there turns out to be wanted,
 recover it from there rather than rebuilding it from memory.
 
-**The maintainer also asked to fold the history review child project into Koine
-on 2026-09-16.** Its script, tests, review standard, and ledger now live in the
-normal Koine layout. There is no separate child project or lifecycle. The
-[review design](history-review.md) retains its useful decisions: keep evidence
-separate from judgement, preserve earlier readings, read the source without
-editing it, and leave external communication to a person. The tool is part of
-Koine's test suite; the reviews remain advisory.
+**A history review child project was folded in on 2026-09-16 and removed on
+2026-09-17**, both at the maintainer's instruction. The script, its tests and
+its review standard are gone; [`history-ledger.md`](history-ledger.md) stays,
+closed. It is in git history and nothing depended on it — no repository outside
+this one ever referenced it, and koine held no role for it.
+
+**What was worth keeping from it is worth keeping anyway**, and `bug_db/`
+already works this way: keep evidence separate from judgement, preserve earlier
+readings, read the source without editing it, and leave what reaches a person to
+a person.
 
 ### Naming
 
@@ -263,15 +267,7 @@ the tools that use it and invents nothing on its own. A feature nobody has asked
 for is a guess about somebody else's needs — likely wrong, and more expensive to
 withdraw than it was to write.
 
-Three things are outstanding and none is an agent's to settle:
-
-- **Where [`koine_history`](../scripts/koine_history) sits.** The maintainer
-  named two purposes on 2026-09-17 — bug-database tooling, and the ecosystem's
-  commands — and the history tool is in neither. It may belong under the first
-  read more broadly, it may be a third purpose, or it may be work this
-  repository no longer wants. **All three are answers and none has been given**,
-  so it stays where it is, documented as neither. Do not resolve this by
-  quietly filing it under a purpose that nearly fits, and do not delete it.
+Two things are outstanding and neither is an agent's to settle:
 
 - **A publishing stance**, owed by this repository — whether there is a paper
   in the work, or a plan for one, or nothing

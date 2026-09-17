@@ -122,8 +122,8 @@ $ python3 tests/test_append_db.py
 No dependencies and no network. `--dry-run` says what would change and writes
 nothing; `--date` records a run under a date other than today.
 
-**The commands live in [`scripts/`](scripts)**, which is where the ecosystem's
-policy says commands live. They were at this repository's root until
+**This program lives here** rather than in `scripts/`, one directory per
+purpose. It was at this repository's root until
 2026-09-17; a customer who put the root on their path wants `scripts/` on it
 now, and [`koine_append_db`](koine_append_db) at the root is a tombstone that
 says so and exits non-zero. It comes out once anoieu and dokimasia have moved

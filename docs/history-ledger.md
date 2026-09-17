@@ -1,13 +1,20 @@
 # History review ledger
 
-**Generated in part, and additive.** `koine_history <repository> --append` writes
-one row per change to the record that has no row yet. **It never rewrites or removes one**,
-because the last two columns are written by hand and a generator that may
-rewrite is one that may quietly delete a verdict.
+**Closed on 2026-09-17, and nothing appends to it now.** The program that wrote
+the mechanical columns, `koine_history`, was removed that day: auditing how a
+repository's history changed is
+[epikrisis](https://github.com/ajreynol/epikrisis)'s, which the ecosystem's
+register states in as many words, and koine had no business holding a second
+implementation of it.
+
+**The rows stay.** The last two columns of each are a person's reading, and this
+repository does not delete one of those because the generator beside it went
+away. What becomes of them — kept here, handed to epikrisis, or dropped — is the
+maintainer's to say.
 
 The mechanical columns are the program's: which change, when, in whose tree,
-how much moved, and which questions [`history-review.md`](history-review.md)
-says to ask of it. **The last two are a reading**, and the reading is where the
+how much moved, and which questions the review standard said to ask of it —
+that standard was removed with the program. **The last two are a reading**, and the reading is where the
 whole judgement lives.
 
 **Newest at the bottom**, which is the opposite of this ecosystem's usual

@@ -53,44 +53,16 @@ word of it, and the copies are held to that mechanically rather than by promise.
 **[`eo_cmd/README.md`](eo_cmd/README.md) is the whole of it** — what is in
 there, where each one came from, and how a copy is proved unmodified.
 
-## Also here: reviewing the history record
-
-**This is neither of the two above.** It came in on 2026-09-16 when the history
-review child project was dissolved into this tree.
-
-The Eunoia ecosystem keeps a term record — `docs/history.md`, in whichever
-repository holds the office — saying what a term was for, what changed, what
-went wrong, and what crosses to the next one. It is written by the people who
-did the work, which is what makes it worth reading and also what makes it worth
-reviewing: a record that quietly loses a failure is worse than no record.
-
-[`scripts/koine_history`](scripts/koine_history) reads that file's history in a
-Git checkout and reports, per change, what it touched, what it added and
-removed, and which questions a reviewer should ask about it — a figure added
-with nothing supporting it, failure language removed, an earlier term's section
-edited. **It writes no verdict.** A person writes that into
-[`docs/history-ledger.md`](docs/history-ledger.md), and `--append` adds rows for
-changes that have none and never touches a row that does.
-
-```console
-$ scripts/koine_history /path/to/record-repository
-$ scripts/koine_history /path/to/record-repository --append
-```
-
-It never writes to the record it reads, and it gates nothing.
-[`docs/history-review.md`](docs/history-review.md) is the review standard, the
-two axes it distinguishes, and the limits of its signals.
-
 ## What else is in this tree
 
 **One directory per purpose**, each with a README that is the whole of its
 subject: [`bug_db/`](bug_db) and [`eo_cmd/`](eo_cmd). [`scripts/`](scripts)
-holds the programs that are not themselves a purpose — the installer that
-serves `eo_cmd/`, and the history tool. [`tests/`](tests) drives all three.
+holds `install_eo_cmd`, which serves `eo_cmd/` without being a purpose of its
+own, and [`tests/`](tests) drives both.
 
-[`docs/`](docs/README.md) holds the history review standard and ledger, the
-maintenance entry point, and [`discussion.md`](docs/discussion.md), the channel
-to the rest of the ecosystem. **No agent acts on the discussion file unbidden**
+[`docs/`](docs/README.md) holds the maintenance entry point and
+[`discussion.md`](docs/discussion.md), the channel to the rest of the
+ecosystem. **No agent acts on the discussion file unbidden**
 — the rule is at the top of it.
 
 **An earlier version of this repository was a reporting-loop library** — a
