@@ -196,7 +196,11 @@ def test_help_says_why_and_where():
         check(f"{name} --help exits 0", out.returncode, 0)
         ok(f"{name} --help writes to stdout", len(out.stdout.strip()) > 200)
         ok(f"{name} names the ecosystem", "Eunoia ecosystem" in out.stdout)
-        ok(f"{name} says where to run it", "Run it at the root" in out.stdout)
+        # The wording differs by command -- "at the root of the repository
+        # being declared", "in the repository that holds the register" -- so
+        # what is checked is that the question is answered, not one phrasing.
+        ok(f"{name} says where to run it",
+           re.search(r"\bRun (it|this)\b[^.]*\brepositor", out.stdout) is not None)
         head = [line for line in out.stdout.splitlines()[:4] if line.strip()]
         ok(f"{name} says what it is for at the top",
            any(line.startswith(f"{name} -- ") for line in head))

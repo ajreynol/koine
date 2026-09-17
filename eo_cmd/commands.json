@@ -23,6 +23,16 @@
       "kind": "prompt"
     },
     {
+      "name": "eo_status",
+      "what": "who is in the Eunoia ecosystem and on what footing. Run only in the repository that holds the register; it refuses to read a copy",
+      "forms": [
+        "eo_status",
+        "eo_status --check",
+        "eo_status --children"
+      ],
+      "kind": "program"
+    },
+    {
       "name": "eo_bump",
       "what": "move a pinned dependency onto a commit whose CI is green, and refuse otherwise",
       "forms": [

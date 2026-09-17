@@ -1,0 +1,110 @@
+#!/usr/bin/env python3
+"""eo_status -- who is in the Eunoia ecosystem, and on what footing.
+
+WHERE: run this **in the repository that holds the register** -- the tree with
+scripts/ecosystem/ecosystem.json in it, which today is kanon and only kanon.
+That file is the ground truth for who is in this ecosystem; this reads it and
+prints it.
+
+**It will not read a copy.** Not a sibling checkout, not a clone at a pin, not
+a cached table. A register read anywhere else is true as of whenever it was
+taken, and a run that printed one would make a claim about who is in this
+ecosystem on evidence that may have moved since. Run somewhere without the
+register, this refuses and says so rather than going to look for one.
+
+**It never writes.** A footing is a decision somebody made, and no program
+takes one. --check reports what is structurally wrong with the file and fixes
+nothing.
+"""
+
+import argparse
+import importlib.machinery
+import importlib.util
+import os
+import sys
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+MODULE = os.path.join(os.path.dirname(HERE), "scripts", "koine_register.py")
+
+_spec = importlib.util.spec_from_loader(
+    "koine_register", importlib.machinery.SourceFileLoader("koine_register", MODULE))
+reg = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(reg)
+
+#: Printed in this order, because it is the order somebody reads the ecosystem
+#: in: the office, then who is held to the policy, then who is not, then the
+#: things that are not repositories at all.
+ORDER = ["president", "member", "associate", "candidate", "foundation",
+         "outsider", "child"]
+
+#: One line each, so a reader who has never opened the policy still knows what
+#: a row claims. The policy page is the authority; this is a reminder of it.
+MEANS = {
+    "president": "holds the office, for this stretch",
+    "member": "declares it on the front page, and a green check on every push",
+    "associate": "holds itself to the policy; owes this ecosystem nothing",
+    "candidate": "addressed by the policy, and owes nothing",
+    "foundation": "this ecosystem is downstream of it; owes nothing, ever",
+    "outsider": "tracked, and never proposed for promotion",
+    "child": "not a repository: reached through its parent",
+}
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description="eo_status -- who is in the Eunoia ecosystem, and on what "
+                    "footing.\n\n" + reg.WHERE,
+        epilog="A footing is a decision somebody made. Nothing here takes one, "
+               "and nothing here writes to the register.")
+    parser.add_argument("--root", metavar="DIR", default=".",
+                        help="the repository holding the register (default: here)")
+    parser.add_argument("--check", action="store_true",
+                        help="report what is structurally wrong with the register")
+    parser.add_argument("--children", action="store_true",
+                        help="include child projects, which are not repositories")
+    args = parser.parse_args()
+
+    try:
+        data = reg.require(args.root)
+    except SystemExit as exc:
+        print(exc, file=sys.stderr)
+        return 2
+
+    tools = reg.entries(data)
+    if args.check:
+        bad = reg.problems(data)
+        for line in bad:
+            print(f"   {line}", file=sys.stderr)
+        print(f"-- {len(tools)} entries, {len(bad)} problem(s)")
+        if not bad:
+            print("-- the register is well formed. Whether each footing is the "
+                  "right one is a decision, and not checkable")
+        return 1 if bad else 0
+
+    by = {}
+    for name, entry in tools:
+        by.setdefault(entry["status"], []).append((name, entry))
+
+    shown = 0
+    for footing in ORDER:
+        rows = by.get(footing, [])
+        if not rows or (footing == "child" and not args.children):
+            continue
+        print(f"\n{footing}  -- {MEANS.get(footing, '')}")
+        for name, entry in sorted(rows):
+            what = entry.get("short") or entry.get("what") or ""
+            print(f"   {name:<14} {what[:58]}")
+            shown += 1
+
+    hidden = len(by.get("child", [])) if not args.children else 0
+    print(f"\n-- {shown} shown, read from {os.path.abspath(args.root)}"
+          + (f"; {hidden} child project(s) not listed, --children shows them"
+             if hidden else ""))
+    print("-- the register is the ground truth: this printed it and changed "
+          "nothing")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

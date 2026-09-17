@@ -12,6 +12,7 @@ person's path.
 | [`eo_join`](eo_join) | join the Eunoia ecosystem, from inside the repository that is joining |
 | [`eo_init`](eo_init) | start a tool: write a README saying what it is for, complying with nothing |
 | [`eo_bump`](eo_bump) | move a pinned dependency onto a commit whose CI is green, and refuse otherwise |
+| [`eo_status`](eo_status) | who is in the ecosystem and on what footing. **Run only where the register is** |
 | `koine_append_db` | add a run's new bugs to a database of every bug found. Installed from [`../bug_db/`](../bug_db), where it lives |
 
 **Every installed command carries a prefix saying whose it is**, because the
@@ -90,6 +91,32 @@ workflow, no checker, and the note names no other project at all.
 the repository works with, and saying it is **not** held to the policy. On a tree
 we do not own that is a second thing to ask agreement for, not a gentler version
 of the first.
+
+## eo_status
+
+```console
+$ eo_status              # the table, by footing
+$ eo_status --check      # what is structurally wrong with the register
+$ eo_status --children   # include child projects, which are not repositories
+```
+
+**Run it in the repository that holds `scripts/ecosystem/ecosystem.json`** —
+today kanon, and only kanon. Anywhere else it refuses, and says so rather than
+going to look.
+
+**That refusal is the design.** kanon keeps the register and koine keeps the
+programs that read it, so it would have been easy to make this find a kanon
+checkout the way anoieu finds koine — `$KANON`, a sibling tree, a clone at a
+pin. That is right for a *program*, where an old one is fine so long as it is
+the one recorded, and wrong for *this*: the register answers **who is in this
+ecosystem right now**, and a copy is only true as of when it was taken. A run
+that printed one would carry the authority of the real thing with nothing in
+the output saying which it read.
+
+**It never writes.** A footing is a decision somebody made and no program takes
+one; `--check` reports facts about the file — a footing the policy does not
+define, an entry with no url, a child with no parent, two entries claiming one
+repository — and never an opinion about who should hold what.
 
 ## eo_init
 
