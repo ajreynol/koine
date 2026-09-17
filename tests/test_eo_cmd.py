@@ -18,8 +18,10 @@ rather than trusted.
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
+import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 STORE = os.path.join(ROOT, "eo_cmd")
@@ -211,12 +213,45 @@ def test_help_says_why_and_where():
         ok(f"{name} sends that to stderr", bad.stdout.strip() == "")
 
 
+def test_runs_as_an_installed_copy():
+    """Every command has to work as a lone file on somebody's PATH.
+
+    `install_eo_cmd` copies one file per command. Anything a command needs from
+    beside it in this tree is simply not there once installed, and the failure
+    is invisible from inside the repository -- every test passes, and the first
+    person to run the installed copy gets a traceback.
+
+    That happened on 2026-09-17: `eo_status` imported a sibling module and, from
+    ~/bin, went looking for it one directory up from the bin directory. This
+    copies each command somewhere with none of this tree beside it and runs it.
+    """
+    print("as an installed copy, with none of this tree beside it")
+    tmp = tempfile.mkdtemp()
+    try:
+        for entry in manifest()["commands"]:
+            name = entry["name"]
+            src = os.path.join(ROOT, entry.get("path") or os.path.join("eo_cmd", name))
+            dest = os.path.join(tmp, name)
+            shutil.copyfile(src, dest)
+            os.chmod(dest, 0o755)
+            probe = ["--help"] if entry.get("kind") == "program" else ["--show-prompt"]
+            if name == "eo_init":
+                probe = ["new", "--show-prompt"]
+            out = subprocess.run([dest, *probe], capture_output=True, text=True,
+                                 cwd=tmp)
+            ok(f"{name} runs from outside the tree", out.returncode == 0)
+            ok(f"{name} raises nothing", "Traceback" not in out.stderr)
+    finally:
+        shutil.rmtree(tmp)
+
+
 def main():
     for test in (test_every_advertised_form_runs, test_refusals,
                  test_no_prompt_names_a_command_that_is_gone,
                  test_associate_says_what_the_footing_needs,
                  test_the_dictated_marker_passes_the_checker,
-                 test_help_says_why_and_where):
+                 test_help_says_why_and_where,
+                 test_runs_as_an_installed_copy):
         test()
     print()
     if FAILS:

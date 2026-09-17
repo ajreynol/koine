@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Finding kanon's register, and never writing to it.
+"""Reading the register, and never writing to it.
 
     python3 tests/test_register.py
 
@@ -21,10 +21,10 @@ import sys
 import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SCRIPT = os.path.join(ROOT, "scripts", "koine_register.py")
+SCRIPT = os.path.join(ROOT, "eo_cmd", "eo_status")
 
 _spec = importlib.util.spec_from_loader(
-    "koine_register", importlib.machinery.SourceFileLoader("koine_register", SCRIPT))
+    "eo_status", importlib.machinery.SourceFileLoader("eo_status", SCRIPT))
 kr = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(kr)
 

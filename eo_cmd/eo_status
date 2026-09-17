@@ -15,21 +15,204 @@ register, this refuses and says so rather than going to look for one.
 **It never writes.** A footing is a decision somebody made, and no program
 takes one. --check reports what is structurally wrong with the file and fixes
 nothing.
+
+**One file, no imports of its own.** It is installed by copying it onto a path,
+so anything it needed from beside it in the koine tree would not be there. This
+carried a sibling module until 2026-09-17 and broke exactly that way the first
+time somebody ran the installed copy.
 """
 
 import argparse
-import importlib.machinery
-import importlib.util
+import datetime
+import json
 import os
+import subprocess
 import sys
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-MODULE = os.path.join(os.path.dirname(HERE), "scripts", "koine_register.py")
+#: The register, relative to the root of the repository that holds it. Its
+#: presence is what makes a directory the one this may be run in.
+REGISTER = os.path.join("scripts", "ecosystem", "ecosystem.json")
+CHECKOUTS = os.path.join("scripts", "ecosystem", "checkouts.json")
 
-_spec = importlib.util.spec_from_loader(
-    "koine_register", importlib.machinery.SourceFileLoader("koine_register", MODULE))
-reg = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(reg)
+#: Every footing the policy defines. A value outside this set is a register
+#: that has drifted from the page that defines it, which `--check` reports and
+#: this module does not silently accept.
+FOOTINGS = {"member", "associate", "candidate", "foundation", "president",
+            "child", "outsider"}
+
+WHERE = ("Run this in the repository that holds the register -- the tree with\n"
+         "scripts/ecosystem/ecosystem.json in it, which today is kanon. The\n"
+         "register is the ground truth for who is in this ecosystem, and a copy\n"
+         "of it read from anywhere else is only true as of whenever it was\n"
+         "taken. This does not read one.")
+
+
+def holds_register(root):
+    """Is this the repository the register lives in?"""
+    return bool(root) and os.path.isfile(os.path.join(root, REGISTER))
+
+
+def require(root="."):
+    """The register in this tree, or a refusal that says where to stand."""
+    root = os.path.abspath(os.path.expanduser(root))
+    if not holds_register(root):
+        raise SystemExit(
+            f"-- refused: {root} does not hold {REGISTER}\n\n{WHERE}")
+    with open(os.path.join(root, REGISTER), encoding="utf-8") as handle:
+        return json.load(handle)
+
+
+def checkouts(root="."):
+    """The recorded checkout locations, where the tree has them. `{}` if not."""
+    path = os.path.join(os.path.abspath(os.path.expanduser(root)), CHECKOUTS)
+    if not os.path.exists(path):
+        return {}
+    with open(path, encoding="utf-8") as handle:
+        return json.load(handle)
+
+
+def entries(data):
+    """The register's tools, as `(id, entry)`. Anything else is not a tool.
+
+    The file carries prose alongside the entries -- a key whose value is a list
+    of strings documenting the footings, for instance. A tool is a mapping with
+    a `status`, and nothing here infers one that is missing.
+    """
+    return [(k, v) for k, v in data.items()
+            if isinstance(v, dict) and "status" in v]
+
+
+def problems(data):
+    """What is wrong with the register, structurally. Offline, and no opinions.
+
+    It never says a footing is the wrong one to have given somebody: that is a
+    decision and not a defect. It says a footing is not one the policy defines,
+    an entry is missing what every entry carries, or two entries claim the same
+    repository -- each of which is a fact about the file.
+    """
+    bad = []
+    seen = {}
+    for name, entry in entries(data):
+        footing = entry["status"]
+        if footing not in FOOTINGS:
+            bad.append(f"{name}: footing `{footing}` is not one the policy defines")
+        if footing == "child":
+            if not entry.get("parent"):
+                bad.append(f"{name}: a child records no parent")
+        elif not entry.get("url"):
+            bad.append(f"{name}: no url, so nothing can be checked against it")
+        repo = entry.get("url") or entry.get("repo")
+        if repo:
+            if repo in seen:
+                bad.append(f"{name}: claims {repo}, which {seen[repo]} also claims")
+            seen[repo] = name
+    return bad
+
+
+# --- the checkouts on this machine, and what the checker says about them ------
+#
+# Everything below reads the tree the register is in. That is not a limitation
+# worked around: the caller already had to be standing there, so the mapping
+# file and the exceptions file are local too, and nothing here goes looking
+# outside the tree it was pointed at.
+
+REPOS_FILE = os.path.join("scripts", "repos.local")
+
+
+def locate(repo, root="."):
+    """Where a tool is checked out on this machine, or "".
+
+    The mapping file first, because it is a person's answer and beats a guess;
+    then $ANOIEU_REPOS, then beside the register's tree, then $HOME. The id
+    comes from the register, never from a path somebody typed.
+    """
+    root = os.path.abspath(os.path.expanduser(root))
+    mapping = os.path.join(root, REPOS_FILE)
+    if os.path.isfile(mapping):
+        with open(mapping, encoding="utf-8") as handle:
+            for line in handle:
+                line = line.split("#", 1)[0].strip()
+                parts = line.split(None, 1)
+                if len(parts) == 2 and parts[0] == repo:
+                    path = os.path.expanduser(parts[1].strip())
+                    if os.path.isdir(path):
+                        return path
+    roots = [p for p in os.environ.get("ANOIEU_REPOS", "").split(os.pathsep) if p]
+    for base in roots + [os.path.dirname(root), os.path.expanduser("~")]:
+        candidate = os.path.join(base, repo)
+        if os.path.isdir(candidate):
+            return candidate
+    return ""
+
+
+def _git(*args, cwd=None):
+    out = subprocess.run(["git", *args], cwd=cwd, capture_output=True, text=True)
+    return out.stdout.strip() if out.returncode == 0 else ""
+
+
+def age(path):
+    """How long since that checkout's last commit. `?` where it is not git."""
+    when = _git("log", "-1", "--format=%cI", cwd=path)
+    if not when:
+        return "?"
+    then = datetime.datetime.fromisoformat(when)
+    days = (datetime.datetime.now(then.tzinfo) - then).days
+    return "today" if days == 0 else f"{days}d"
+
+
+def checker(root="."):
+    """The policy checker to run, and where it came from. `("", why)` if none.
+
+    **The checker is anoieu's and is not ours to carry.** A shim in the tree we
+    are standing in is preferred, because that tree already decided which
+    revision it trusts; a sibling anoieu checkout is the fallback for a machine
+    that has one.
+    """
+    root = os.path.abspath(os.path.expanduser(root))
+    shim = os.path.join(root, "scripts", "policy_check.py")
+    if os.path.isfile(shim):
+        return shim, "the shim in this tree, which picks the revision it trusts"
+    for base in (os.environ.get("ANOIEU", ""), os.path.dirname(root)):
+        if not base:
+            continue
+        direct = os.path.join(base if base.endswith("anoieu") else
+                              os.path.join(base, "anoieu"),
+                              "scripts", "policy_check.py")
+        if os.path.isfile(direct):
+            return direct, direct
+    return "", "no policy checker found: no shim here and no anoieu checkout"
+
+
+def verdict(path, checker_path):
+    """What the checker says about a checkout: `(verdict, reasons)`.
+
+    Failing **checks** are counted, not their detail lines: one check reporting
+    three things is one thing wrong, and saying `3 failing` overstates it.
+
+    **A count is not a judgement.** What it means depends on the footing, and
+    that is the reader's to apply: a number against a tool that owes this
+    ecosystem nothing is a measurement, and against a member it is a shortfall.
+    Nothing here decides which.
+    """
+    if not checker_path:
+        return "unverified", ["no checker"]
+    out = subprocess.run([os.sys.executable, checker_path, "--root", path],
+                         capture_output=True, text=True)
+    failed, detail, inside = [], [], False
+    for line in out.stdout.splitlines():
+        if line.startswith("FAIL "):
+            failed.append(line[5:].strip())
+            detail.append(failed[-1])
+            inside = True
+        elif inside and line.startswith("     "):
+            detail.append(line.strip())
+        else:
+            inside = False
+    if out.returncode not in (0, 1) or (out.returncode == 1 and not failed):
+        return "unverified", [out.stderr.strip() or out.stdout.strip()
+                              or "the checker did not report a result"]
+    return (f"{len(failed)} failing" if failed else "ok"), detail
+
 
 #: Printed in this order, because it is the order somebody reads the ecosystem
 #: in: the office, then who is held to the policy, then who is not, then the
@@ -54,7 +237,7 @@ def main():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description="eo_status -- who is in the Eunoia ecosystem, and on what "
-                    "footing.\n\n" + reg.WHERE,
+                    "footing.\n\n" + WHERE,
         epilog="A footing is a decision somebody made. Nothing here takes one, "
                "and nothing here writes to the register.")
     parser.add_argument("--root", metavar="DIR", default=".",
@@ -63,17 +246,21 @@ def main():
                         help="report what is structurally wrong with the register")
     parser.add_argument("--children", action="store_true",
                         help="include child projects, which are not repositories")
+    parser.add_argument("--no-policy", dest="policy", action="store_false",
+                        help="skip the checker, which is what makes a run slow")
+    parser.add_argument("--verbose", action="store_true",
+                        help="say what each failing check reported")
     args = parser.parse_args()
 
     try:
-        data = reg.require(args.root)
+        data = require(args.root)
     except SystemExit as exc:
         print(exc, file=sys.stderr)
         return 2
 
-    tools = reg.entries(data)
+    tools = entries(data)
     if args.check:
-        bad = reg.problems(data)
+        bad = problems(data)
         for line in bad:
             print(f"   {line}", file=sys.stderr)
         print(f"-- {len(tools)} entries, {len(bad)} problem(s)")
@@ -86,6 +273,12 @@ def main():
     for name, entry in tools:
         by.setdefault(entry["status"], []).append((name, entry))
 
+    checker_path, why = ("", "")
+    if args.policy:
+        checker_path, why = checker(args.root)
+        if not checker_path:
+            print(f"-- policy column unavailable: {why}", file=sys.stderr)
+
     shown = 0
     for footing in ORDER:
         rows = by.get(footing, [])
@@ -94,13 +287,32 @@ def main():
         print(f"\n{footing}  -- {MEANS.get(footing, '')}")
         for name, entry in sorted(rows):
             what = entry.get("short") or entry.get("what") or ""
-            print(f"   {name:<14} {what[:58]}")
+            where = "" if footing == "child" else locate(entry.get("repo") or name,
+                                                         args.root)
+            if checker_path and where and footing not in ("child", "outsider"):
+                said, detail = verdict(where, checker_path)
+                stamp = f"{said}, {age(where)}"
+            elif where:
+                stamp = age(where)
+                detail = []
+            else:
+                stamp = "not here"
+                detail = []
+            print(f"   {name:<14} {stamp:<18} {what[:44]}")
+            if args.verbose:
+                for line in detail:
+                    print(f"                  {line}")
             shown += 1
 
     hidden = len(by.get("child", [])) if not args.children else 0
     print(f"\n-- {shown} shown, read from {os.path.abspath(args.root)}"
           + (f"; {hidden} child project(s) not listed, --children shows them"
              if hidden else ""))
+    if args.policy and checker_path:
+        print("-- a count is a measurement against a tool that owes this "
+              "ecosystem nothing,")
+        print("   and a shortfall against one that does. The footing column "
+              "says which")
     print("-- the register is the ground truth: this printed it and changed "
           "nothing")
     return 0
