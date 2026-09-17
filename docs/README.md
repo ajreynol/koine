@@ -7,7 +7,7 @@ front page and the whole of what anything below may assume has been read.
 | document | its job |
 | --- | --- |
 | [`history-ledger.md`](history-ledger.md) | **a closed record**: the reviews of the ecosystem's history that were written while this repository held a history tool. The tool was removed on 2026-09-17; the rows stay because the last two columns of each are somebody's reading, and nothing here deletes one of those |
-| [`coherence.md`](coherence.md) | **the maintenance entry point**: what koine is for, the division between what an agent decides alone and what is asked first, what is not koine's at all, and the open work. Not linked from the front page, by the same convention that keeps it out of a reader's way |
+| [`coherence.md`](coherence.md) | **the maintenance entry point**: what an agent decides alone, what it must ask first, what is not koine's at all, and the open work. Everything on it is something a reader of the front page would still get wrong; it repeats nothing the front page says. Not linked from there, by the convention that keeps it out of a reader's way |
 | [`discussion.md`](discussion.md) | **the standing channel to the rest of the ecosystem**: anything that is not a bug report — a request, a proposal, a question about somebody's intent, a notice that something here is moving under them. It opens with the rule that no agent acts on it unbidden. **Its topics were written for an earlier purpose of this repository** and none was ever carried |
 
 A document not worth a row here is not worth adding.
