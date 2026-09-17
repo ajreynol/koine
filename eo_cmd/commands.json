@@ -24,13 +24,14 @@
     },
     {
       "name": "eo_status",
-      "what": "who is in the Eunoia ecosystem and on what footing. Run only in the repository that holds the register; it refuses to read a copy",
+      "what": "who is in the Eunoia ecosystem and on what footing. Live where the register is; elsewhere, the snapshot baked in at install time, said to be one",
       "forms": [
         "eo_status",
         "eo_status --check",
         "eo_status --children"
       ],
-      "kind": "program"
+      "kind": "program",
+      "needs": "register"
     },
     {
       "name": "eo_bump",
@@ -51,8 +52,29 @@
         "koine_append_db <new bugs> <bug database>"
       ],
       "kind": "program"
+    },
+    {
+      "name": "eo_process_discussion",
+      "what": "work the topics another tool has addressed to you. Run in your own repository; naming a topic is what authorises acting on it",
+      "forms": [
+        "eo_process_discussion <name>",
+        "eo_process_discussion <name> <Dn>"
+      ],
+      "kind": "prompt"
+    },
+    {
+      "name": "eo_install",
+      "what": "put the Eunoia ecosystem on a machine, or say what is here. Reads the register live in the president's tree, otherwise the baked-in snapshot",
+      "forms": [
+        "eo_install --status",
+        "eo_install --dry-run",
+        "eo_install"
+      ],
+      "kind": "program",
+      "needs": "register"
     }
   ],
   "convention": "Every installed command carries a prefix saying whose it is, because the name is claimed inside somebody else's process and on their PATH. `eo_` is the ecosystem's commands, which run inside a tree that is not this one. `koine_` is this repository's own. install_eo_cmd refuses anything else.",
-  "kinds": "`prompt` hands context to an assistant and takes --show-prompt, which prints what it would hand one and runs nothing. `program` does the work itself."
+  "kinds": "`prompt` hands context to an assistant and takes --show-prompt, which prints what it would hand one and runs nothing. `program` does the work itself.",
+  "register": "A command marked `needs: register` has the president's ecosystem.json baked into it when install_eo_cmd copies it, with the commit and date it was taken. That makes it usable away from the president's tree without ever presenting a snapshot as the live register."
 }

@@ -37,6 +37,7 @@ import hashlib
 import json
 import os
 import re
+import datetime
 import shutil
 import stat
 import subprocess
@@ -94,10 +95,126 @@ def write_json(path, data):
     os.replace(tmp, path)
 
 
-def install_file(src, dest):
-    """Copy, executable, atomically."""
+#: The register, relative to the root of the repository that holds it. Whoever
+#: holds it is the president; nothing here decides that, it is read from the
+#: file itself.
+REGISTER = os.path.join("scripts", "ecosystem", "ecosystem.json")
+
+#: The line a command carries when it wants the register baked in, and what it
+#: is replaced with. A command that does not carry it gets nothing.
+SENTINEL = "EMBEDDED = None"
+
+
+def find_president(given=None):
+    """The tree holding the register, and what we can say about its state.
+
+    **Nothing here decides who the president is.** The register records that,
+    and the tree that holds the register is the one to read it from. Given a
+    directory, that one is used; otherwise a sibling of this checkout.
+    """
+    candidates = [given] if given else []
+    candidates += [os.environ.get("KANON", ""),
+                   os.path.join(os.path.dirname(ROOT), "kanon")]
+    for candidate in candidates:
+        if candidate:
+            candidate = os.path.abspath(os.path.expanduser(candidate))
+            if os.path.isfile(os.path.join(candidate, REGISTER)):
+                return candidate
+    return ""
+
+
+#: What an installed command actually reads out of an entry. Everything else in
+#: the register is the office's business -- when a footing was vetted, why, the
+#: commit somebody joined at -- and baking it in would put a copy of somebody's
+#: reasoning on a stranger's disk with no way to keep it current.
+KEEP = ("status", "url", "repo", "parent")
+
+#: Footings first, in the order a reader takes the ecosystem in.
+ORDER = ("president", "member", "associate", "candidate", "foundation",
+         "outsider", "child")
+
+
+def as_source(data, where):
+    """The register as Python somebody can read, not a line of JSON.
+
+    An installed command is a file people open. A single 23KB line of `{...}`
+    in the middle of one is not a snapshot anybody can check against the
+    register, which defeats the point of naming where it came from -- so this
+    writes it out grouped by footing, one entry per line, sorted, with only the
+    fields a command reads.
+    """
+    rows = {k: v for k, v in data.items()
+            if isinstance(v, dict) and "status" in v}
+    out = ["EMBEDDED = {",
+           f"    # The register, {where}.",
+           "    # Grouped by footing; only the fields these commands read.",
+           "    # Re-install to refresh it. The live register is the office's.",
+           ""]
+    for footing in ORDER:
+        group = sorted(k for k, v in rows.items() if v["status"] == footing)
+        if not group:
+            continue
+        out.append(f"    # -- {footing} --")
+        for name in group:
+            entry = rows[name]
+            fields = {k: entry[k] for k in KEEP if entry.get(k)}
+            what = entry.get("short") or entry.get("what") or ""
+            if what:
+                fields["short"] = what
+            body = ", ".join(f"{k!r}: {v!r}" for k, v in fields.items())
+            out.append(f"    {name!r}: {{{body}}},")
+        out.append("")
+    unknown = sorted(k for k, v in rows.items() if v["status"] not in ORDER)
+    if unknown:
+        out.append("    # -- footings this version of the command did not know --")
+        for name in unknown:
+            out.append(f"    {name!r}: {rows[name]!r},")
+    out.append("}")
+    return "\n".join(out)
+
+
+def snapshot(president):
+    """The register as JSON, and a sentence saying where and when it came from.
+
+    The provenance is not decoration. What gets baked into an installed command
+    is a **snapshot**, and every run that falls back to it has to be able to say
+    which commit it was taken at and whether that checkout was clean -- a
+    snapshot from somebody's half-edited working tree is a different fact from
+    one taken at a commit, and the reader is entitled to know which.
+    """
+    with open(os.path.join(president, REGISTER), encoding="utf-8") as handle:
+        data = json.load(handle)
+    commit = subprocess.run(["git", "-C", president, "rev-parse", "--short", "HEAD"],
+                            capture_output=True, text=True)
+    commit = commit.stdout.strip() if commit.returncode == 0 else ""
+    dirty = subprocess.run(["git", "-C", president, "status", "--porcelain",
+                            "--", REGISTER], capture_output=True, text=True)
+    edited = bool(dirty.stdout.strip())
+    where = f"from {os.path.basename(president)}"
+    if commit:
+        where += f" at {commit}"
+        if edited:
+            where += " with the register edited and not committed"
+    where += f", on {datetime.date.today().isoformat()}"
+    return data, where
+
+
+def install_file(src, dest, embed=None):
+    """Copy, executable, atomically -- baking in the register where asked."""
     tmp = dest + ".tmp"
-    shutil.copyfile(src, tmp)
+    if embed is None:
+        shutil.copyfile(src, tmp)
+    else:
+        data, where = embed
+        text = read_text(src)
+        if SENTINEL not in text:
+            shutil.copyfile(src, tmp)
+        else:
+            text = text.replace(SENTINEL, as_source(data, where), 1)
+            text = text.replace('EMBEDDED_FROM = ""',
+                                f"EMBEDDED_FROM = {where!r}", 1)
+            with open(tmp, "w", encoding="utf-8") as handle:
+                handle.write(text)
     os.chmod(tmp, os.stat(tmp).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
     os.replace(tmp, dest)
 
@@ -135,6 +252,22 @@ def misnamed(origin):
             if not c["name"].startswith(PREFIXES)]
 
 
+def record(config, prefix):
+    """What this script installed into that directory, by name.
+
+    Keyed by directory. It was a single flat map until 2026-09-17, which meant
+    installing to a second prefix made the first one's files look like somebody
+    else's the next time they were installed to -- so they were skipped as
+    foreign, and the copies nobody was tracking went quietly stale.
+    """
+    per = config.setdefault("installed", {})
+    if per and not all(isinstance(v, dict) for v in per.values()):
+        # the old flat shape, belonging to whatever prefix was in use
+        config["installed"] = {config.get("prefix", ""): per}
+        per = config["installed"]
+    return per.setdefault(prefix, {})
+
+
 def prefix_from(args, config):
     if args.prefix:
         return os.path.abspath(os.path.expanduser(args.prefix))
@@ -151,7 +284,7 @@ def on_path(directory):
 
 def do_status(prefix, origin, config):
     print(f"-- {prefix}" + ("" if on_path(prefix) else "  (not on PATH)"))
-    installed = config.get("installed", {})
+    installed = record(config, prefix)
     for cmd in commands(origin):
         name = cmd["name"]
         dest = os.path.join(prefix, name)
@@ -172,7 +305,7 @@ def do_status(prefix, origin, config):
 
 
 def do_uninstall(prefix, origin, config, dry_run):
-    installed = config.get("installed", {})
+    installed = record(config, prefix)
     removed, left = [], []
     for cmd in commands(origin):
         name = cmd["name"]
@@ -196,12 +329,13 @@ def do_uninstall(prefix, origin, config, dry_run):
     if dry_run:
         print(f"-- dry run: nothing was written, and {prefix} is unchanged")
         return 0
-    config["installed"] = installed
+    record(config, prefix).clear()
+    record(config, prefix).update(installed)
     write_json(CONFIG, config)
     return 0
 
 
-def do_install(prefix, origin, config, dry_run, force):
+def do_install(prefix, origin, config, dry_run, force, president_dir=None):
     """Install, and say in full what that means.
 
     **Every command is listed every time**, with the verb that applies to it.
@@ -209,8 +343,22 @@ def do_install(prefix, origin, config, dry_run, force):
     machine was up to date, which is exactly when somebody runs it to find out
     what the command does.
     """
-    installed = dict(config.get("installed", {}))
+    installed = dict(record(config, prefix))
     plan, copied, current, skipped = [], 0, 0, 0
+
+    # Read once, so every command baked in this run carries the same snapshot.
+    embed = None
+    president = find_president(president_dir)
+    if president:
+        try:
+            embed = snapshot(president)
+        except (OSError, ValueError) as exc:
+            print(f"-- the register at {president} could not be read: {exc}",
+                  file=sys.stderr)
+    elif any(c.get("needs") == "register" for c in commands(origin)):
+        print("-- no president checkout found, so commands that read the "
+              "register will\n   install without a snapshot and work only "
+              "where the register is", file=sys.stderr)
 
     for cmd in commands(origin):
         name = cmd["name"]
@@ -226,7 +374,8 @@ def do_install(prefix, origin, config, dry_run, force):
         if os.path.exists(dest):
             there = digest(read_text(dest))
             ours = installed.get(name) == there
-            if there == want:
+            if there == want or (cmd.get("needs") == "register"
+                                 and installed.get(name) == there and not embed):
                 verb, why = "skip", "already current"
                 current += 1
                 installed[name] = there
@@ -237,12 +386,17 @@ def do_install(prefix, origin, config, dry_run, force):
             else:
                 verb, why = "skip", "exists and is not ours; --force replaces it"
                 skipped += 1
-        plan.append((verb, rel(src), dest, why))
+        wants = cmd.get("needs") == "register"
+        plan.append((verb, rel(src), dest,
+                     ("refreshing the baked-in register"
+                      if wants and embed and why.startswith("replacing")
+                      else why + (", register baked in" if wants and embed else
+                                  ", no register to bake in" if wants else ""))))
         if verb == "cp":
             copied += 1
             if not dry_run:
-                install_file(src, dest)
-                installed[name] = want
+                install_file(src, dest, embed if wants else None)
+                installed[name] = digest(read_text(dest))
 
     verb = "would install" if dry_run else "installed"
     print(f"-- {verb} {copied}, {current} already current, {skipped} skipped"
@@ -264,7 +418,7 @@ def do_install(prefix, origin, config, dry_run, force):
         return 0
 
     config["prefix"] = prefix
-    config["installed"] = installed
+    record(config, prefix).update(installed)
     write_json(CONFIG, config)
     print(f"-- remembered {prefix} in {os.path.relpath(CONFIG, ROOT)}")
     if not on_path(prefix):
@@ -282,6 +436,9 @@ def main():
                         help="what is installed, where, and whether it is current")
     parser.add_argument("--uninstall", action="store_true",
                         help="remove the files this script installed")
+    parser.add_argument("--president", metavar="DIR",
+                        help="the checkout holding the register, whose contents "
+                             "are baked into the commands that read it")
     parser.add_argument("--force", action="store_true",
                         help="replace a file of the same name this script did not install")
     parser.add_argument("--dry-run", action="store_true",
@@ -325,7 +482,8 @@ def main():
                 return 1
             print(f"-- created {prefix}")
 
-    return do_install(prefix, origin, config, args.dry_run, args.force)
+    return do_install(prefix, origin, config, args.dry_run, args.force,
+                      args.president)
 
 
 if __name__ == "__main__":

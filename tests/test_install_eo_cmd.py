@@ -187,8 +187,153 @@ def test_uninstall():
         shutil.rmtree(tmp)
 
 
+def president(tmp, entries, commit=True, edit_after=False):
+    """A git repository holding the register, standing in for the president."""
+    root = os.path.join(tmp, "kanon")
+    os.makedirs(os.path.join(root, "scripts", "ecosystem"))
+    path = os.path.join(root, inst.REGISTER)
+    with open(path, "w") as handle:
+        json.dump(entries, handle)
+    run = lambda *a: subprocess.run(["git", "-C", root, *a], capture_output=True)
+    run("init", "-q", "-b", "main")
+    run("config", "user.email", "t@example.invalid")
+    run("config", "user.name", "t")
+    if commit:
+        run("add", "-A")
+        run("commit", "-qm", "the register")
+    if edit_after:
+        with open(path, "w") as handle:
+            json.dump({**entries, "late": {"status": "member"}}, handle)
+    return root
+
+
+def test_the_register_is_baked_in():
+    """An installed command carries the register, and says it is a snapshot.
+
+    The point is usability away from the president's tree without the lie that
+    would otherwise come with it. What is baked in is what the register said at
+    a moment, so the moment travels with it.
+    """
+    print("baking the register into an installed command")
+    tmp = tempfile.mkdtemp()
+    try:
+        prefix = sandbox(tmp)
+        office = president(tmp, {"a": {"status": "member", "url": "u"}})
+
+        # only a command that asks for it gets it
+        manifest = os.path.join(tmp, "eo_cmd", "commands.json")
+        data = json.load(open(manifest))
+        data["commands"][0]["needs"] = "register"
+        json.dump(data, open(manifest, "w"))
+        with open(os.path.join(tmp, "eo_cmd", "eo_join"), "w") as handle:
+            handle.write("#!/usr/bin/env python3\nEMBEDDED = None\n"
+                         'EMBEDDED_FROM = ""\nprint(EMBEDDED, EMBEDDED_FROM)\n')
+
+        out = run(tmp, "--prefix", prefix, "--president", office)
+        check("installing returns 0", out.returncode, 0)
+        ok("the plan says the register was baked in",
+           "register baked in" in out.stdout)
+
+        installed = open(os.path.join(prefix, "eo_join")).read()
+        ok("the data is in the installed file",
+           "'status': 'member'" in installed)
+        ok("and it is grouped rather than dumped", "# -- member --" in installed)
+        ok("and the source is untouched",
+           "EMBEDDED = None" in open(os.path.join(tmp, "eo_cmd", "eo_join")).read())
+        ok("the provenance names the tree", "from kanon" in installed)
+        ok("and the date", "2026-" in installed or "20" in installed)
+
+        # the command that did not ask for it gets nothing
+        other = open(os.path.join(prefix, "eo_init")).read()
+        ok("a command that did not ask carries no register",
+           "status" not in other)
+    finally:
+        shutil.rmtree(tmp)
+
+
+def test_a_snapshot_says_when_it_came_from_a_dirty_tree():
+    """A snapshot from a half-edited working tree is a different fact.
+
+    Baking one in is fine -- that is often exactly what somebody wants while
+    they are working -- but a reader who later wonders why the numbers disagree
+    with the register is owed the reason, and `at <commit>` alone would not
+    give it.
+    """
+    print("a snapshot from an edited register")
+    tmp = tempfile.mkdtemp()
+    try:
+        office = president(tmp, {"a": {"status": "member"}}, edit_after=True)
+        _, where = inst.snapshot(office)
+        ok("it says the register was edited", "edited and not committed" in where)
+        ok("and still names the commit", " at " in where)
+    finally:
+        shutil.rmtree(tmp)
+
+
+def test_no_president_is_a_warning_not_a_failure():
+    print("installing with no president to read")
+    tmp = tempfile.mkdtemp()
+    try:
+        prefix = sandbox(tmp)
+        manifest = os.path.join(tmp, "eo_cmd", "commands.json")
+        data = json.load(open(manifest))
+        data["commands"][0]["needs"] = "register"
+        json.dump(data, open(manifest, "w"))
+        os.environ["KANON"] = os.path.join(tmp, "nowhere")
+        try:
+            out = run(tmp, "--prefix", prefix)
+        finally:
+            del os.environ["KANON"]
+        check("it still installs", out.returncode, 0)
+        ok("and says what the commands will and will not do",
+           "work only where the register is" in out.stderr)
+    finally:
+        shutil.rmtree(tmp)
+
+
+def test_the_snapshot_is_readable_python():
+    """What is baked in is source somebody can read, and it round-trips.
+
+    A command carrying the register is a file people open. A single line of
+    JSON in the middle of one cannot be checked against anything by eye, which
+    would waste the provenance line printed beside it.
+    """
+    print("the shape of what is baked in")
+    data = {
+        "kanon": {"status": "president", "url": "u1", "short": "the office",
+                  "vetted": "2026-01-01", "why": "reasons nobody else needs"},
+        "anoieu": {"status": "member", "url": "u2", "what": "the checker"},
+        "kid": {"status": "child", "parent": "kanon", "short": "a child"},
+        "odd": {"status": "brand-new-footing", "url": "u3"},
+        "prose": ["not an entry"],
+    }
+    text = inst.as_source(data, "from kanon at abc1234, on 2026-09-17")
+
+    ok("it is grouped by footing", "# -- president --" in text)
+    ok("and says where it came from", "from kanon at abc1234" in text)
+    ok("one entry per line", text.count("'status':") == 4)
+    ok("a footing it does not know is kept, and flagged",
+       "did not know" in text and "'odd'" in text)
+    ok("prose is left out", "not an entry" not in text)
+    ok("the office's own reasoning is left out",
+       "vetted" not in text and "reasons nobody else needs" not in text)
+
+    scope = {}
+    exec(compile(text, "<embedded>", "exec"), scope)
+    got = scope["EMBEDDED"]
+    check("it round-trips to the entries a command reads",
+          sorted(got), ["anoieu", "kanon", "kid", "odd"])
+    check("with the footing intact", got["anoieu"]["status"], "member")
+    check("and `what` normalised to the field the readers use",
+          got["anoieu"]["short"], "the checker")
+    check("a child keeps its parent", got["kid"]["parent"], "kanon")
+
+
 def main():
-    for test in (test_install,
+    for test in (test_install, test_the_register_is_baked_in,
+                 test_the_snapshot_is_readable_python,
+                 test_a_snapshot_says_when_it_came_from_a_dirty_tree,
+                 test_no_president_is_a_warning_not_a_failure,
                  test_a_dry_run_with_nothing_to_do_still_says_what_it_would_do,
                  test_uninstall):
         test()

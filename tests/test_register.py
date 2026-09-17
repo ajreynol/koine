@@ -78,7 +78,7 @@ def test_only_where_the_register_is():
             ok("reading elsewhere refuses", False)
         except SystemExit as exc:
             ok("reading elsewhere refuses", True)
-            ok("and says where to stand", "holds the register" in str(exc))
+            ok("and says where to stand", "Run it at the root" in str(exc))
             ok("and does not offer to go looking", "clone" not in str(exc).lower())
     finally:
         shutil.rmtree(tmp)
@@ -94,7 +94,8 @@ def test_reading_and_never_writing():
             "footings": ["prose, not a tool"],
         })
         before = os.stat(os.path.join(root, kr.REGISTER)).st_mtime_ns
-        data = kr.require(root)
+        data, provenance = kr.require(root)
+        ok("a live read says so", provenance.startswith("live"))
         check("prose is not an entry", sorted(n for n, _ in kr.entries(data)), ["a", "b"])
         check("a well-formed register has no problems", kr.problems(data), [])
         check("the file was not written to",
@@ -117,7 +118,7 @@ def test_what_check_reports():
             "d": {"status": "member"},
             "e": {"status": "child"},
         })
-        bad = " | ".join(kr.problems(kr.require(root)))
+        bad = " | ".join(kr.problems(kr.require(root)[0]))
         ok("an undefined footing is named", "not one the policy defines" in bad)
         ok("a missing url is named", "no url" in bad)
         ok("a child with no parent is named", "records no parent" in bad)
@@ -135,7 +136,8 @@ def test_against_the_real_register():
     if not kr.holds_register(beside):
         print("  --   no register beside this one; skipped")
         return
-    data = kr.require(beside)
+    data, provenance = kr.require(beside)
+    ok("reading the tree that holds it is live", "live" in provenance)
     ok("it reads", len(kr.entries(data)) > 5)
     footings = {e["status"] for _, e in kr.entries(data)}
     ok("every footing is one the policy defines", footings <= kr.FOOTINGS)

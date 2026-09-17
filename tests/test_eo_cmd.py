@@ -67,7 +67,8 @@ def test_every_advertised_form_runs():
     for name, command, args in forms():
         # `from-child` needs a directory that exists; any tree will do, and it
         # is read rather than written even when the command is not previewing.
-        args = [a if a != "<path>" else ROOT for a in args]
+        args = [ROOT if a == "<path>" else "kanon" if a == "<name>"
+                else "D1" if a == "<Dn>" else a for a in args]
         out = show(command, *args)
         label = " ".join([command, *args]) if args else command
         check(f"{label} exits 0", out.returncode, 0)
@@ -100,7 +101,8 @@ def test_no_prompt_names_a_command_that_is_gone():
     """
     print("no prompt names a command or page that moved")
     for name, command, args in forms():
-        args = [a if a != "<path>" else ROOT for a in args]
+        args = [ROOT if a == "<path>" else "kanon" if a == "<name>"
+                else "D1" if a == "<Dn>" else a for a in args]
         text = show(command, *args).stdout
         label = " ".join([command, *args]) if args else command
         ok(f"{label} does not say join_eo", not re.search(r"\bjoin_eo\b", text))
@@ -178,6 +180,29 @@ def test_the_dictated_marker_passes_the_checker():
     check("the dictated marker satisfies associate_in", problems, [])
 
 
+def test_the_gate_is_the_default():
+    """No topic named means read-only, and that is the gate not a convenience.
+
+    The ecosystem's rule is that a tool acts on another tool's discussion file
+    only where a human said so and named which topic. `eo_process_discussion`
+    implements it by making the unauthorised form the default one: run it with
+    a repository and no topic and the prompt forbids changing anything.
+    """
+    print("the discussion gate")
+    read_only = show("eo_process_discussion", "kanon").stdout
+    ok("with no topic, the prompt is read-only", "Read only." in read_only)
+    ok("and forbids acting", "not authorised to act" in read_only)
+    ok("and forbids drafting a reply", "do not draft a reply" in read_only)
+
+    worked = show("eo_process_discussion", "kanon", "D14").stdout
+    ok("naming a topic authorises that topic", "Work D14, and only D14" in worked)
+    ok("and requires the two accounts to agree", "If they disagree" in worked)
+    ok("and forbids the smaller safe part", "smaller safe part" in worked)
+
+    ok("it names the repository it is run from, not a fixed one",
+       "You are working in **koine**" in read_only)
+
+
 def test_help_says_why_and_where():
     """--help has to answer *what is this* and *where do I stand*, on stdout.
 
@@ -234,11 +259,12 @@ def test_runs_as_an_installed_copy():
             dest = os.path.join(tmp, name)
             shutil.copyfile(src, dest)
             os.chmod(dest, 0o755)
-            probe = ["--help"] if entry.get("kind") == "program" else ["--show-prompt"]
-            if name == "eo_init":
-                probe = ["new", "--show-prompt"]
-            out = subprocess.run([dest, *probe], capture_output=True, text=True,
-                                 cwd=tmp)
+            # --help for everything: it needs no arguments and no git
+            # repository, and for a Python command it still runs every line of
+            # module scope -- which is where the import of a sibling file that
+            # is not installed beside it would blow up.
+            out = subprocess.run([dest, "--help"], capture_output=True,
+                                 text=True, cwd=tmp)
             ok(f"{name} runs from outside the tree", out.returncode == 0)
             ok(f"{name} raises nothing", "Traceback" not in out.stderr)
     finally:
@@ -250,6 +276,7 @@ def main():
                  test_no_prompt_names_a_command_that_is_gone,
                  test_associate_says_what_the_footing_needs,
                  test_the_dictated_marker_passes_the_checker,
+                 test_the_gate_is_the_default,
                  test_help_says_why_and_where,
                  test_runs_as_an_installed_copy):
         test()

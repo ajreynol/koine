@@ -13,6 +13,8 @@ person's path.
 | [`eo_init`](eo_init) | start a tool: write a README saying what it is for, complying with nothing |
 | [`eo_bump`](eo_bump) | move a pinned dependency onto a commit whose CI is green, and refuse otherwise |
 | [`eo_status`](eo_status) | who is in the ecosystem and on what footing. **Run only where the register is** |
+| [`eo_process_discussion`](eo_process_discussion) | work the topics another tool has addressed to you. Run in your own repository |
+| [`eo_install`](eo_install) | put the ecosystem on a machine, or say what is here |
 | `koine_append_db` | add a run's new bugs to a database of every bug found. Installed from [`../bug_db/`](../bug_db), where it lives |
 
 **Every installed command carries a prefix saying whose it is**, because the
@@ -128,6 +130,51 @@ the repository works with, and saying it is **not** held to the policy. On a tre
 we do not own that is a second thing to ask agreement for, not a gentler version
 of the first.
 
+## eo_install
+
+```console
+$ eo_install --status    # what is here, what is missing
+$ eo_install --dry-run   # the clone commands, run nothing
+$ eo_install             # clone what is not here yet
+```
+
+Run it anywhere. Checkouts go beside the register's tree when you are standing
+in it and otherwise into the working directory; `--into DIR` says where
+instead, and **every run names the directory it chose before cloning
+anything.**
+
+**The dry run prints exactly what a real run executes**, live rather than
+commented out, so reading it is a review and pasting it does the same thing.
+The only command that installs anything is `git clone <url> <dir>` — no branch
+flags, nothing through a shell. **A directory that already exists is reported
+and never touched**, because a checkout is somebody's working tree and the cost
+of being wrong about that is theirs. Children arrive inside their parent and
+outsiders are never cloned: we do not put other people's projects on a disk on
+their behalf.
+
+## eo_process_discussion
+
+```console
+$ eo_process_discussion kanon        # read only: what have they addressed to us?
+$ eo_process_discussion kanon D14    # work that one topic
+```
+
+Run it at the root of **your** repository, naming the one whose discussion file
+may address you. Their tree is read and never written; anything this changes is
+changed in your tree and left staged.
+
+**Naming a topic is what authorises acting on it**, and the command implements
+that rather than restating it: with no id the prompt is read-only and forbids
+changing a file or drafting a reply. With an id it works that topic, and first
+checks what the human asked against what the topic says — where they disagree
+it stops and says where, rather than taking the more plausible reading or doing
+the smaller safe part.
+
+This was kanon's `prompts/process_discussion`, written around kanon by name.
+**Nothing about the job is the office's** — every member has a discussion file
+and can be addressed in one — so "us" is worked out from the checkout you are
+standing in rather than written into the text.
+
 ## eo_status
 
 ```console
@@ -136,18 +183,27 @@ $ eo_status --check      # what is structurally wrong with the register
 $ eo_status --children   # include child projects, which are not repositories
 ```
 
-**Run it in the repository that holds `scripts/ecosystem/ecosystem.json`** —
-today kanon, and only kanon. Anywhere else it refuses, and says so rather than
-going to look.
+**In the president's tree it reads the live register.** Anywhere else it is an
+**offline** command: the register is baked into the file when
+`install_eo_cmd` copies it, and a run says which commit and date that snapshot
+came from. Re-installing refreshes it.
 
-**That refusal is the design.** kanon keeps the register and koine keeps the
-programs that read it, so it would have been easy to make this find a kanon
-checkout the way anoieu finds koine — `$KANON`, a sibling tree, a clone at a
-pin. That is right for a *program*, where an old one is fine so long as it is
-the one recorded, and wrong for *this*: the register answers **who is in this
-ecosystem right now**, and a copy is only true as of when it was taken. A run
-that printed one would carry the authority of the real thing with nothing in
-the output saying which it read.
+```console
+$ eo_status --check          # from anywhere
+-- offline: a snapshot taken at install time, from kanon at a7bd2b7, on 2026-09-17
+--   re-install to refresh it, or run in the president's tree for the live register
+```
+
+**Being out of date is fine; not saying so is not.** Live beats snapshot beats
+refusal, in that order and never silently — and there is no third place it will
+look. A register found somewhere unnamed is a claim about who is in this
+ecosystem with no way to say how current it is.
+
+**Why baked in rather than fetched.** Going to look — a sibling checkout, a
+clone at a pin — would find *a* register with no way to say how current it is.
+Baking it in at install time makes the provenance a property of the file: the
+snapshot and the sentence describing it are written together, so no run can
+report one without the other.
 
 **It never writes.** A footing is a decision somebody made and no program takes
 one; `--check` reports facts about the file — a footing the policy does not

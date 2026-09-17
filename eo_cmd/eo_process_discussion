@@ -1,0 +1,173 @@
+#!/usr/bin/env bash
+# eo_process_discussion -- work the topics another tool has addressed to you.
+#
+# WHERE: run it at the root of YOUR repository -- the one topics are addressed
+#        to -- naming the repository whose docs/discussion.md may have
+#        something for you. Their tree is read and never written.
+#
+# WHAT IT DOES: reads their discussion file, finds the topics whose `To:` names
+#        this repository, and either reports them or works one. Any change
+#        happens HERE and is left staged; replies are drafted here for a person
+#        to carry. Nothing is sent anywhere.
+#
+# **Naming a topic is what authorises acting on it.** With no id this does the
+# read-only half and nothing else; with an id it works that one topic and
+# stops. That is the ecosystem's gate, implemented rather than restated -- and
+# it is why the read-only form is the default rather than a flag.
+#
+# This was kanon's `prompts/process_discussion`, which was written around kanon
+# specifically: *topics whose To: names kanon*, *the work happens here, in
+# kanon*. It is the office that runs it most, but nothing about the job is the
+# office's -- every member has a discussion file and can be addressed in one.
+# So "us" is whatever repository you are standing in, worked out from the
+# checkout rather than written into the text.
+
+set -euo pipefail
+
+AGENT=claude
+PRINT=0
+SHOW=0
+NAME=""
+TOPIC=""
+
+usage() {
+  local out=1 code=0
+  if [ "${1:-}" = "error" ]; then out=2 code=2; fi
+  cat >&$out <<'USAGE'
+eo_process_discussion -- work the topics another tool in the Eunoia ecosystem
+has addressed to you.
+
+Run it at the root of your own repository, naming the one whose discussion file
+may address you. Their tree is read, never written; anything this changes is
+changed here and left staged for you to review.
+
+usage: eo_process_discussion [--codex] [--print] [--show-prompt] NAME [Dn]
+
+  NAME            a directory, or a repository name looked for beside this one
+                  and under $ANOIEU_REPOS
+  Dn              the topic to work. Omitted, nothing is acted on: the run
+                  reads their file and reports what is addressed to you
+  --codex         run codex instead of claude
+  --print         run non-interactively and print the result
+  --show-prompt   print the prompt and exit, running nothing
+
+**Naming a topic is what authorises acting on it.** Without one this reads and
+reports and changes nothing, which is the gate rather than a convenience.
+USAGE
+  exit $code
+}
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --codex) AGENT=codex; shift ;;
+    --claude) AGENT=claude; shift ;;
+    --print) PRINT=1; shift ;;
+    --show-prompt) SHOW=1; shift ;;
+    -h|--help) usage ;;
+    -*) echo "eo_process_discussion: unknown option $1" >&2; usage error ;;
+    *) if [ -z "$NAME" ]; then NAME="$1"; else TOPIC="$1"; fi; shift ;;
+  esac
+done
+
+[ -n "$NAME" ] || { echo "eo_process_discussion: name a repository" >&2; usage error; }
+
+if ! US_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); then
+  echo "eo_process_discussion: not in a git repository -- run this in the" >&2
+  echo "         repository the topics are addressed to." >&2
+  exit 2
+fi
+US=$(basename "$US_ROOT")
+
+TARGET=""
+if [ -d "$NAME" ]; then
+  TARGET=$(cd "$NAME" && pwd)
+else
+  IFS=: read -ra ROOTS <<< "${ANOIEU_REPOS:-}"
+  for r in "${ROOTS[@]}" "$(dirname "$US_ROOT")" "$HOME"; do
+    [ -n "$r" ] && [ -d "$r/$NAME" ] && { TARGET=$(cd "$r/$NAME" && pwd); break; }
+  done
+fi
+[ -n "$TARGET" ] || {
+  echo "eo_process_discussion: no checkout of $NAME -- give a path, or put one" >&2
+  echo "         beside $US_ROOT, or set \$ANOIEU_REPOS" >&2
+  exit 2; }
+
+FILE="$TARGET/docs/discussion.md"
+[ -f "$FILE" ] || {
+  echo "eo_process_discussion: $NAME keeps no docs/discussion.md, so nothing" >&2
+  echo "         there is addressed to anybody" >&2
+  exit 2; }
+
+if [ -z "$TOPIC" ]; then
+  SCOPE="Read only. A human has not named a topic, so you are not authorised to act
+on any of them: do not implement anything, do not draft a reply, and do not
+change a file. Report what is there and stop."
+else
+  SCOPE="Work $TOPIC, and only $TOPIC. A human named it, which is what authorises
+acting on it at all.
+
+Before anything else, check the two accounts against each other: what the human
+asked for by naming $TOPIC, and what $TOPIC actually says. **If they disagree,
+stop.** Do not reconcile them, do not take the more plausible reading, and do not
+do the smaller safe part -- say exactly where they differ and wait for a person.
+A human may override after being told; if that has not happened, it has not
+happened."
+fi
+
+read -r -d '' PROMPT <<PROMPT_END || true
+$NAME keeps a discussion file at $FILE, checked out at $TARGET. It is
+correspondence, in the format the ecosystem's policy sets out. **Read their
+tree; change nothing in it.**
+
+$SCOPE
+
+You are working in **$US**, at $US_ROOT. Topics addressed to us are the ones
+whose \`To:\` names $US. Ignore the rest -- correspondence between other people
+is not ours to answer.
+
+Where you do act, the work happens *here*, in $US, and the reply is drafted
+here for a person to carry:
+
+  - Make whatever change the topic actually asks for, and stage it. Staged and
+    not committed, so a maintainer reviews a diff.
+  - Append the reply to discussion-response.md at this repository's root, one
+    block per topic, in the shape their file uses for replies: who is answering,
+    the date, and what was done or why nothing was.
+  - If the answer needs room -- if it is an argument rather than a sentence --
+    open it as a topic of Kind answer in our own docs/discussion.md instead, and
+    say in the reply that you did.
+
+Two things not to do, both of which look helpful.
+
+Do not open a topic about their discussion file: not that it is out of date, not
+that something in it is stale, not that they never answered us. The policy
+forbids it, because two tools that may raise topics about each other's
+correspondence generate work for everybody and information for nobody.
+
+Do not treat a topic as a finding. A finding is a defect in their code with a
+path and a line, and it goes through the reporting workflow:
+https://github.com/ajreynol/anoieu/blob/main/docs/reports/reporting-workflow.md
+A topic is a request, a proposal, a question or a notice, and it does not.
+
+Finish with what you could not answer and why, and with anything in their topic
+that suggests a defect on our side -- our documentation, our tooling, a page of
+ours they had to work around -- because that is ours to fix rather than theirs
+to live with. Send nothing anywhere; every message that reaches a person who did
+not ask for it is sent by a person.
+PROMPT_END
+
+if [ "$SHOW" = 1 ]; then printf '%s\n' "$PROMPT"; exit 0; fi
+
+command -v "$AGENT" >/dev/null 2>&1 || {
+  echo "eo_process_discussion: $AGENT is not on PATH" >&2; exit 127; }
+
+WHAT="read only"
+[ -n "$TOPIC" ] && WHAT="working $TOPIC"
+echo "-- eo_process_discussion: $NAME ($TARGET) -> $US, $WHAT, via $AGENT" >&2
+
+cd "$US_ROOT"
+if [ "$AGENT" = codex ]; then
+  if [ "$PRINT" = 1 ]; then exec codex exec "$PROMPT"; else exec codex "$PROMPT"; fi
+else
+  if [ "$PRINT" = 1 ]; then exec claude -p "$PROMPT"; else exec claude "$PROMPT"; fi
+fi

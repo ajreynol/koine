@@ -6,11 +6,13 @@ scripts/ecosystem/ecosystem.json in it, which today is kanon and only kanon.
 That file is the ground truth for who is in this ecosystem; this reads it and
 prints it.
 
-**It will not read a copy.** Not a sibling checkout, not a clone at a pin, not
-a cached table. A register read anywhere else is true as of whenever it was
-taken, and a run that printed one would make a claim about who is in this
-ecosystem on evidence that may have moved since. Run somewhere without the
-register, this refuses and says so rather than going to look for one.
+**Anywhere else it is an offline command, and may be out of date.** That is
+the intended way to use it away from the president's tree: the register is
+baked in when this file is installed, and a run says which commit and date the
+snapshot came from. Re-installing refreshes it. What it will not do is go
+looking -- no sibling checkout, no clone, no cache -- because a register found
+somewhere unnamed is a claim about who is in this ecosystem with no way to say
+how current it is.
 
 **It never writes.** A footing is a decision somebody made, and no program
 takes one. --check reports what is structurally wrong with the file and fixes
@@ -31,6 +33,14 @@ import sys
 
 #: The register, relative to the root of the repository that holds it. Its
 #: presence is what makes a directory the one this may be run in.
+#: Filled in when this file is installed, from the president's tree. Away from
+#: that tree this command is **offline and may be out of date**, which is fine
+#: and is the point: it works anywhere. What is not fine is a stale answer
+#: presented as a current one, so every run that falls back to this says which
+#: commit and date it came from.
+EMBEDDED = None
+EMBEDDED_FROM = ""
+
 REGISTER = os.path.join("scripts", "ecosystem", "ecosystem.json")
 CHECKOUTS = os.path.join("scripts", "ecosystem", "checkouts.json")
 
@@ -40,11 +50,14 @@ CHECKOUTS = os.path.join("scripts", "ecosystem", "checkouts.json")
 FOOTINGS = {"member", "associate", "candidate", "foundation", "president",
             "child", "outsider"}
 
-WHERE = ("Run this in the repository that holds the register -- the tree with\n"
-         "scripts/ecosystem/ecosystem.json in it, which today is kanon. The\n"
-         "register is the ground truth for who is in this ecosystem, and a copy\n"
-         "of it read from anywhere else is only true as of whenever it was\n"
-         "taken. This does not read one.")
+WHERE = ("Run it at the root of the repository that holds the register -- the tree\n"
+         "with scripts/ecosystem/ecosystem.json in it, which today is the\n"
+         "president's -- and it reads the live register.\n\n"
+         "Run it anywhere else and it is offline: it uses the snapshot baked in\n"
+         "when this file was installed, names the commit and date that came\n"
+         "from, and may be out of date. Re-install to refresh it. It never goes\n"
+         "looking for a register elsewhere, and never presents a snapshot as\n"
+         "the live one.")
 
 
 def holds_register(root):
@@ -53,13 +66,24 @@ def holds_register(root):
 
 
 def require(root="."):
-    """The register in this tree, or a refusal that says where to stand."""
+    """The register, and how current it is: `(data, provenance)`.
+
+    **Live beats snapshot beats refusal**, in that order and never silently.
+    Standing in the tree that holds the register, that file is read and the run
+    is authoritative. Anywhere else, the snapshot taken at install time is used
+    and the run says where it came from and when. With neither, this refuses
+    rather than guessing -- there is no third place to look, by design.
+    """
     root = os.path.abspath(os.path.expanduser(root))
-    if not holds_register(root):
-        raise SystemExit(
-            f"-- refused: {root} does not hold {REGISTER}\n\n{WHERE}")
-    with open(os.path.join(root, REGISTER), encoding="utf-8") as handle:
-        return json.load(handle)
+    if holds_register(root):
+        with open(os.path.join(root, REGISTER), encoding="utf-8") as handle:
+            return json.load(handle), f"live, from {root}"
+    if EMBEDDED is not None:
+        return EMBEDDED, f"a snapshot taken at install time, {EMBEDDED_FROM}"
+    raise SystemExit(
+        f"-- refused: {root} does not hold {REGISTER}, and this copy carries no\n"
+        f"   snapshot -- it was run out of a source tree rather than installed.\n\n"
+        f"{WHERE}")
 
 
 def checkouts(root="."):
@@ -160,6 +184,43 @@ def age(path):
     return "today" if days == 0 else f"{days}d"
 
 
+def channel(where, us):
+    """Whether that tree keeps a channel, and whether anything in it is ours.
+
+        -          no checkout here, so nothing could be read
+        none       they keep no docs/discussion.md
+        yes        they keep one, and nothing in it is addressed to us
+        N for us   N topics name us in their `To:`
+
+    **Three states, not two.** *They have no channel* and *they have one and
+    nothing in it is for us* are different facts about a repository, and
+    collapsing them would hide which. Read from their correspondence rather
+    than their code -- so this counts and never opens one. Acting on a topic
+    needs a human who named it, and a column in a table is not that.
+    """
+    if not where or not us:
+        return "-"
+    path = os.path.join(where, "docs", "discussion.md")
+    if not os.path.isfile(path):
+        return "none"
+    try:
+        text = open(path, encoding="utf-8").read()
+    except OSError:
+        return "-"
+    addressed = 0
+    for block in text.split("\n## ")[1:]:
+        # The fields sit under the heading, past the blank line after it, so
+        # the whole head of the block is scanned rather than its first
+        # paragraph -- which is the title and nothing else.
+        for line in block.splitlines()[:12]:
+            if line.startswith("**To:**") and us in line:
+                addressed += 1
+                break
+    if not addressed:
+        return "yes"
+    return f"{addressed} for us"
+
+
 def checker(root="."):
     """The policy checker to run, and where it came from. `("", why)` if none.
 
@@ -217,11 +278,18 @@ def verdict(path, checker_path):
 #: Printed in this order, because it is the order somebody reads the ecosystem
 #: in: the office, then who is held to the policy, then who is not, then the
 #: things that are not repositories at all.
-ORDER = ["president", "member", "associate", "candidate", "foundation",
-         "outsider", "child"]
+#: Footings that owe this ecosystem nothing. A failing count against one of
+#: these is a measurement rather than a shortfall, and the table says `tracked`
+#: rather than `failing` so the two are never read as the same thing.
+#: Only the associate. The policy's sentence is precise -- *a member's number
+#: is a shortfall; an associate's is a measurement* -- and a candidate is not
+#: named in it, so this does not extend the wording on its own. Whether it
+#: should is a question for the office, not for a renderer.
+OWES_NOTHING = {"associate"}
 
-#: One line each, so a reader who has never opened the policy still knows what
-#: a row claims. The policy page is the authority; this is a reminder of it.
+#: What each footing means, printed under --verbose rather than in the table:
+#: a key beside every row would be noise, and absent entirely it is a table of
+#: words somebody has to go and look up.
 MEANS = {
     "president": "holds the office, for this stretch",
     "member": "declares it on the front page, and a green check on every push",
@@ -253,59 +321,77 @@ def main():
     args = parser.parse_args()
 
     try:
-        data = require(args.root)
+        data, provenance = require(args.root)
     except SystemExit as exc:
         print(exc, file=sys.stderr)
         return 2
+
+    live = provenance.startswith("live")
+    if not live:
+        print(f"-- offline: {provenance}")
+        print("--   re-install to refresh it, or run in the president's tree "
+              "for the live register")
 
     tools = entries(data)
     if args.check:
         bad = problems(data)
         for line in bad:
             print(f"   {line}", file=sys.stderr)
-        print(f"-- {len(tools)} entries, {len(bad)} problem(s)")
+        print(f"-- {len(tools)} entries, {len(bad)} problem(s) -- {provenance}")
         if not bad:
             print("-- the register is well formed. Whether each footing is the "
                   "right one is a decision, and not checkable")
         return 1 if bad else 0
 
-    by = {}
-    for name, entry in tools:
-        by.setdefault(entry["status"], []).append((name, entry))
-
     checker_path, why = ("", "")
-    if args.policy:
+    if args.policy and live:
         checker_path, why = checker(args.root)
         if not checker_path:
             print(f"-- policy column unavailable: {why}", file=sys.stderr)
 
-    shown = 0
-    for footing in ORDER:
-        rows = by.get(footing, [])
-        if not rows or (footing == "child" and not args.children):
-            continue
-        print(f"\n{footing}  -- {MEANS.get(footing, '')}")
-        for name, entry in sorted(rows):
-            what = entry.get("short") or entry.get("what") or ""
-            where = "" if footing == "child" else locate(entry.get("repo") or name,
-                                                         args.root)
-            if checker_path and where and footing not in ("child", "outsider"):
-                said, detail = verdict(where, checker_path)
-                stamp = f"{said}, {age(where)}"
-            elif where:
-                stamp = age(where)
-                detail = []
-            else:
-                stamp = "not here"
-                detail = []
-            print(f"   {name:<14} {stamp:<18} {what[:44]}")
-            if args.verbose:
-                for line in detail:
-                    print(f"                  {line}")
-            shown += 1
+    us = os.path.basename(_git("rev-parse", "--show-toplevel",
+                               cwd=os.path.abspath(args.root)) or "")
 
-    hidden = len(by.get("child", [])) if not args.children else 0
-    print(f"\n-- {shown} shown, read from {os.path.abspath(args.root)}"
+    rows = []
+    for name, entry in tools:
+        footing = entry["status"]
+        if footing == "child" and not args.children:
+            continue
+        where = "" if footing == "child" else (
+            locate(entry.get("repo") or name, args.root) if live else "")
+
+        if footing == "child":
+            policy, moved, detail = "-", "-", []
+            where = entry.get("parent", "")
+        elif footing == "foundation":
+            policy, moved, detail = "-", "-", []
+        elif not where:
+            policy, moved, detail = ("no checkout" if live else "-"), "-", []
+        else:
+            said, detail = verdict(where, checker_path) if checker_path else ("-", [])
+            # A count against a tool that owes this ecosystem nothing is a
+            # measurement; against one that owes the policy it is a shortfall.
+            # Printing both in the same word would invite the conclusion the
+            # footing refuses, so the word differs.
+            if said.endswith("failing") and footing in OWES_NOTHING:
+                said = said.replace("failing", "tracked")
+            policy, moved = said, age(where)
+
+        rows.append((name, footing, policy, channel(where, us), moved,
+                     where, entry.get("short") or entry.get("what") or "", detail))
+
+    widths = [max(len(str(r[i])) for r in rows) if rows else 0 for i in range(7)]
+    header = ("tool", "status", "policy", "channel", "moved", "where", "purpose")
+    widths = [max(w, len(h)) for w, h in zip(widths, header)]
+    print("  ".join(h.ljust(w) for h, w in zip(header, widths)).rstrip())
+    for row in rows:
+        print("  ".join(str(c).ljust(w) for c, w in zip(row[:7], widths)).rstrip())
+        if args.verbose:
+            for line in row[7]:
+                print(f"     {line}")
+
+    hidden = sum(1 for _, e in tools if e["status"] == "child") if not args.children else 0
+    print(f"\n-- {len(rows)} shown, {provenance}"
           + (f"; {hidden} child project(s) not listed, --children shows them"
              if hidden else ""))
     if args.policy and checker_path:
