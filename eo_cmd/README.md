@@ -14,7 +14,6 @@ person's path.
 | [`eo_bump`](eo_bump) | move a pinned dependency onto a commit whose CI is green, and refuse otherwise |
 | [`eo_status`](eo_status) | who is in the ecosystem and on what footing. **Run only where the register is** |
 | [`eo_process_discussion`](eo_process_discussion) | work the topics another tool has addressed to you. Run in your own repository |
-| [`eo_install`](eo_install) | put the ecosystem on a machine, or say what is here |
 | `koine_append_db` | add a run's new bugs to a database of every bug found. Installed from [`../bug_db/`](../bug_db), where it lives |
 
 **Every installed command carries a prefix saying whose it is**, because the
@@ -66,6 +65,14 @@ so the two are compared by reading them. **It never overwrites a file it did
 not install** — that row is skipped and says so, and `--force` is a person's
 decision because the file being replaced is theirs. The chosen directory is
 remembered in `install_eo_cmd.local.json`, which the repository ignores.
+
+**Cloning the ecosystem is not one of these commands.** It is
+`../scripts/install_eo_cmd --init-clone [DIR]`, which reads the register the
+president holds and clones what is missing beside it. A command for it would
+have to be installed by the installer first, so putting the ecosystem on a
+machine would depend on having already set up the thing that does it — the job
+belongs where somebody already is. `--dry-run` prints the `git clone` lines and
+runs none of them; a directory that already exists is reported and left alone.
 
 **Each command is installed as one file**, so nothing here may import anything
 from beside it in this tree. `eo_status` did for an afternoon on 2026-09-17 and
@@ -130,28 +137,6 @@ the repository works with, and saying it is **not** held to the policy. On a tre
 we do not own that is a second thing to ask agreement for, not a gentler version
 of the first.
 
-## eo_install
-
-```console
-$ eo_install --status    # what is here, what is missing
-$ eo_install --dry-run   # the clone commands, run nothing
-$ eo_install             # clone what is not here yet
-```
-
-Run it anywhere. Checkouts go beside the register's tree when you are standing
-in it and otherwise into the working directory; `--into DIR` says where
-instead, and **every run names the directory it chose before cloning
-anything.**
-
-**The dry run prints exactly what a real run executes**, live rather than
-commented out, so reading it is a review and pasting it does the same thing.
-The only command that installs anything is `git clone <url> <dir>` — no branch
-flags, nothing through a shell. **A directory that already exists is reported
-and never touched**, because a checkout is somebody's working tree and the cost
-of being wrong about that is theirs. Children arrive inside their parent and
-outsiders are never cloned: we do not put other people's projects on a disk on
-their behalf.
-
 ## eo_process_discussion
 
 ```console
@@ -183,6 +168,13 @@ $ eo_status --check      # what is structurally wrong with the register
 $ eo_status --children   # include child projects, which are not repositories
 ```
 
+**It reads the register and prints what it says — that is the whole of it.**
+It runs no checker against anybody, reads no correspondence, and looks at no
+commits. Those go further than reading: they check the register *against the
+world*, and being wrong about them is being wrong about somebody else's tree.
+The president keeps `eo_status_audit` for that, and the line between the two is
+the word audit.
+
 **In the president's tree it reads the live register.** Anywhere else it is an
 **offline** command: the register is baked into the file when
 `install_eo_cmd` copies it, and a run says which commit and date that snapshot
@@ -193,6 +185,9 @@ $ eo_status --check          # from anywhere
 -- offline: a snapshot taken at install time, from kanon at a7bd2b7, on 2026-09-17
 --   re-install to refresh it, or run in the president's tree for the live register
 ```
+
+Because every column comes out of the register, **the offline table is exactly
+as complete as the live one** — only its age differs.
 
 **Being out of date is fine; not saying so is not.** Live beats snapshot beats
 refusal, in that order and never silently — and there is no third place it will

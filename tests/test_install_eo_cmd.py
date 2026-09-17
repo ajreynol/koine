@@ -329,8 +329,98 @@ def test_the_snapshot_is_readable_python():
     check("a child keeps its parent", got["kid"]["parent"], "kanon")
 
 
+def test_init_clone_is_not_a_command_it_installs():
+    """Cloning the ecosystem lives here, not in an installed command.
+
+    A command for it would have to be installed by this script first, so
+    putting the ecosystem on a machine would depend on having already set up
+    the thing that puts the ecosystem on a machine. It belongs where somebody
+    already is.
+    """
+    print("--init-clone")
+    tmp = tempfile.mkdtemp()
+    try:
+        sandbox(tmp)
+        office = president(tmp, {
+            "a": {"status": "member", "url": "https://example.invalid/a"},
+            "kid": {"status": "child", "parent": "a"},
+            "them": {"status": "outsider", "url": "https://example.invalid/them"},
+            "here": {"status": "member", "url": "https://example.invalid/here"},
+        })
+        into = os.path.join(tmp, "eo")
+        os.makedirs(os.path.join(into, "here"))
+
+        out = run(tmp, "--init-clone", into, "--president", office, "--dry-run")
+        check("a dry run returns 0", out.returncode, 0)
+        ok("it names the clone command", "git clone https://example.invalid/a" in out.stdout)
+        ok("a child is never cloned", "kid" not in out.stdout)
+        ok("an outsider is never cloned", "them" not in out.stdout)
+        ok("a directory already there is left alone",
+           "here: already there, left alone" in out.stdout)
+        ok("and it says where the register came from", "from kanon" in out.stdout)
+        ok("nothing was cloned", not os.path.exists(os.path.join(into, "a")))
+
+        ok("no command called eo_install is installed",
+           not any(c["name"] == "eo_install"
+                   for c in json.load(open(os.path.join(ROOT, "eo_cmd",
+                                                        "commands.json")))["commands"]))
+    finally:
+        shutil.rmtree(tmp)
+
+
+def test_init_clone_refuses_without_a_register():
+    print("--init-clone with no register to read")
+    tmp = tempfile.mkdtemp()
+    try:
+        sandbox(tmp)
+        os.environ["KANON"] = os.path.join(tmp, "nowhere")
+        try:
+            out = run(tmp, "--init-clone", os.path.join(tmp, "eo"))
+        finally:
+            del os.environ["KANON"]
+        check("it refuses", out.returncode, 2)
+        ok("and says the register is what names who to clone",
+           "register" in out.stderr)
+    finally:
+        shutil.rmtree(tmp)
+
+
+def test_an_orphan_is_noticed():
+    """A command dropped from the manifest leaves a file behind.
+
+    Dropping it stops it being installed; it does not remove the copy already
+    on somebody's path, which then goes stale forever with nothing pointing at
+    it. That happened to `eo_install` on 2026-09-17 and nothing said so.
+    """
+    print("a command that is no longer offered")
+    tmp = tempfile.mkdtemp()
+    try:
+        prefix = sandbox(tmp)
+        run(tmp, "--prefix", prefix)
+
+        manifest = os.path.join(tmp, "eo_cmd", "commands.json")
+        data = json.load(open(manifest))
+        dropped = data["commands"].pop()["name"]
+        json.dump(data, open(manifest, "w"))
+
+        out = run(tmp, "--status")
+        ok("status names it as orphaned",
+           f"{dropped}" in out.stdout and "orphaned" in out.stdout)
+        ok("and says it can be removed", "--uninstall removes it" in out.stdout)
+        ok("the file is still there",
+           os.path.exists(os.path.join(prefix, dropped)))
+
+        run(tmp, "--uninstall")
+        ok("and --uninstall takes it", not os.path.exists(os.path.join(prefix, dropped)))
+    finally:
+        shutil.rmtree(tmp)
+
+
 def main():
     for test in (test_install, test_the_register_is_baked_in,
+                 test_init_clone_is_not_a_command_it_installs,
+                 test_init_clone_refuses_without_a_register,
+                 test_an_orphan_is_noticed,
                  test_the_snapshot_is_readable_python,
                  test_a_snapshot_says_when_it_came_from_a_dirty_tree,
                  test_no_president_is_a_warning_not_a_failure,

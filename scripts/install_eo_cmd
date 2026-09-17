@@ -282,33 +282,152 @@ def on_path(directory):
     return directory in entries
 
 
+#: Footings that are not repositories to clone. A child arrives inside its
+#: parent; an outsider is tracked and is not ours to put on somebody's disk.
+NOT_CLONED = {"child", "outsider"}
+
+
+def do_init_clone(president, into, dry_run):
+    """Clone the ecosystem beside the president, from the register it holds.
+
+    **This is not a command anybody installs.** Putting the ecosystem on a
+    machine is something you do once, from the checkout you already have, and a
+    command for it would have to be installed by this script first -- which
+    means cloning the ecosystem would depend on having already set up the thing
+    that clones the ecosystem. So it lives here, where somebody already is.
+
+    The only command that installs anything is `git clone <url> <dir>`: no
+    branch flags, nothing through a shell, so only a default branch is ever
+    cloned. **A directory that already exists is reported and never touched** --
+    a checkout is somebody's working tree and the cost of being wrong about that
+    is theirs.
+    """
+    if not president:
+        print("-- refused: no checkout holding the register was found, and the "
+              "register\n   is what says who to clone. Pass --president DIR",
+              file=sys.stderr)
+        return 2
+    try:
+        data, where = snapshot(president)
+    except (OSError, ValueError) as exc:
+        print(f"-- refused: {president}: {exc}", file=sys.stderr)
+        return 2
+
+    todo, here = [], []
+    for name, entry in sorted(data.items()):
+        if not isinstance(entry, dict) or "status" not in entry:
+            continue
+        if entry["status"] in NOT_CLONED or not entry.get("url"):
+            continue
+        path = os.path.join(into, entry.get("repo") or name)
+        (here if os.path.exists(path) else todo).append(
+            (name, entry["status"], entry["url"], path))
+
+    print(f"-- the register {where}")
+    print(f"-- {len(todo)} to clone into {into}, {len(here)} already there")
+    for name, footing, url, path in todo:
+        print(f"   git clone {url} {path}")
+    for name, footing, _, path in here:
+        print(f"   -- {name}: already there, left alone")
+    if not todo:
+        return 0
+    if dry_run:
+        print("-- dry run: nothing was cloned. The lines above are what a real "
+              "run executes")
+        return 0
+
+    failed = []
+    for name, footing, url, path in todo:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        out = subprocess.run(["git", "clone", url, path],
+                             capture_output=True, text=True)
+        if out.returncode == 0:
+            print(f"-- {name}: cloned")
+        else:
+            failed.append(name)
+            print(f"-- {name}: did not clone -- "
+                  f"{(out.stderr or out.stdout).strip()}", file=sys.stderr)
+    print(f"-- {len(todo) - len(failed)} cloned, {len(failed)} failed"
+          + (f": {', '.join(failed)}" if failed else ""))
+    return 1 if failed else 0
+
+
+def orphans(prefix, origin, config):
+    """Files this script installed that the manifest no longer lists.
+
+    Dropping a command from `commands.json` stops it being installed; it does
+    not remove the copy already on somebody's path, which then goes stale
+    forever with nothing pointing at it. The record says what we put there, so
+    the difference is knowable and worth printing.
+    """
+    known = {c["name"] for c in commands(origin)}
+    out = []
+    for name, sha in record(config, prefix).items():
+        if name in known:
+            continue
+        dest = os.path.join(prefix, name)
+        if os.path.exists(dest):
+            out.append((name, dest, digest(read_text(dest)) == sha))
+    return out
+
+
 def do_status(prefix, origin, config):
     print(f"-- {prefix}" + ("" if on_path(prefix) else "  (not on PATH)"))
     installed = record(config, prefix)
+    rows = []
     for cmd in commands(origin):
         name = cmd["name"]
         dest = os.path.join(prefix, name)
-        stored = source_of(cmd)
-        here = digest(read_text(stored)) if os.path.exists(stored) else None
+        src = source_of(cmd)
         if not os.path.exists(dest):
-            print(f"   {name:10} not installed")
+            rows.append((name, "not installed", ""))
             continue
         there = digest(read_text(dest))
-        if there == here:
-            print(f"   {name:10} current")
-        elif name in installed and installed[name] == there:
-            print(f"   {name:10} stale -- eo_cmd/ has moved since; re-run to update")
+        here = digest(read_text(src)) if os.path.exists(src) else None
+        if installed.get(name) != there:
+            rows.append((name, "not ours",
+                         "a file of that name is there and this script did not "
+                         "put it"))
+        elif cmd.get("needs") == "register":
+            # Never byte-identical to its source: the register is written into
+            # it at install time. What it carries says when, so that is read
+            # back rather than guessed at from a hash.
+            rows.append((name, "installed", embedded_note(dest)))
+        elif there == here:
+            rows.append((name, "current", ""))
         else:
-            print(f"   {name:10} not ours -- a file of that name is there and "
-                  "this script did not put it")
+            rows.append((name, "stale", "the source has moved; re-run to update"))
+    for name, dest, ours in orphans(prefix, origin, config):
+        rows.append((name, "orphaned",
+                     "installed from here once and no longer offered"
+                     + ("; --uninstall removes it" if ours
+                        else ", and changed since, so --uninstall leaves it")))
+    width = max((len(r[0]) for r in rows), default=0)
+    state = max((len(r[1]) for r in rows), default=0)
+    for name, said, note in rows:
+        print(f"   {name:<{width}}  {said:<{state}}  {note}".rstrip())
     return 0
+
+
+def embedded_note(dest):
+    """What an installed command says about the register it carries."""
+    try:
+        for line in read_text(dest).splitlines():
+            if line.strip().startswith("# The register, "):
+                return line.strip()[2:].rstrip(".")
+    except OSError:
+        pass
+    return "carries a register snapshot"
 
 
 def do_uninstall(prefix, origin, config, dry_run):
     installed = record(config, prefix)
     removed, left = [], []
-    for cmd in commands(origin):
-        name = cmd["name"]
+    # Orphans too: a command this script installed and no longer offers is
+    # still a file this script put on somebody's path.
+    names = [c["name"] for c in commands(origin)]
+    names += [n for n, _, _ in orphans(prefix, origin, config)]
+    for name in names:
         dest = os.path.join(prefix, name)
         if not os.path.exists(dest):
             continue
@@ -436,6 +555,10 @@ def main():
                         help="what is installed, where, and whether it is current")
     parser.add_argument("--uninstall", action="store_true",
                         help="remove the files this script installed")
+    parser.add_argument("--init-clone", nargs="?", const=True, metavar="DIR",
+                        help="clone the ecosystem's repositories, from the "
+                             "register the president holds, into DIR (default: "
+                             "beside the president). Installs no commands")
     parser.add_argument("--president", metavar="DIR",
                         help="the checkout holding the register, whose contents "
                              "are baked into the commands that read it")
@@ -465,6 +588,13 @@ def main():
               + " or ".join(f"`{x}`" for x in PREFIXES)
               + ", which every installed command carries", file=sys.stderr)
         return 1
+
+    if args.init_clone is not None:
+        president = find_president(args.president)
+        into = (os.path.abspath(os.path.expanduser(args.init_clone))
+                if args.init_clone is not True
+                else os.path.dirname(president) if president else "")
+        return do_init_clone(president, into, args.dry_run)
 
     if args.status:
         return do_status(prefix, origin, config)

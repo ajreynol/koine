@@ -24,7 +24,7 @@
     },
     {
       "name": "eo_status",
-      "what": "who is in the Eunoia ecosystem and on what footing. Live where the register is; elsewhere, the snapshot baked in at install time, said to be one",
+      "what": "who is in the Eunoia ecosystem and on what footing, as the register says it. Reading, not auditing",
       "forms": [
         "eo_status",
         "eo_status --check",
@@ -61,17 +61,6 @@
         "eo_process_discussion <name> <Dn>"
       ],
       "kind": "prompt"
-    },
-    {
-      "name": "eo_install",
-      "what": "put the Eunoia ecosystem on a machine, or say what is here. Reads the register live in the president's tree, otherwise the baked-in snapshot",
-      "forms": [
-        "eo_install --status",
-        "eo_install --dry-run",
-        "eo_install"
-      ],
-      "kind": "program",
-      "needs": "register"
     }
   ],
   "convention": "Every installed command carries a prefix saying whose it is, because the name is claimed inside somebody else's process and on their PATH. `eo_` is the ecosystem's commands, which run inside a tree that is not this one. `koine_` is this repository's own. install_eo_cmd refuses anything else.",
