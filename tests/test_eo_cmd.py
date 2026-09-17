@@ -68,8 +68,8 @@ def test_the_readme_table_agrees_with_the_manifest():
     A register restated somewhere else needs something that runs between the
     two, or the copy is drift that has not happened yet. It had already
     happened once: the README said *every form takes `--show-prompt`* after
-    `eo_bump` and `eo_status` arrived, which are programs and take no such
-    thing. This is the comparison that was missing, not a second description.
+    programs arrived that take no such thing. This is the comparison that was
+    missing, not a second description.
     """
     print("the README's table against commands.json")
     page = open(os.path.join(STORE, "README.md"), encoding="utf-8").read()

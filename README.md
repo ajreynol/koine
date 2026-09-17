@@ -27,12 +27,11 @@ example, the one rule that makes it a database, what happens when two runs
 arrive at once, and what it refuses to do.
 
 **2. [`eo_cmd/`](eo_cmd), the commands that run inside somebody else's tree.**
-`eo_init` starts a tool and `eo_join` joins it; `eo_bump` moves a pinned
-dependency onto a commit whose CI is green and refuses otherwise; `eo_status`
-says who is in this ecosystem and on what footing; `eo_respond` answers one
-topic another tool addressed to you, and `eo_housekeeping` brings a repository
-up to date. Each runs *inside the tree being started, joined, bumped, tidied or
-answered* rather than from the repository that keeps the rule — which is why
+`eo_init` starts a tool and `eo_join` joins it; `eo_status` says who is in this
+ecosystem and on what footing; `eo_respond` answers one topic another tool
+addressed to you, and `eo_housekeeping` brings a repository up to date. Each runs
+*inside the tree being started, joined, tidied or answered* rather than from
+the repository that keeps the rule — which is why
 they live with the tool whose job is shared machinery, and why
 [`scripts/install_eo_cmd`](scripts/install_eo_cmd) puts them on a person's path.
 **koine maintains what they ask and has no standing to change what joining
@@ -71,17 +70,14 @@ by side on one disk.
   `docs/policy.md`. koine maintains `eo_join`, which *states* that rule and
   cannot change it.
 - **What decides whether my tree complies?** The policy checker, published by
-  [anoieu](https://github.com/ajreynol/anoieu). koine pins it like everybody
-  else and does not maintain it.
+  [anoieu](https://github.com/ajreynol/anoieu). koine follows its current
+  implementation using policy contract 1.
 - **Who is in this ecosystem, and on what footing?** The register, which kanon
   holds. [`eo_cmd/eo_status`](eo_cmd/eo_status) prints what it says and never
   writes to it — a footing is a decision somebody made, not one a program takes.
 - **How do I start a tool, or join?** [`eo_cmd/`](eo_cmd/README.md) —
   `eo_init` and `eo_join`, run inside the tree being started or joined, and put
   on your path by [`scripts/install_eo_cmd`](scripts/install_eo_cmd).
-- **How do I move a pinned dependency without taking work nobody could build?**
-  [`eo_cmd/eo_bump`](eo_cmd/eo_bump), which moves a pin onto a commit whose CI
-  was green there and refuses otherwise.
 - **Where do I report a bug you found in one of these tools?** Not here. A
   defect with a file and a line number is a finding, and anoieu keeps the
   reporting workflow that says how one is carried. Anything else goes in that
@@ -95,7 +91,8 @@ This repository is part of the **Eunoia ecosystem** and follows its shared
 repository policy, kept by [kanon](https://github.com/ajreynol/kanon) in
 [`docs/policy.md`](https://github.com/ajreynol/kanon/blob/main/docs/policy.md).
 The program that decides it stays in
-[anoieu](https://github.com/ajreynol/anoieu), and that is what CI here pins.
+[anoieu](https://github.com/ajreynol/anoieu). CI uses its shared workflow at
+`main`, selecting policy contract 1.
 
 **Written by AI agents, under light human supervision.** A human directs the
 work, decides what this repository is for, and reads what is published here;

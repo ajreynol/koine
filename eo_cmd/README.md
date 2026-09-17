@@ -11,7 +11,6 @@ person's path.
 | --- | --- |
 | [`eo_join`](eo_join) | join the Eunoia ecosystem, from inside the repository that is joining |
 | [`eo_init`](eo_init) | start a tool: write a README saying what it is for, complying with nothing |
-| [`eo_bump`](eo_bump) | move a pinned dependency onto a commit whose CI is green, and refuse otherwise |
 | [`eo_status`](eo_status) | who is in the ecosystem and on what footing. **Run only where the register is** |
 | [`eo_respond`](eo_respond) | answer one topic another tool has addressed to you. Run in your own repository |
 | [`eo_housekeeping`](eo_housekeeping) | bring a repository up to date: its documentation, the topics addressed to it, its own tooling, and CI |
@@ -36,8 +35,8 @@ installed out of it.
 each command says which of two things it is. **A `prompt` hands context to an
 assistant, and every form of one takes `--show-prompt`**, which prints exactly
 what it would hand one and does nothing else — read that before running it.
-`eo_bump` and `eo_status` are **programs**: they do the work themselves, spend
-no turn, and have nothing to show.
+`eo_status` and `koine_append_db` are **programs**: they do the work themselves,
+spend no turn, and have nothing to show.
 
 ## Installing them
 
@@ -65,11 +64,11 @@ $ ../scripts/install_eo_cmd --dry-run
 -- would install 1, 1 already current, 1 skipped  ->  /home/you/bin
    skip eo_cmd/eo_join    /home/you/bin/eo_join     (already current)
    cp   eo_cmd/eo_status  /home/you/bin/eo_status   (new)
-   skip eo_cmd/eo_bump    /home/you/bin/eo_bump     (exists and is not ours; --force replaces it)
+   skip eo_cmd/eo_init    /home/you/bin/eo_init     (exists and is not ours; --force replaces it)
 -- what each one is for, from eo_cmd/commands.json:
    eo_join    join the Eunoia ecosystem, run inside the repository that is joining
    eo_status  who is in the Eunoia ecosystem and on what footing, as the register says it
-   eo_bump    move a pinned dependency onto a commit whose CI is green, and refuse otherwise
+   eo_init    start a tool: write a README saying what it is for, complying with nothing
 -- a copy, not a move: the source keeps every file, and each one is written
    to a temporary file beside the target, made executable, and renamed over
    it, so an interrupted run leaves the old file in place
@@ -254,49 +253,6 @@ under five hundred and to two paragraphs.
 
 **The finished prompt is refilled to one width before it is sent**, being
 assembled from fragments each wrapped at whatever width it was written at.
-
-## eo_bump
-
-```console
-$ eo_bump --show     # what is pinned, what is upstream, what is between
-$ eo_bump --check    # answer, and write nothing
-$ eo_bump            # move the pin, if the commit is one to move onto
-$ eo_bump --force    # move it anyway, and say in the run that you did
-```
-
-Run it at the root of the repository that holds the pin. **A pin moves onto a
-commit whose CI was green there and onto no other** — a lock naming a commit
-nobody passed against is worse than no lock, because it reads like evidence and
-is not. Configuration is `eo_bump.json` beside the lock or at the root: the lock
-file, the upstream and ref, and the workflow that must have passed.
-
-**Four exit codes, because four things can happen and three are not success.**
-
-| | |
-| --- | --- |
-| `0` | adopt — the check passed there |
-| `1` | refuse — somebody was asked and said no |
-| `2` | refuse as unverified — nobody could be asked |
-| `3` | this command could not run: no configuration, or one it could not read |
-
-**`1` and `2` are the pair that matters**, and collapsing them is the failure
-this command exists to prevent: *we asked and it is not green* and *we could not
-ask* are different facts, and a caller that logs one number for both is back
-where it was before the command existed. The distinction is the whole value, so
-it is visible at the one place a caller can act on it.
-
-**A lock that is JSON says which field the commit is in**, so a repository whose
-lock already carries a ref, a date and a comment beside the commit does not have
-to flatten it to adopt this — `"pin": {"file": "scripts/deps.lock", "json":
-"anoieu.commit", "date": "anoieu.date"}`. Every other field is read back
-unchanged and written back unchanged.
-
-**`verify` is the consumer's own veto, and it answers a different question.**
-That the upstream build was green says the work got past *their* checks; whether
-this tree still works against it is a fact nobody upstream can establish. A
-repository that already has that check names it, it runs after the green answer
-and before anything is written, and a non-zero exit refuses the bump — with the
-run saying which of the two said no.
 
 ## eo_status
 

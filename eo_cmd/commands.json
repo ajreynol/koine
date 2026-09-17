@@ -34,17 +34,6 @@
       "needs": "register"
     },
     {
-      "name": "eo_bump",
-      "what": "move a pinned dependency onto a commit whose CI is green, and refuse otherwise",
-      "forms": [
-        "eo_bump --show",
-        "eo_bump --check",
-        "eo_bump",
-        "eo_bump --force"
-      ],
-      "kind": "program"
-    },
-    {
       "name": "koine_append_db",
       "path": "bug_db/koine_append_db",
       "what": "add a run's new bugs to the database of every bug a tool has found. For a person at a terminal: a pinned consumer resolves it through its own lock and must not take it off PATH, which would lose the pin",

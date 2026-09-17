@@ -15,7 +15,6 @@ somebody deciding whether this is worth depending on.
 ```bash
 python3 tests/test_append_db.py                          # bug_db
 python3 tests/test_install_eo_cmd.py                     # the installer
-python3 tests/test_bump.py                               # eo_bump
 python3 tests/test_register.py                           # reading the register
 python3 tests/test_eo_cmd.py                             # the eo_cmd commands themselves
 python3 /path/to/anoieu/scripts/policy_check.py --policy-version 1 --root .  # the policy
@@ -24,6 +23,12 @@ python3 /path/to/anoieu/scripts/policy_check.py --policy-version 1 --root .  # t
 Each directory's own README is the whole of its subject:
 [`../bug_db/README.md`](../bug_db/README.md),
 [`../eo_cmd/README.md`](../eo_cmd/README.md).
+
+CI calls anoieu's shared workflow at `main`, selecting **policy contract 1**.
+The contract fixes the requirements and severities while implementation fixes
+arrive automatically. There is no checker commit pin to update. The contract
+and workflow are maintained in
+[anoieu's checker guide](https://github.com/ajreynol/anoieu/blob/main/docs/policy-checker.md).
 
 **Scripts are named `koine_<piece>`** where they go on somebody's path, because
 a name claimed inside another person's process should say whose it is.
@@ -65,7 +70,7 @@ Do not design it, do not build it, do not have an opinion about it in the tree.
 | global announcements, and who is told | **kanon's** | the same reason, one level down |
 | **the register itself** — the inventory, the footings, the entity ids | **kanon's** | a footing is a decision somebody made. koine keeps the programs that *read* it (`eo_cmd/eo_status`) and never writes to it, and reads it only in the tree that holds it; owning the file would be owning membership |
 | the discussion protocol, the role handoff, the channel model | **kanon's** | governance, not a shape |
-| the policy checker itself | **anoieu's** | our CI pins it and it is not ours to move |
+| the policy checker itself | **anoieu's** | our CI calls its shared workflow; its implementation belongs there |
 | auditing how a repository's history changed | **epikrisis's** | the register describes it as *audits repository histories against evidence*; koine held a second implementation until 2026-09-17 and should not have |
 | **what joining costs, and what a member is held to** | **kanon's** | `R4`. koine maintains `eo_join`, which *states* that rule, and has no standing to change it |
 | `check_join_eo`, `global_audit`; every position on publishing | **anoieu's and kanon's** | a position is what somebody signs |
@@ -84,7 +89,7 @@ touch is what joining costs**, the row above: this repository maintains the
 program that states the rule, and a change to the rule is argued in kanon and
 then written here. [`../eo_cmd/README.md`](../eo_cmd/README.md) carries that
 line in full, and records that `R35` names two commands while the directory
-holds six with nothing comparing the two statements.
+holds five with nothing comparing the two statements.
 
 ## Check who the instruction is addressed to, before the first edit
 
@@ -165,6 +170,10 @@ withdraw than it was to write.
   copy against a promise nobody signed is worse off than one who never heard it.
 
 ## What was here before
+
+`eo_bump` and its configuration were retired on 2026-09-17 at the maintainer's
+request. Koine adopted anoieu's shared workflow and removed its checker lock.
+Earlier discussion entries describe the pinned setup that existed then.
 
 koine has been pointed at a new job twice: it was a reporting-loop library until
 2026-09-16, and held a history review tool until 2026-09-17. The history tool's

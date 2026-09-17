@@ -493,7 +493,7 @@ def say_what_they_are(origin, prefix):
 
     **The plan says what happened to each file; this says what each file is.**
     Those are different questions and the first one answers neither: a row
-    reading `cp eo_cmd/eo_bump ~/bin/eo_bump (new)` tells somebody a name they
+    reading `cp eo_cmd/eo_status ~/bin/eo_status (new)` tells somebody a name they
     now have on their path and nothing whatever about when they would type it.
 
     The text is the manifest's, which is the same text the READMEs are written
