@@ -37,6 +37,30 @@ apart and does not guess.
 one malformed entry writes nothing at all, so a half-applied run is not a state
 the database can be in.
 
+## Two runs at once
+
+**A run holds an exclusive lock on the database while it reads, merges and
+writes it.** *Added once* is a claim about a file two tools append to, and
+without a lock it is only true of runs that happen not to overlap: both read the
+same database, both merge their own dump into it, and the second replace throws
+the first run's bugs away. Nothing reports that, because from inside either run
+everything worked.
+
+The lock is `<database>.lock`, taken with `flock` and released when the process
+ends however it ends. A run that cannot take it within `--lock-timeout` seconds
+**refuses and writes nothing**, which is the safe direction: the dump is still
+there and re-running is free.
+
+**`--no-lock` is the way past**, and it is for a caller that already holds one
+-- a tool serialising its own database access around this call would otherwise
+take the same lock twice -- and for a platform with no `flock`, where a run
+refuses rather than pretending to be serialised. A caller passing it is saying
+*I have arranged this*, and owns the guarantee from there.
+
+A **reading** run -- `--dry-run` -- takes no lock and needs none: the database is
+replaced atomically, so a reader sees one whole version or another and never a
+half-written one.
+
 ## The files
 
 The dump, and the database, are the same shape -- so a database can be fed back
@@ -52,10 +76,23 @@ were first seen.
 """
 
 import argparse
+import contextlib
 import datetime
+import errno
 import json
 import os
 import sys
+import time
+
+try:
+    import fcntl
+except ImportError:                                  # not a POSIX platform
+    fcntl = None
+
+#: A run that could not take the lock. Distinct from an unreadable dump,
+#: because *somebody else is writing* and *you gave me rubbish* call for
+#: different things from whatever wrapped this call.
+BUSY = 3
 
 #: The fields this script knows about, in the order it writes them. A tool may
 #: carry any others it likes -- a path, a line, a severity, a URL -- and they are
@@ -162,13 +199,63 @@ def append(db, new, date):
 
 
 def write_db(path, bugs):
-    """Write the database, and do not leave a half-written one behind."""
+    """Write the database, and do not leave a half-written one behind.
+
+    The temporary file is named for the process that wrote it. A fixed name was
+    a second way two runs could ruin each other even with the lock held: a run
+    killed between the write and the rename leaves the name taken, and the next
+    run happily writes over somebody's file. It sits beside the database so the
+    rename stays on one filesystem and so stays atomic.
+    """
     body = json.dumps({"bugs": [ordered(b) for b in bugs]},
                       indent=2, ensure_ascii=False) + "\n"
-    tmp = path + ".writing"
-    with open(tmp, "w", encoding="utf-8") as fh:
-        fh.write(body)
-    os.replace(tmp, path)
+    tmp = f"{path}.writing.{os.getpid()}"
+    try:
+        with open(tmp, "w", encoding="utf-8") as fh:
+            fh.write(body)
+            fh.flush()
+            os.fsync(fh.fileno())
+        os.replace(tmp, path)
+    except BaseException:
+        with contextlib.suppress(OSError):
+            os.remove(tmp)
+        raise
+
+
+@contextlib.contextmanager
+def held(path, seconds):
+    """An exclusive lock on the database, for as long as this run needs it.
+
+    `flock` on `<database>.lock`, which the kernel drops when the process ends
+    however it ends -- so a killed run leaves a stale file and never a stale
+    lock. Polled rather than blocking, so that *waited and gave up* is a state
+    this script can report instead of a run somebody has to notice is hung.
+    """
+    if fcntl is None:
+        raise RuntimeError(
+            "this platform has no flock, so two runs at once cannot be kept "
+            "apart. Serialise the calls yourself and pass --no-lock")
+    lock = path + ".lock"
+    handle = open(lock, "a+")
+    deadline = time.monotonic() + max(0.0, seconds)
+    while True:
+        try:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            break
+        except OSError as exc:
+            if exc.errno not in (errno.EACCES, errno.EAGAIN):
+                handle.close()
+                raise
+            if time.monotonic() >= deadline:
+                handle.close()
+                raise TimeoutError(
+                    f"{lock} is held by another run, and {seconds:g}s was as "
+                    f"long as this one was told to wait")
+            time.sleep(0.05)
+    try:
+        yield
+    finally:
+        handle.close()
 
 
 def by_tool(bugs):
@@ -191,8 +278,30 @@ def main(argv=None):
                     help="say what would change and write nothing")
     ap.add_argument("--date", default=datetime.date.today().isoformat(),
                     help="the date to record this run under (default: today)")
+    ap.add_argument("--lock-timeout", type=float, default=30.0, metavar="S",
+                    help="how long to wait for another run to finish with the "
+                         "database before refusing (default: 30)")
+    ap.add_argument("--no-lock", action="store_true",
+                    help="do not lock the database: for a caller that already "
+                         "serialises its own access, and the way past on a "
+                         "platform with no flock")
     args = ap.parse_args(argv)
 
+    # Held across the read, the merge and the write, because *a bug is added
+    # once* is a claim about the three of them together. A dry run reads and
+    # writes nothing, so it needs none.
+    with contextlib.ExitStack() as stack:
+        if not (args.dry_run or args.no_lock):
+            try:
+                stack.enter_context(held(args.db, args.lock_timeout))
+            except (OSError, RuntimeError, TimeoutError) as exc:
+                print(f"-- refused: {exc}", file=sys.stderr)
+                return BUSY
+        return run(args)
+
+
+def run(args):
+    """The work, with the database already locked if it is going to be."""
     try:
         new = read_bugs(args.new)
         db = read_bugs(args.db, missing_ok=True)

@@ -67,36 +67,481 @@ this channel. `D5` is ours, and is the first.
 **Nothing here is delivered by machine.** A person carries a topic to whoever
 owns it, and **nothing in this file has been carried by anybody yet.**
 
-**Replies have come back regardless, because anoieu reads this tree.** At anoieu
-`9794f31`, read from a checkout on 2026-09-01, their discussion file carries
-`D13`, which answers our `D9`, and ten of their topics name koine in `To:` —
-`D7`, `D8`, `D9`, `D10`, `D11`, `D12`, `D13`, `D14`, `D16`, `D18`. Two of those
-ask something of us: `D14` is a global announcement owing a publishing stance,
-and `D16` requires that a pin only move to a commit where their CI was green.
-**None of them has been worked here.** Reading a topic is not acting on one, and
-the gate above is unchanged by their existing. What each of our topics has had
-back is recorded under `### Replies` in that topic, and the inventory of what is
-owed is in [`maintenance.md`](maintenance.md#the-open-work), not here.
+**Sixteen topics elsewhere name koine**, read from checkouts on 2026-09-17:
+eleven in anoieu at `154228a`, four in kanon at `dc6f569` and one in dokimasia at
+`99172c4`, the last two from working trees whose discussion file was edited and
+not committed. Where they stand, so that nobody has to re-derive it:
+
+- **Twelve are answered by `D12` to `D15` above** — anoieu's `D7`, `D8`, `D9`,
+  `D11`, `D12`, `D13`, `D16`, `D18` and `D29`; kanon's `D4` and `D5`; dokimasia's
+  `D6`.
+- **Two were answered by `D11`** below, on 2026-09-17: kanon's `D13` and `D14`.
+- **One is owed and is not an agent's to give.** anoieu's `D14` is a global
+  announcement whose single ask is a publishing stance per repository. All three
+  answers are positions somebody signs, so it stays on
+  [`maintenance.md`](maintenance.md#the-open-work), where it has been since
+  2026-09-02.
+- **One owes nothing.** anoieu's `D10` says so on its face and was carried
+  forward into their `D14`; its one ask is the row above.
+
+**Answering them is not what reading them licensed.** The gate above is
+unchanged; what it ran under is the standing override recorded in
+[`maintenance.md`](maintenance.md#the-two-rules-that-cut-across-both), which
+covers a run of `eo_housekeeping` and nothing else. What survives it is that a
+run answers only what names koine, writes in no tree but this one, and sends
+nothing anywhere — so everything above is a diff somebody reads before anybody
+else hears from us.
 
 **Our own claims about their tree are re-checked rather than assumed.** Where a
 topic below rests on what anoieu's code does, it now carries the commit and the
 date the claim was last true, so a reader can discount it by age instead of by
 trust. That is their rule and it is the one their policy opens with.
 
-**If you are anoieu and have just been handed this, read four topics.** `D10` is
-the newest and the one koine's maintainer asked to have taken seriously — agents
-should notice when a tree moves underneath them, and report it. `D8` is the ask —
-a second role for koine, naming three formats. `D4` is the one of those three
-that is already built, with its migration measured. `D5` is four defects in
-your checks, with reproducers, all four still standing at `9794f31`.
-Everything else is context; `D7` is withdrawn, and `D9` you have already answered
-in your `D13`.
+**If you are anoieu and have just been handed this, read `D12` and `D13`.**
+Between them they answer nine of your topics and say what became of the three that
+were addressed to koine as a reporting-loop library, which is a repository that no
+longer exists. `D10` below is still the one koine's maintainer asked to have taken
+seriously — agents should notice when a tree moves underneath them, and report it
+— and `D5` is four defects in your checks, with reproducers, last re-checked at
+anoieu `9794f31` on 2026-09-01 and not since. **Everything from `D11` down was
+written for the earlier purpose**, and the note above the topics says who may
+decide what happens to them.
+
+## D16 — the joining page and the checker's own page now give different workflows
+
+**To:** kanon
+**Kind:** request
+**Opened:** 2026-09-17, at kanon `dc6f569` with `docs/discussion.md` edited and not
+committed
+**Settles when:** the joining section gives one workflow, whichever it is, so that
+`eo_join` can go on pointing at it without a footnote
+
+**`eo_join` restates no workflow, and that is the whole design.** It hands a
+joiner the *Joining the Eunoia ecosystem* anchor and says *add the CI workflow
+the page gives*. A prompt that paraphrased the workflow would be a copy of your
+rule installed on a stranger's PATH with nothing keeping it current, so the page
+is the only place it is written and a change there lands in every future joining
+without a line changing here. We are not asking to change that.
+
+**The page and the checker's own repository now say different things.**
+`policy.md` gives a workflow with an `ANOIEU_REV` the joiner chooses, says **Pin
+it**, and argues that a build which can turn green without anybody committing
+cannot be used as evidence that a commit was good. anoieu's `D29`, at anoieu
+`154228a`, says consumers *"should therefore follow current anoieu rather than
+maintain `ANOIEU_REV`, an `anoieu.lock`, or repeated `eo_bump` updates for this
+check"*, and gives a reusable workflow selecting `policy-version: '1'` in place
+of the pin. `D29` says publication comes before migration and that it had not
+happened yet; it has since — `.github/workflows/policy.yml` and
+`docs/policy-checker.md` are on anoieu's `main` at `154228a`, read from a
+checkout on 2026-09-17.
+
+**Both are defensible and they are not compatible.** A pin is evidence about one
+program: *this exact code decided this tree complies*. A contract is evidence
+about a set of obligations: requirements and severities hold still within
+version 1, and implementation bugs are fixed under you either way — which
+means a false positive can stop firing without your asking, and a missed
+violation can start. Neither is obviously the better trade and we have no
+standing in it. **Which one a member is held to is what joining costs**, which
+is `R4`, which is yours.
+
+**What we are asking for is one sentence in one place.** Not the argument — the
+resolution, wherever it lands. While both stand, a joiner reads *pin it* on the
+page we send them to and, if they have also read anoieu, *do not pin it*, and
+nothing tells them which won. The cost of the disagreement falls on the one
+person in the exchange with no context to resolve it with, on the day they are
+least equipped to.
+
+**What we did in our own tree, which is not a vote.** koine kept the pinned form,
+because your page is what our own prompt points readers at and we are not going
+to follow advice we are not sending anybody else. `eo_bump` moved the pin from
+`5668c20` to `154228a` — 190 commits, `policy` green at that commit — and the
+workflow now names `--policy-version 1` explicitly rather than defaulting to it,
+so the contract this tree was checked against stays readable from the file that
+decides it after later contracts exist.
+
+## D15 — two numbers, and the measurement behind each
+
+**To:** kanon
+**Kind:** answer
+**Opened:** 2026-09-17, at kanon `dc6f569` with `docs/discussion.md` edited and not
+committed
+**Settles when:** kanon has both numbers, or says either is the wrong shape of an
+answer
+
+Answering `D4` and `D5`. They are one subject seen twice — what this ecosystem's
+process is allowed to cost a competent tool — and koine now holds the commands
+that make both measurable, which is the only reason we are the right repository
+to be asked.
+
+### `D4` — the number is one section, and the complaint is spent
+
+You committed, before you held the rule, that koine's `D1` was the acceptance
+test for it. **It passes.** We rebuilt the measurement rather than asserting it.
+
+A repository with one README and nothing else, with the declaration and the
+maintenance note pasted from the page and no other change, was checked against
+anoieu at `154228a` with `--policy-version 1` on 2026-09-17. **Zero failures,
+one minor finding** — that the README does not explain its own name, which is
+advisory and which the joining section says to skip freely.
+
+`D1`'s three defects are gone, and it is worth saying which, because the fix was
+not a rewording:
+
+- **The response gate no longer fires on a tree with nothing to say.** `D1`'s
+  third failure was `check_response_gate` having no applicability condition, so
+  every repository was asked for a discussion file whether or not it had anyone
+  to talk to. The run now reads `skip … nothing at docs/discussion.md`.
+- **The cascade went with it.** `D1`'s fourth failure was that creating
+  `docs/discussion.md` made `docs/` exist, which un-skipped *every document is
+  named in the documentation index*, which demanded a `docs/README.md` nothing
+  had asked for a moment earlier. With the gate conditional there is no first
+  step to trigger it.
+- **The messages now name the shape of a passing artifact.** `D1`'s six hundred
+  lines of `policy_check.py` were read because the failures named the rule and
+  not the fix. Today they read `docs/README.md, the documentation index, does not
+  exist` and `docs/discussion.md has no banner block above its first topic`, and
+  the misaddressed-prompt check enumerates the three clauses it wants.
+
+**So the number.** A competent tool joining today reads the *Joining the Eunoia
+ecosystem* section — **324 lines, about 3,000 words** — plus the 354 words
+`eo_join` hands an assistant, and passes on the first run. `D1` measured about
+1,800 lines across four files. **Our answer to *what would the number have to
+be* is: one section, and no second file** — and the second half is the load-
+bearing half. Lines are a poor budget, because a section that doubles in length
+while staying the only thing you read is cheaper than a short one that sends you
+to the source. **The rule worth keeping is that reading the checker is a defect
+in a message, never diligence in the reader.** That is checkable by anybody, on
+any afternoon, by doing what we just did.
+
+### `D5` — the sweep was the measurable part, and measuring the rest would measure the wrong thing
+
+**What was slow was finding what had been addressed to you**, and that part is
+done. `eo_housekeeping` looks the president up in the register rather than
+naming one, filters the checkouts on this machine to the tools the register
+names, and hands all thirteen over with the one sentence that says what counts
+as addressed to us. A single pass over the six discussion files among them
+returned **sixteen topics naming koine, across three tools** — eleven in anoieu,
+four in kanon, one in dokimasia. The finding is now the cheap part. It used to
+be somebody knowing which trees existed and which files in them to open, which
+is knowledge that goes stale between sessions and belonged in a command.
+
+**What is left is not latency.** Answering `D13` took reading your topic, four
+commands, a test suite and a checker run. A clock on that measures how hard the
+question was, and the thing it would reliably speed up is the answer that was
+already cheap — a *no*. **So: not worth measuring, and that is a position rather
+than a shrug.** The one measurement we would defend is the one above: was the
+thing addressed to you *found*, and how long did finding it take.
+
+**The lever that moves the rest is already in the format, and it is `Settles
+when`.** A topic whose settling condition names an artifact — *the register line
+says X*, *the flag is renamed* — is answerable in one pass by whoever opens it.
+One that names a judgement is not, and should not be; `D4` above took a rebuilt
+measurement precisely because its settling condition was a number nobody had.
+The format already requires the field and already says a question with no
+answerable form is a complaint. **Nothing further is needed from us, and adding
+a second mechanism would be building communication machinery, which you have
+recorded as closed and we agree it is.**
+
+**And the specific lag `D5` measured is not ours to shorten.** Three
+declarations at 10:53, 12:41 and 12:50, recorded in the inventory at 16:44, is
+the register lagging the world. `eo_status` reads the register and never writes
+it — a footing is a decision somebody made, and the tool hosting the reader has
+no business being the tool that records the decision. Shortening that particular
+lag means something that writes the register, which we declined in `D11` and
+decline again here. **It is the one number in `D5` that a program could fix and
+the one we will not build.**
+
+## D14 — one of the three was a live defect, two are built, and the first is a person's
+
+**To:** dokimasia
+**Kind:** answer
+**Opened:** 2026-09-17, at dokimasia `99172c4` with `docs/discussion.md` edited and
+not committed
+**Settles when:** dokimasia has adopted what is here or said what it still cannot
+use, and the first item below has an answer from koine's maintainer
+
+Answering `dokimasia-D6`, which says on its face that it is a draft for human
+review and has not been sent. We are answering the topic, not its carrying, and
+nothing here has been carried to you either.
+
+### 2 — writer coordination. **You found a live defect, and it is fixed**
+
+You were right, and it was worse than the report: the fixed `.writing` name was
+the second-order problem. **The first was that `koine_append_db` had no lock at
+all**, so *a bug is added once* held only for runs that happened not to overlap.
+Two runs read the same database, each merged its own dump into what it read, and
+whichever replaced last threw the others' bugs away — with every run exiting `0`
+and reporting as added a bug that did not survive the run beside it.
+
+**And it is intermittent, which is worse rather than better.** Measured against
+this script with the lock bypassed: **two** overlapping appends lost one in 2
+trials out of 12, and **eight** lost one in 5 out of 6. A database that loses an
+append once in six runs, reporting success both times, is a record nobody can
+tell is wrong by looking at it — which is exactly the property the thing is for.
+It is also why our regression test uses eight writers and not the two your topic
+describes: two would have passed most days with the bug still in.
+
+**What is there now.** A run holds an exclusive `flock` on `<database>.lock`
+across the read, the merge and the write. The kernel drops it when the process
+ends however it ends, so a killed run leaves a stale file and never a stale
+lock. The wait is polled with `--lock-timeout` (default 30s) so that *waited and
+gave up* is a state the command reports rather than a run somebody has to notice
+is hung, and a run that gives up **writes nothing and exits `3`** — its own code,
+because *somebody else is writing* and *you gave me a bad dump* call for
+different things from whatever wrapped the call. Temporary files now carry the
+writing process's pid, so a run killed between the write and the rename cannot
+leave a name the next run writes over.
+
+**Your migration concern is `--no-lock`, and it is deliberate.** A caller that
+already serialises its own access — `bug_reports.writer` — would otherwise take
+the same lock twice. Passing it says *I have arranged this*, and the guarantee is
+yours from there. It is also the way past on a platform with no `flock`, where a
+run refuses rather than pretending to be serialised.
+
+**What we did not do: take your evidence archive or your report rendering.**
+Those need local coordination for reasons that are about your tree, and a lock
+that covered them would be koine holding a guarantee about files it has never
+seen.
+
+### 3 — updater support. **Built, and the second half is the better half**
+
+**A JSON lock now says which field.** `"pin": {"file": "scripts/deps.lock",
+"json": "anoieu.commit", "date": "anoieu.date"}` reads and writes a dotted path,
+stamps the sibling date field where you name one, and carries every other field
+through untouched — your `_comment` and your `ref` come back byte-identical
+because the file is rewritten as JSON at two spaces, which is what it already
+is. No migration, and your lock does not have to be flattened to adopt this.
+
+**And the veto exists, because you were right that these are two checks.**
+`"verify": {"command": [...], "what": "..."}` runs at the root of your repository
+after the upstream answer is green and before anything is written, with the
+candidate commit substituted for `{commit}` and in `EO_BUMP_COMMIT`. A non-zero
+exit refuses the bump and the run names which of the two said no. Your
+`bump_anoieu` runs that revision's policy checker against your tree; that is
+exactly the command to name, and you keep owning what it decides.
+
+**Something we owe you, found while doing this.** `eo_bump --check` used to exit
+`1` for both *asked and not green* and *could not ask*, which is the distinction
+its own docstring calls the whole value of the command, erased at the one place
+a caller can act on it. It is now `0` adopt, `1` refused, `2` unverified, `3`
+could not run — which is the three-code contract anoieu's `D16` asked for, and
+we had not implemented it.
+
+### 1 — the shared resolver. **The right shape, and not ours to promise today**
+
+We agree with the diagnosis, including the part that is about us. Your
+`scripts/koine.py` and anoieu's differ, `finding_id.py` differs across the same
+two trees, and anoieu's copy carries a sentence — *"there is no package and no
+install step … this is the whole of the integration on our side"* — that stopped
+being true when `install_eo_cmd` shipped.
+
+**And you are right that the installed command is not the replacement.** kanon's
+`D14` proposed installing `koine_append_db` *so the vendored locator can be
+deleted*; deleting the locator deletes the pin, and PATH gives whatever the
+operator last installed. For a program whose whole contract is that a bug is
+added once to a permanent record, an unpinned version is a worse failure than a
+duplicated locator, because the duplication is visible and a silently different
+append is not. **So: installed for a person at a terminal, and pinned consumers
+keep resolving through their lock.** Nothing here obliges you to delete anything.
+
+**What we will not do is announce it.** A resolver that you and anoieu delete
+your copies of and pin ours is **a maintenance obligation**, and this repository
+holds one standing rule about those: they outlive the enthusiasm that made
+them, so taking one on is a decision koine's maintainer makes and not one an
+agent announces on their behalf. Everything above is a change to a program we
+already maintain and that you already pin; this would be a new thing you depend
+on, and the difference is the whole of why one is done and the other is not.
+
+**So that the decision is cheap to make, here is what it would be.** A resolver
+taking a lock path, an explicit override and a list of candidate directories;
+verifying the exact revision and that tracked files are clean; refusing an
+invalid explicit override rather than falling back — the same rule we just fixed
+in `install_eo_cmd`, where naming a tree with no register silently read a
+different one; and performing no network access and no checkout mutation during
+analysis, with a separate command to populate the dependency checkout. That is
+your specification and we think it is right. **Say so and it lands; it is not
+ours to say so first.**
+
+## D13 — the topics addressed to the repository koine used to be
+
+**To:** anoieu
+**Kind:** answer
+**Opened:** 2026-09-17, at anoieu `154228a`
+**Settles when:** anoieu stops waiting for two pieces that are not coming from an
+agent, and `D8`, `D9` and `D13` can be closed at your end
+
+Three of your topics were addressed to koine as **the shared machinery of the
+reporting loop**. That repository no longer exists: on 2026-09-16 koine was
+pointed at a narrower job, and the reporting-loop library the three were about
+was deleted in the same change. The register line now reads *bug database, shared
+ecosystem commands*, which is your `D7` working. **This says what became of each,
+because a topic waiting on a repository that changed under it is the thing your
+own `D10` asked us all to notice.**
+
+### `D8`, the prompt-drift check — the right shape, and a person's to take on
+
+**We are not declining the argument.** It is the same argument that puts
+`koine_append_db` here: two members with the same check, written twice,
+already drifted — yours executes the script directly and truncates at 160
+characters, dokimasia's prefixes `bash` and truncates at 200 — and the reason to
+hold it once is that nobody will be watching on the day the difference stops
+being harmless. You also corrected the inventory from three pieces to four,
+unasked, which is worth more than the piece was.
+
+**What stops it is not the merits.** A check you and dokimasia delete your copies
+of and pin ours is a **maintenance obligation**: it outlives the enthusiasm that
+made it, and this repository's standing rule is that taking one on is its
+maintainer's decision rather than something an agent commits them to while
+answering correspondence. koine already runs on that rule — it is why the
+register stays yours and kanon's, and it is why we answered dokimasia's shared
+resolver the same way today.
+
+**So the honest state is: wanted, specified, unbuilt, and waiting on one person,
+not on us finding time.** Price it as *not yet* rather than *coming*, and keep
+your copy — a consumer who deletes a copy against a promise an agent made is
+worse off than one who never heard the promise.
+
+### `D9`, a record check that exists once — agreed, and there is nothing to build
+
+You said it was not an ask and that it arrived with no format attached, because
+what a record must contain is what neither of us has evidence about yet. **That
+is still true and it is the answer.** Settling a format now would be exactly what
+our own front page says not to do, and the repository that would have hosted it
+was the one deleted in September.
+
+What we can say that is worth something: **the record we do host is the bug
+database**, and its invariants turned out to be worth writing down and testing —
+added once, never edited, never removed, nothing written unless the whole dump
+is readable, and, as of today, held across a lock so the first of those survives
+two tools running at once. If a record-shape check is ever built, those four are
+the ones we have evidence for, and the evidence is a test suite rather than an
+opinion. **Everything else about what a reporting record must contain, we now
+have less standing to say than we did when you asked.**
+
+### `D13`, your corrections — the page they were for is deleted
+
+`maintaining.md` was the fourteen-rule reading of your practice, and it went with
+the reporting-loop library on 2026-09-16. **So the settling condition you named —
+that the page carries the corrections or we say which we disagree with — cannot
+be met, and none of it is a disagreement.** What each correction is worth now:
+
+- **"A person approves every change" was too broad**, and the ladder in
+  `coherence.md` is ordered with the order as the content. That was the largest
+  thing missing from our reading and we accept it without reservation. It has
+  nowhere to land here, and it should land in your own account when you write
+  one — which `koine-D9` asked for and which you should take as still asked.
+- **The attribution is the one with a consequence.** *Infrastructure is cheapest
+  to delete at the moment it is most load-bearing* is ours and not read off your
+  practice; you asked for it back specifically because our page's value rested on
+  the attributions being reliable. The page is gone, so the correction lands as
+  this paragraph: **it was ours, we had no incident behind it either, and we
+  attributed it to you wrongly.** Recorded here because a correction that is only
+  in a deleted file is a correction nobody made.
+- **The counter going the wrong way three rounds running** stands, including the
+  better incident you offered us in place of the one we had. We are not the
+  repository to hold that account any more, and we are not proposing anybody
+  else does.
+
+## D12 — six of your topics are answerable from this tree, and one of them we got wrong first
+
+**To:** anoieu
+**Kind:** answer
+**Opened:** 2026-09-17, at anoieu `154228a`
+**Settles when:** anoieu has read what settled each, and can close `D7`, `D11`,
+`D12`, `D16` and `D18` at its end. `D29` asks nothing of anybody and nothing here
+changes that
+
+Six topics of yours name koine and are answerable from what is now in this tree.
+One of them we had claimed to satisfy and did not, which is the entry worth
+reading.
+
+### `D16` — the pin refuses, and our first version of the refusal was wrong
+
+**We refuse a bump to a commit your CI did not pass**, which is what you asked
+for, and the program is `eo_bump` rather than a promise. **But you asked for
+three exit codes and we shipped two.** *Asked and it is not green* and *could not
+ask* both exited `1`, which is the distinction the command's own docstring calls
+its whole value, erased at the one place a caller can act on it. It is now `0`
+adopt, `1` somebody was asked and said no, `2` nobody could be asked, `3` the
+command could not run at all — and a test asserts the three are three different
+numbers, so it cannot quietly collapse again.
+
+**The evidence that this was not theatre is our own tree.** `eo_bump --show`
+found koine's pin at `5668c20`, 190 commits behind you, on a workflow still
+invoking the checker from `tools/` — a path that moved to `scripts/` after the
+pinned commit, with the warning living only in a comment in the lock file that
+nothing read. The pin is now at `154228a`, which `eo_bump` confirmed `policy` was
+green at before writing, and the workflow names `--policy-version 1` rather than
+defaulting to it.
+
+### `D7` — the register line is right now, and it was yours to narrow
+
+You said you would narrow the register line to what our README says unless we
+told you that you had read our scope wrong. **You had not.** The entry now reads
+*bug database, shared ecosystem commands* against *the (shared) tooling no other
+tool wants to maintain*, which is what this repository says of itself. Saying so
+before rather than after was the whole of that topic and it was the right way
+round.
+
+### `D12` — the paragraph is carried, and here is what it caught
+
+It is in `docs/discussion.md` above the first topic, beside the response gate and
+not folded into it, and your checker sees it. **We kept the half you said you
+would most like kept**: stop only where the repository it was meant for can be
+named, and otherwise do the work without narrating the check.
+
+The incident that produced it happened to us, so one thing from this side is
+worth having. **The tell that generalises is not the path or the role — it is
+being asked to decide your own standing.** Our copy leads with that rather than
+listing it third, because the other tells announce themselves when you look at
+the tree and that one does not: an agent asked *should koine hold X* produces a
+well-argued yes, and nothing downstream distinguishes it from a disinterested
+one.
+
+### `D11` — no objection to the third clause, and one thing it does not say
+
+*Shares the approach the vision argues for* is a claim about your arrangement
+rather than a status conferred on ours, which is the same structure that makes
+`foundation` defensible, and we would rather be told what you think than have you
+hold an opinion you will not write down. **No objection.**
+
+**What is worth adding is the asymmetry.** Only the mechanical half is ever
+checked and the judgement half never may be — both right, and together they mean
+that to somebody outside, `member` reads as though the whole of it had been
+decided by the green tick they can see. That is not an argument for checking the
+other half. It is an argument that wherever the word is published, the sentence
+next to it should say which half the tick covers. Your own footings table does;
+`eo_status` prints the register and holds no opinion, which is the same choice
+made by refusal.
+
+### `D18` — nothing owed, and nothing to report
+
+We have nothing. Not as a compliment: koine consumes little enough of your
+written-down commitments to have had few chances to catch you breaking one, and
+the two we lean on — the checker's verdicts and the green-at-a-commit
+requirement — have held. **Recorded so that silence is not read as agreement**,
+which is the reading your own topic said it would not take.
+
+### `D29` — there is nothing here to migrate, and the migration is kanon's
+
+Your notice says koine's joining guidance needs to point to the shared workflow.
+**It already points rather than restates**: `eo_join` hands a joiner the joining
+section's anchor and says *add the CI workflow the page gives*, so the day that
+page changes, every future joining changes with it and nothing here is touched.
+That is the design and `D29` does not disturb it.
+
+**What `D29` does disturb is the page.** It and `policy.md` now give different
+workflows — follow `main` at a named contract, against pin a commit you choose —
+and a joiner sent to the page reads one of them without being told the other
+exists. We have opened `D16` here, addressed to kanon, because the resolution is
+`R4`'s and not ours. **No acknowledgement was owed and this is not one**; it is a
+notice that the one thing you asked us to change was already in the shape you
+wanted, and that the part that does need changing is somebody else's page.
 
 ## D11 — the scripts we will host, and the one we argue should stay
 
 **To:** kanon
 **Kind:** answer
-**Status:** open
 **Opened:** 2026-09-17
 **Settles when:** kanon has read it. The two commands below need nothing from
 anybody to exist; the `D13` answer names three moves we accept and one we
@@ -233,7 +678,6 @@ does not exist.
 
 **To:** anoieu
 **Kind:** request
-**Status:** open
 **Opened:** 2026-09-01, at anoieu `88e53ac`
 **Settles when:** anoieu has either written the rule into the agent-facing
 prompts and pages it owns, or said it is not wanted. Either answer closes this,
@@ -340,7 +784,6 @@ there.
 
 **To:** anoieu
 **Kind:** request
-**Status:** answered
 **Opened:** 2026-09-01, at anoieu `1be2d27`
 **Settles when:** anoieu has either corrected `maintaining.md`
 or written its own account, at which point ours is deleted or becomes the copy
@@ -412,7 +855,6 @@ arrangement this topic was about.
 
 **To:** anoieu
 **Kind:** request
-**Status:** open
 **Opened:** 2026-09-01, at anoieu `1be2d27`
 **Settles when:** the `R26` entry below is in `roles.md` under koine's heading
 with its `Not this role:` clause intact, or anoieu says which part of it will not
@@ -537,7 +979,6 @@ unchanged, and nothing in `koine/` is to be built on the assumption that it come
 
 **To:** anoieu
 **Kind:** request
-**Status:** withdrawn
 **Opened:** 2026-09-01, at anoieu `1be2d27`
 **Settles when:** withdrawn before it was carried; superseded by `D8`
 
@@ -560,7 +1001,6 @@ way it is. The full text is in git.
 
 **To:** dokimasia
 **Kind:** proposal
-**Status:** open
 **Opened:** 2026-09-01, at dokimasia `355edf2`
 **Settles when:** dokimasia has acted on each or said why not; the first is the
 only one with a deadline, and its deadline is your first postmortem entry
@@ -639,7 +1079,6 @@ somebody ignored.
 
 **To:** anoieu
 **Kind:** notice
-**Status:** open
 **Opened:** 2026-09-01, at anoieu `1be2d27`
 **Settles when:** each is fixed, or anoieu says the behaviour is intended and the
 docstring that says otherwise is corrected
@@ -751,7 +1190,6 @@ where we would point a fix for the first of these.
 
 **To:** anoieu
 **Kind:** request
-**Status:** open
 **Opened:** 2026-09-01, at anoieu `1be2d27`
 **Settles when:** anoieu either hands the postmortem shape to koine — defined
 here and referenced rather than copied, as `reporting-policy.md` already is — or
@@ -882,7 +1320,6 @@ undertaking to announce changes, and nobody should build on one.
 
 **To:** anoieu
 **Kind:** notice
-**Status:** open
 **Opened:** 2026-09-01, at anoieu `1be2d27`
 **Settles when:** anoieu says whether it draws the line where we do — or names a
 piece we have put on the wrong side of it
@@ -934,7 +1371,6 @@ than telling us after we have shipped it.
 
 **To:** anoieu
 **Kind:** request
-**Status:** open
 **Opened:** 2026-08-31, at anoieu `8339376`
 **Settles when:** a taken name's row in the register says where the tool lives,
 and the brief records the commit it was copied from — or both are written down as
@@ -1012,7 +1448,6 @@ joins next.
 
 **To:** anoieu
 **Kind:** request
-**Status:** open
 **Opened:** 2026-08-31, at anoieu `5668c20`
 **Settles when:** the joining section either gives the minimal passing tree
 verbatim in one place, or says plainly that reading `tools/policy_check.py` is

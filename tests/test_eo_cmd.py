@@ -62,6 +62,55 @@ def forms(kind="prompt"):
             yield entry["name"], parts[0], parts[1:]
 
 
+def test_the_readme_table_agrees_with_the_manifest():
+    """The manifest is the ground truth; this directory's README carries a copy.
+
+    A register restated somewhere else needs something that runs between the
+    two, or the copy is drift that has not happened yet. It had already
+    happened once: the README said *every form takes `--show-prompt`* after
+    `eo_bump` and `eo_status` arrived, which are programs and take no such
+    thing. This is the comparison that was missing, not a second description.
+    """
+    print("the README's table against commands.json")
+    page = open(os.path.join(STORE, "README.md"), encoding="utf-8").read()
+    listed = set(re.findall(r"^\| \[?`(eo_[a-z_]+|koine_[a-z_]+)`",
+                            page, re.M))
+    named = {c["name"] for c in manifest()["commands"]}
+    check("the table names every command the manifest offers",
+          sorted(named - listed), [])
+    check("and offers nothing the manifest does not",
+          sorted(listed - named), [])
+
+    # A command in the directory that nobody put in the manifest installs
+    # nowhere and is described nowhere; `eo_install` went that way once.
+    here = {f for f in os.listdir(STORE)
+            if os.access(os.path.join(STORE, f), os.X_OK)
+            and not os.path.isdir(os.path.join(STORE, f))}
+    check("every file in this directory is in the manifest",
+          sorted(here - named), [])
+
+    # Each one is either written up on this page or lives somewhere that has
+    # its own page; a row with neither is a command with no documentation.
+    for entry in manifest()["commands"]:
+        where = "elsewhere" if entry.get("path") else "here"
+        ok(f"{entry['name']} is written up ({where})",
+           entry.get("path") or f"\n## {entry['name']}\n" in page)
+
+
+def test_only_prompts_take_show_prompt():
+    """The one behavioural claim the manifest makes about a `kind`."""
+    print("what each kind of command answers to")
+    for entry in manifest()["commands"]:
+        if entry.get("kind") != "program":
+            continue
+        path = os.path.join(ROOT, entry.get("path")
+                            or os.path.join("eo_cmd", entry["name"]))
+        out = subprocess.run([path, "--show-prompt"], capture_output=True,
+                             text=True)
+        ok(f"{entry['name']} is a program and refuses --show-prompt",
+           out.returncode != 0)
+
+
 def test_every_advertised_form_runs():
     print("every form the manifest advertises")
     for name, command, args in forms():
@@ -421,7 +470,9 @@ def test_runs_as_an_installed_copy():
 
 
 def main():
-    for test in (test_every_advertised_form_runs, test_refusals,
+    for test in (test_the_readme_table_agrees_with_the_manifest,
+                 test_only_prompts_take_show_prompt,
+                 test_every_advertised_form_runs, test_refusals,
                  test_no_prompt_names_a_command_that_is_gone,
                  test_associate_says_what_the_footing_needs,
                  test_the_dictated_marker_passes_the_checker,

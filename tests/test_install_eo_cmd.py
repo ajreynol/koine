@@ -385,6 +385,60 @@ def test_init_clone_refuses_without_a_register():
         shutil.rmtree(tmp)
 
 
+def test_a_named_president_is_used_or_refused_never_replaced():
+    """Naming a tree with no register does not silently read a different one.
+
+    `--president` and `KANON` are somebody saying *read the register there*.
+    Falling through to a sibling of the checkout answers a question nobody
+    asked, with a register whose age the run has no reason to trust -- and for
+    `--init-clone`, which clones whatever the register names, the blast radius
+    is a disk full of repositories nobody asked for. This test builds the
+    fallback on purpose, in the sandbox, and checks it is not taken.
+    """
+    print("a president somebody named")
+    tmp = tempfile.mkdtemp()
+    try:
+        # scripts/install_eo_cmd one level down, so the sibling the unnamed
+        # case would look at -- `<parent of the checkout>/kanon` -- is inside
+        # the sandbox and can be made to exist.
+        checkout = os.path.join(tmp, "checkout")
+        os.makedirs(checkout)
+        prefix = sandbox(checkout)
+        fallback = os.path.join(tmp, "kanon")
+        os.makedirs(os.path.join(fallback, "scripts", "ecosystem"))
+        with open(os.path.join(fallback, "scripts", "ecosystem",
+                               "ecosystem.json"), "w") as handle:
+            json.dump({"a": {"status": "member", "url": "https://example/a"}},
+                      handle)
+
+        ok("the fallback is there to be taken",
+           run(checkout, "--init-clone", os.path.join(tmp, "eo"), "--dry-run")
+           .returncode == 0)
+
+        out = run(checkout, "--init-clone", os.path.join(tmp, "eo"),
+                  "--president", os.path.join(tmp, "nowhere"))
+        check("a named tree with no register refuses", out.returncode, 2)
+        ok("and the refusal names the tree that was named",
+           os.path.join(tmp, "nowhere") in out.stderr)
+        ok("and nothing was cloned from the tree nobody named",
+           not os.path.exists(os.path.join(tmp, "eo")))
+
+        manifest = os.path.join(checkout, "eo_cmd", "commands.json")
+        data = json.load(open(manifest))
+        data["commands"][0]["needs"] = "register"
+        json.dump(data, open(manifest, "w"))
+
+        out = run(checkout, "--prefix", prefix, "--dry-run",
+                  env={"KANON": os.path.join(tmp, "nowhere")})
+        check("KANON is read the same way", out.returncode, 0)
+        ok("and the fallback register is not baked in behind somebody's back",
+           "work only where the register is" in out.stderr)
+        ok("and the warning names the tree that was named",
+           os.path.join(tmp, "nowhere") in out.stderr)
+    finally:
+        shutil.rmtree(tmp)
+
+
 def test_an_orphan_is_noticed():
     """A command dropped from the manifest leaves a file behind.
 
@@ -450,6 +504,7 @@ def main():
                  test_help_answers_why_and_not_only_what,
                  test_init_clone_is_not_a_command_it_installs,
                  test_init_clone_refuses_without_a_register,
+                 test_a_named_president_is_used_or_refused_never_replaced,
                  test_an_orphan_is_noticed,
                  test_the_snapshot_is_readable_python,
                  test_a_snapshot_says_when_it_came_from_a_dirty_tree,

@@ -6,6 +6,20 @@
     eo_bump                 move the pin, if the tip is green
     eo_bump --force         move it anyway, and say in the run that you did
 
+## What a run's exit code means
+
+**Four states, because four things can happen and three of them are not
+success.** *We asked and the answer was no* and *we could not ask* are
+different facts, and a command that returned the same number for both would
+erase the distinction this one exists to draw.
+
+    0   adopt: the check passed at that commit (and the pin moved, unless asked not to)
+    1   refuse: somebody was asked and said no -- the upstream check was not green,
+        or this repository's own `verify` command vetoed the commit
+    2   refuse as unverified: nobody could be asked -- no network, no such workflow,
+        a run still going, an upstream that could not be read
+    3   this command could not run at all: no configuration, or one it could not read
+
 Every repository in this ecosystem pins something, and moving that pin is a
 decision rather than an update: a change made in somebody else's tree turns this
 build red or green without anybody touching a file here. **So the pin moves only
@@ -32,11 +46,36 @@ every lock in this ecosystem already uses. `green.workflow` is the check that
 must have passed at a commit before the pin may name it. `upstream.local` may
 name a checkout on this machine, which is read and never written or fetched into.
 
+**A lock that is JSON says which field the commit is in**, so a repository whose
+lock already carries a ref, a date and a comment beside the commit does not have
+to flatten it to adopt this:
+
+    {"pin": {"file": "scripts/deps.lock", "json": "anoieu.commit",
+             "date": "anoieu.date"}}
+
+`pin.json` is a dotted path to the commit and `pin.date`, where it is given, is a
+sibling field stamped with the run's date. The file is rewritten as JSON at two
+spaces, which is what every lock in this ecosystem is already written at; every
+other field is carried through untouched.
+
+**`verify` is this repository's own veto, and it is a separate question.** That
+the upstream build was green says the work got past *their* checks; whether it
+still works *here* is a different fact and nobody upstream can answer it.
+
+    {"verify": {"command": ["scripts/check_compat", "{commit}"],
+                "what": "the pinned checker still passes on this tree"}}
+
+It runs at the root of this repository with the candidate commit substituted for
+`{commit}` and also in `EO_BUMP_COMMIT`, **after** the check is green and
+**before** anything is written. A non-zero exit refuses the bump, and the run
+says which of the two said no.
+
 ## What it will not do
 
 **It never edits anything but the lock file**, and it writes the lock only when
-the commit it names is one the check passed at. `--force` is the single
-exception, it is a person's decision, and the run says so in as many words.
+the commit it names is one the check passed at and this repository's own
+`verify`, where there is one, did not veto. `--force` is the single exception,
+it is a person's decision, and the run says so in as many words.
 
 **It does not decide what green means.** The workflow named in the
 configuration is the one asked about, and a run that cannot reach an answer --
@@ -46,6 +85,7 @@ distinction is the whole value of the command.
 """
 
 import argparse
+import datetime
 import json
 import os
 import subprocess
@@ -55,6 +95,10 @@ import urllib.request
 
 CONFIG = "eo_bump.json"
 API = "https://api.github.com"
+
+#: What a run's exit code means. Four, because *asked and told no* and *could
+#: not ask* are different facts and this command exists to keep them apart.
+ADOPT, REFUSED, UNVERIFIED, CANNOT_RUN = 0, 1, 2, 3
 
 
 def find_config(start):
@@ -71,8 +115,38 @@ def find_config(start):
         here = up
 
 
-def read_pin(path):
-    """The commit a lock names. Comments and blank lines are not it."""
+def dig(data, path):
+    """The value at a dotted path, or `""` where the path does not go there."""
+    for step in path.split("."):
+        if not isinstance(data, dict) or step not in data:
+            return ""
+        data = data[step]
+    return data if isinstance(data, str) else ""
+
+
+def plant(data, path, value):
+    """Set the value at a dotted path, making the dictionaries on the way."""
+    steps = path.split(".")
+    for step in steps[:-1]:
+        nxt = data.get(step)
+        if not isinstance(nxt, dict):
+            nxt = {}
+            data[step] = nxt
+        data = nxt
+    data[steps[-1]] = value
+
+
+def read_pin(path, field=""):
+    """The commit a lock names.
+
+    A plain lock is one commit with `#` comments around it, which is what every
+    lock in this ecosystem started as. **A lock that is JSON says which field**,
+    because a repository whose lock already carries a ref and a date beside the
+    commit should not have to flatten it in order to adopt this.
+    """
+    if field:
+        with open(path, encoding="utf-8") as handle:
+            return dig(json.load(handle), field)
     for line in open(path, encoding="utf-8").read().splitlines():
         line = line.split("#", 1)[0].strip()
         if line:
@@ -80,13 +154,27 @@ def read_pin(path):
     return ""
 
 
-def write_pin(path, commit):
+def write_pin(path, commit, field="", date_field="", date=""):
     """Replace the commit, keeping every comment the lock carries.
 
     The comments are why the pin is where it is, and they are usually the only
     record of that. A rewrite that dropped them would lose the reasoning and
-    keep the number.
+    keep the number. **The same holds of a JSON lock's other fields**, which are
+    read back unchanged and written back unchanged; only the commit, and a date
+    beside it where the configuration names one, are this command's to move.
     """
+    if field:
+        with open(path, encoding="utf-8") as handle:
+            data = json.load(handle)
+        plant(data, field, commit)
+        if date_field:
+            plant(data, date_field, date or datetime.date.today().isoformat())
+        body = json.dumps(data, indent=2, ensure_ascii=False) + "\n"
+        tmp = path + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as handle:
+            handle.write(body)
+        os.replace(tmp, path)
+        return
     lines = open(path, encoding="utf-8").read().splitlines(keepends=True)
     out, done = [], False
     for line in lines:
@@ -177,6 +265,41 @@ def green_at(cfg, commit, token):
     return True, f"`{want}` passed at this commit"
 
 
+def vetoed(cfg, root, commit):
+    """This repository's own check on the candidate commit: `(bad, note)`.
+
+    **Green upstream and workable here are separate questions**, and only the
+    second is this repository's to answer. A consumer whose own build has to
+    keep passing against the pinned commit has a check for that already; this
+    runs it before anything is written, so a bump that would break this tree
+    refuses instead of landing and being found later.
+
+    No shell: the command is a list, and `{commit}` in any of its words is the
+    candidate. `EO_BUMP_COMMIT` carries it too, for a script that would rather
+    read an environment variable than be handed an argument.
+    """
+    spec = cfg.get("verify") or {}
+    command = spec.get("command")
+    if not command:
+        return False, ""
+    if isinstance(command, str) or not all(isinstance(w, str) for w in command):
+        return True, ("`verify.command` must be a list of words, so that nothing "
+                      "goes through a shell")
+    what = spec.get("what") or " ".join(command)
+    argv = [word.replace("{commit}", commit) for word in command]
+    env = dict(os.environ, EO_BUMP_COMMIT=commit)
+    try:
+        out = subprocess.run(argv, cwd=root, env=env, capture_output=True,
+                             text=True)
+    except OSError as exc:
+        return True, f"{what}: could not be run -- {exc}"
+    if out.returncode == 0:
+        return False, what
+    tail = (out.stderr or out.stdout).strip().splitlines()
+    return True, (f"{what}: exited {out.returncode}"
+                  + (f" -- {tail[-1]}" if tail else ""))
+
+
 def main():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -200,7 +323,15 @@ eo_bump.json, beside the lock or at the repository root:
     }
 
 "upstream.local" may name a checkout on this machine, which is read and never
-written or fetched into. GITHUB_TOKEN is used for the check query if set.""")
+written or fetched into. GITHUB_TOKEN is used for the check query if set.
+
+A lock that is JSON names the field: "pin": {"file": "scripts/deps.lock",
+"json": "anoieu.commit", "date": "anoieu.date"}. A repository with its own
+compatibility check names it too, and a non-zero exit refuses the bump:
+"verify": {"command": ["scripts/check_compat", "{commit}"], "what": "..."}.
+
+Exit codes: 0 adopt, 1 somebody was asked and said no, 2 nobody could be
+asked, 3 this command could not run.""")
     parser.add_argument("--root", metavar="DIR", default=".",
                         help="the repository to work in (default: here)")
     parser.add_argument("--show", action="store_true",
@@ -213,39 +344,45 @@ written or fetched into. GITHUB_TOKEN is used for the check query if set.""")
                         help="say what would happen and write nothing")
     args = parser.parse_args()
 
+    root = os.path.abspath(args.root)
     path = find_config(args.root)
     if not path:
-        print(f"-- refused: no {CONFIG} at or above {os.path.abspath(args.root)}",
+        print(f"-- refused: no {CONFIG} at or above {root}", file=sys.stderr)
+        print(f"   see the docstring at the top of this file for its keys",
               file=sys.stderr)
-        print(f"   see the docstring at the top of this file for its three keys",
-              file=sys.stderr)
-        return 2
+        return CANNOT_RUN
     try:
         cfg = json.load(open(path, encoding="utf-8"))
+        field = cfg["pin"].get("json", "")
         lock = os.path.join(os.path.dirname(path), cfg["pin"]["file"])
         if not os.path.exists(lock):
             lock = os.path.join(os.path.dirname(os.path.dirname(path)),
                                 cfg["pin"]["file"])
-        old = read_pin(lock)
+        old = read_pin(lock, field)
     except (OSError, ValueError, KeyError) as exc:
         print(f"-- refused: {path}: {exc}", file=sys.stderr)
-        return 2
+        return CANNOT_RUN
+    if field and not old:
+        print(f"-- refused: {lock} has no commit at `{field}`", file=sys.stderr)
+        return CANNOT_RUN
 
     tip, where = upstream_tip(cfg)
     if not tip:
-        print(f"-- refused: could not read {cfg['upstream']['url']}", file=sys.stderr)
-        return 1
+        print(f"-- unknown: could not read {cfg['upstream']['url']}, so nothing "
+              "was asked", file=sys.stderr)
+        return UNVERIFIED
 
-    print(f"-- pinned   {old[:12]}  ({os.path.relpath(lock, os.path.abspath(args.root))})")
+    print(f"-- pinned   {old[:12]}  ({os.path.relpath(lock, root)}"
+          + (f" `{field}`)" if field else ")"))
     print(f"-- upstream {tip[:12]}  ({where})")
     gap = between(cfg, old, tip)
     if gap is not None:
         print(f"-- between  {gap} commit(s)")
     if old == tip:
         print("-- the pin is already at the tip; nothing to do")
-        return 0
+        return ADOPT
     if args.show:
-        return 0
+        return ADOPT
 
     ok, note = green_at(cfg, tip, os.environ.get("GITHUB_TOKEN", ""))
     if ok is True:
@@ -256,23 +393,42 @@ written or fetched into. GITHUB_TOKEN is used for the check query if set.""")
         print(f"-- unknown: {note}", file=sys.stderr)
         print("--   unknown is not green, and this command will not treat it as "
               "green", file=sys.stderr)
-    if args.check:
-        return 0 if ok is True else 1
 
-    if ok is not True and not args.force:
-        print(f"-- refused: the pin stays at {old[:12]}, which is the commit this "
-              "build is tested against", file=sys.stderr)
+    # Their build passing and this tree still working are separate questions,
+    # and only one of them is answerable from here. Asked after the check, so a
+    # run never spends the consumer's check on a commit already refused.
+    bad, why = (False, "")
+    if ok is True:
+        bad, why = vetoed(cfg, root, tip)
+        if bad:
+            print(f"-- vetoed here: {why}", file=sys.stderr)
+        elif why:
+            print(f"-- verified here: {why}")
+
+    if args.check:
+        return (ADOPT if ok is True and not bad
+                else UNVERIFIED if ok is None else REFUSED)
+
+    if (ok is not True or bad) and not args.force:
+        said = ("this repository's own check" if bad
+                else "nobody, because the state could not be established"
+                if ok is None else "the upstream check")
+        print(f"-- refused: the pin stays at {old[:12]}, which is the commit "
+              "this build is tested against", file=sys.stderr)
+        print(f"--   what said no: {said}", file=sys.stderr)
         print("--   --force moves it anyway, and that is a person's decision",
               file=sys.stderr)
-        return 1
+        return UNVERIFIED if ok is None and not bad else REFUSED
     if args.dry_run:
         print(f"-- dry run: would write {tip} to {lock}")
-        return 0
+        return ADOPT
 
-    write_pin(lock, tip)
-    print(f"-- moved the pin to {tip[:12]}" + ("" if ok is True else "  (--force: the check did not pass)"))
-    print(f"-- wrote {lock}, comments kept")
-    return 0
+    write_pin(lock, tip, field, cfg["pin"].get("date", ""))
+    forced = "" if ok is True and not bad else "  (--force: something said no)"
+    print(f"-- moved the pin to {tip[:12]}{forced}")
+    print(f"-- wrote {lock}, " + ("every other field kept" if field
+                                  else "comments kept"))
+    return ADOPT
 
 
 if __name__ == "__main__":

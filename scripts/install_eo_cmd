@@ -123,18 +123,32 @@ def find_president(given=None):
     """The tree holding the register, and what we can say about its state.
 
     **Nothing here decides who the president is.** The register records that,
-    and the tree that holds the register is the one to read it from. Given a
-    directory, that one is used; otherwise a sibling of this checkout.
+    and the tree that holds the register is the one to read it from.
+
+    **A tree somebody named is used or refused, never replaced.** `--president`
+    and `KANON` are somebody saying *read the register there*; if that tree does
+    not hold one, falling through to a different tree would answer a question
+    nobody asked, with a register whose age and provenance the run has no reason
+    to trust. Only the unnamed case looks at a sibling of this checkout, which
+    is a guess and is the one place a guess is the whole point.
     """
-    candidates = [given] if given else []
-    candidates += [os.environ.get("KANON", ""),
-                   os.path.join(os.path.dirname(ROOT), "kanon")]
-    for candidate in candidates:
-        if candidate:
-            candidate = os.path.abspath(os.path.expanduser(candidate))
-            if os.path.isfile(os.path.join(candidate, REGISTER)):
-                return candidate
-    return ""
+    named = given or os.environ.get("KANON", "")
+    if named:
+        named = os.path.abspath(os.path.expanduser(named))
+        return named if os.path.isfile(os.path.join(named, REGISTER)) else ""
+    sibling = os.path.join(os.path.dirname(ROOT), "kanon")
+    return sibling if os.path.isfile(os.path.join(sibling, REGISTER)) else ""
+
+
+def named_president(given=None):
+    """The tree somebody named, if they named one. `""` if nobody did.
+
+    Only for a message: a run that refuses should say *the tree you named holds
+    no register* rather than *none was found*, which reads as though nobody had
+    said where to look.
+    """
+    named = given or os.environ.get("KANON", "")
+    return os.path.abspath(os.path.expanduser(named)) if named else ""
 
 
 #: What an installed command actually reads out of an entry. Everything else in
@@ -301,7 +315,7 @@ def on_path(directory):
 NOT_CLONED = {"child", "outsider"}
 
 
-def do_init_clone(president, into, dry_run):
+def do_init_clone(president, into, dry_run, named_dir=None):
     """Clone the ecosystem beside the president, from the register it holds.
 
     **This is not a command anybody installs.** Putting the ecosystem on a
@@ -317,9 +331,15 @@ def do_init_clone(president, into, dry_run):
     is theirs.
     """
     if not president:
-        print("-- refused: no checkout holding the register was found, and the "
-              "register\n   is what says who to clone. Pass --president DIR",
-              file=sys.stderr)
+        named = named_president(named_dir)
+        if named:
+            print(f"-- refused: {named} does not hold {REGISTER}, and nothing "
+                  f"else is\n   read once a tree has been named. Name the one "
+                  f"that holds the register", file=sys.stderr)
+        else:
+            print("-- refused: no checkout holding the register was found, and "
+                  "the register\n   is what says who to clone. Pass "
+                  "--president DIR", file=sys.stderr)
         return 2
     try:
         data, where = snapshot(president)
@@ -518,7 +538,10 @@ def do_install(prefix, origin, config, dry_run, force, president_dir=None):
             print(f"-- the register at {president} could not be read: {exc}",
                   file=sys.stderr)
     elif any(c.get("needs") == "register" for c in commands(origin)):
-        print("-- no president checkout found, so commands that read the "
+        named = named_president(president_dir)
+        where = (f"{named} does not hold {REGISTER}"
+                 if named else "no president checkout found")
+        print(f"-- {where}, so commands that read the "
               "register will\n   install without a snapshot and work only "
               "where the register is", file=sys.stderr)
 
@@ -647,7 +670,9 @@ def main():
                              "beside the president). Installs no commands")
     parser.add_argument("--president", metavar="DIR",
                         help="the checkout holding the register, whose contents "
-                             "are baked into the commands that read it")
+                             "are baked into the commands that read it. A tree "
+                             "named here is used or refused, never replaced by "
+                             "another")
     parser.add_argument("--force", action="store_true",
                         help="replace a file of the same name this script did not install")
     parser.add_argument("--dry-run", action="store_true",
@@ -680,7 +705,8 @@ def main():
         into = (os.path.abspath(os.path.expanduser(args.init_clone))
                 if args.init_clone is not True
                 else os.path.dirname(president) if president else "")
-        return do_init_clone(president, into, args.dry_run)
+        return do_init_clone(president, into, args.dry_run,
+                             args.president)
 
     if args.status:
         return do_status(prefix, origin, config)

@@ -18,7 +18,7 @@ python3 tests/test_install_eo_cmd.py                     # the installer
 python3 tests/test_bump.py                               # eo_bump
 python3 tests/test_register.py                           # reading the register
 python3 tests/test_eo_cmd.py                             # the eo_cmd commands themselves
-python3 /path/to/anoieu/scripts/policy_check.py --root .  # the ecosystem policy
+python3 /path/to/anoieu/scripts/policy_check.py --policy-version 1 --root .  # the policy
 ```
 
 Each directory's own README is the whole of its subject:
@@ -76,13 +76,15 @@ wrong about it reaches people who did not sign up for this. Either is enough.
 **When a task lands on this list:** stop, say which row it is, and ask which
 repository was meant. Do not build the smaller safe part.
 
-**`eo_cmd/` is the edge of this list, and the edge moved.** Those two commands
-were kanon's, stored here as copies nobody could edit, until kanon deleted its
-pair on 2026-09-17 and `R35` was created to hold them. koine now writes them —
-their text, their options, what they ask. **What it still may not touch is what
-joining costs**, the row above: this repository maintains the program that
-states the rule, and a change to the rule is argued in kanon and then written
-here. [`../eo_cmd/README.md`](../eo_cmd/README.md) carries that line in full.
+**`eo_cmd/` is the edge of this list, and the edge moved.** `eo_init` and
+`eo_join` were kanon's, stored here as copies nobody could edit, until kanon
+deleted its pair on 2026-09-17 and `R35` was created to hold them. koine now
+writes them — their text, their options, what they ask. **What it still may not
+touch is what joining costs**, the row above: this repository maintains the
+program that states the rule, and a change to the rule is argued in kanon and
+then written here. [`../eo_cmd/README.md`](../eo_cmd/README.md) carries that
+line in full, and records that `R35` names two commands while the directory
+holds six with nothing comparing the two statements.
 
 ## Check who the instruction is addressed to, before the first edit
 
@@ -144,10 +146,23 @@ withdraw than it was to write.
   nothing worth writing up. **All three are answers**, the third is the
   commonest, and which one it is is a position somebody signs. Asked by anoieu on
   2026-09-02 and left unstated.
-- **[`discussion.md`](discussion.md) is a record of an earlier purpose.** Its
-  topics were written when koine was a reporting-loop library and none was ever
-  carried. Whether they are withdrawn, rewritten or left is the maintainer's;
-  **no agent works that file unbidden**, including to tidy it.
+- **[`discussion.md`](discussion.md) below `D11` is a record of an earlier
+  purpose.** Those topics were written when koine was a reporting-loop library
+  and none was ever carried. Whether they are withdrawn, rewritten or left is the
+  maintainer's; **no agent works that file unbidden**, including to tidy it, and
+  the standing override above does not reach them — it covers answering what
+  names koine, which is `D11` and above. Two look finished on their own terms and
+  are the first to look at: `D7` says on its face that it was withdrawn, and
+  `D9`'s settling condition was that our page is deleted or becomes the copy, and
+  the page is deleted.
+- **Two pieces are wanted by name, and each is a maintenance obligation**, so
+  neither is an agent's to take on: a **prompt-drift check** hosted once instead
+  of copied into anoieu and dokimasia (anoieu's `D8`, answered in `D13`), and a
+  **shared pinned-checkout resolver** replacing the two copies of `koine.py`
+  (dokimasia's `D6`, answered in `D14`). Both are specified in those answers so
+  that the decision is cheap to make; until somebody makes it, what stands in
+  both files is *not yet* rather than *coming*, because a consumer who deletes a
+  copy against a promise nobody signed is worse off than one who never heard it.
 
 ## What was here before
 

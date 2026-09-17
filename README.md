@@ -23,17 +23,23 @@ why it is written once here instead of three times badly elsewhere.
 [dokimasia](https://github.com/ajreynol/dokimasia) are the customers: each pins
 a commit of this repository and calls it from its own run.
 **[`bug_db/README.md`](bug_db/README.md) is the whole of it** — the worked
-example, the one rule that makes it a database, and what it refuses to do.
+example, the one rule that makes it a database, what happens when two runs
+arrive at once, and what it refuses to do.
 
-**2. [`eo_cmd/`](eo_cmd), the commands a repository outside this ecosystem
-runs.** `eo_join` joins it; `eo_init` starts a tool. Both run *inside the tree
-being started or joined* rather than from the repository that keeps the rule,
-which is why they live with the tool whose job is shared machinery and why
+**2. [`eo_cmd/`](eo_cmd), the commands that run inside somebody else's tree.**
+`eo_init` starts a tool and `eo_join` joins it; `eo_bump` moves a pinned
+dependency onto a commit whose CI is green and refuses otherwise; `eo_status`
+says who is in this ecosystem and on what footing; `eo_respond` answers one
+topic another tool addressed to you, and `eo_housekeeping` brings a repository
+up to date. Each runs *inside the tree being started, joined, bumped, tidied or
+answered* rather than from the repository that keeps the rule — which is why
+they live with the tool whose job is shared machinery, and why
 [`scripts/install_eo_cmd`](scripts/install_eo_cmd) puts them on a person's path.
 **koine maintains what they ask and has no standing to change what joining
 costs** — that stays with the office.
-**[`eo_cmd/README.md`](eo_cmd/README.md) is the whole of it** — the four forms
-of `eo_join`, and where the line between the two falls.
+**[`eo_cmd/README.md`](eo_cmd/README.md) is the whole of it** — one section per
+command, and where the line between maintaining them and owning what they ask
+falls.
 
 ## What else is in this tree
 
@@ -53,6 +59,35 @@ ecosystem. **No agent acts on the discussion file unbidden**
 became the tongue people whose Greek differed used to understand each other. It
 was the plain register rather than the literary one, which is the right ambition
 for a script that appends to a file.
+
+## Common questions
+
+Mostly routing, because the commonest question about koine is which repository
+the asker actually wants. These trees are alike on purpose and several sit side
+by side on one disk.
+
+- **Where is the repository policy, and what does joining cost?** Neither is
+  koine's. Both are [kanon](https://github.com/ajreynol/kanon)'s, in
+  `docs/policy.md`. koine maintains `eo_join`, which *states* that rule and
+  cannot change it.
+- **What decides whether my tree complies?** The policy checker, published by
+  [anoieu](https://github.com/ajreynol/anoieu). koine pins it like everybody
+  else and does not maintain it.
+- **Who is in this ecosystem, and on what footing?** The register, which kanon
+  holds. [`eo_cmd/eo_status`](eo_cmd/eo_status) prints what it says and never
+  writes to it — a footing is a decision somebody made, not one a program takes.
+- **How do I start a tool, or join?** [`eo_cmd/`](eo_cmd/README.md) —
+  `eo_init` and `eo_join`, run inside the tree being started or joined, and put
+  on your path by [`scripts/install_eo_cmd`](scripts/install_eo_cmd).
+- **How do I move a pinned dependency without taking work nobody could build?**
+  [`eo_cmd/eo_bump`](eo_cmd/eo_bump), which moves a pin onto a commit whose CI
+  was green there and refuses otherwise.
+- **Where do I report a bug you found in one of these tools?** Not here. A
+  defect with a file and a line number is a finding, and anoieu keeps the
+  reporting workflow that says how one is carried. Anything else goes in that
+  tool's own `docs/discussion.md`.
+- **Is this where the bug database itself lives?** No. koine keeps the program
+  that appends to one; the database belongs to the tool that found the bugs.
 
 ## How this repository is maintained
 

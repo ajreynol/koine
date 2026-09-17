@@ -20,6 +20,7 @@ import os
 import subprocess
 import sys
 import tempfile
+import textwrap
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -61,6 +62,12 @@ class Tree:
     def bugs(self):
         with open(self.db, encoding="utf-8") as fh:
             return json.load(fh)["bugs"]
+
+    def start(self, dump, *extra, db=None):
+        """A run left running, so two of them can be in flight at once."""
+        return subprocess.Popen(
+            [sys.executable, SCRIPT, dump, db or self.db, *extra],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
 
 RUN1 = [{"bug": "EO0031-17", "tool": "anoieu", "description": "declared twice"},
@@ -216,6 +223,108 @@ def test_a_database_is_also_a_dump():
           "0 new bug(s), 2 already known" in r.stdout, r.stdout)
 
 
+def test_two_runs_at_once_both_survive():
+    """The property the lock exists for, and the one it is easiest to lose.
+
+    *A bug is added once* is a claim about a file several tools append to.
+    Without a lock each run reads the same database, merges its own dump into
+    what it read, and whichever replaces last throws the others' bugs away --
+    silently, because from inside every one of them everything worked.
+
+    **Eight writers rather than two, because two was a bad test.** Measured
+    against this script with the lock bypassed: two overlapping appends lost one
+    in 2 trials out of 12, and eight lost one in 5 out of 6. A regression test
+    that catches its own bug one run in six is not a test, and the number is
+    here so the next person does not have to re-measure it to find that out.
+    """
+    print("\neight tools appending to one database at the same time:")
+    t = Tree()
+    t.run(t.write("first.json", RUN1), "--date", "2026-03-04")
+    dumps = [t.write(f"n{i}.json", [{"bug": f"b-{i}", "tool": f"tool{i}",
+                                     "description": "z"}])
+             for i in range(8)]
+
+    # Every run is held at the front of the queue by a third process sitting on
+    # the lock, so all eight are certainly in flight before any may write.
+    holder = subprocess.Popen(
+        [sys.executable, "-c", textwrap.dedent(f"""
+            import fcntl, sys, time
+            h = open({t.db + ".lock"!r}, "a+")
+            fcntl.flock(h.fileno(), fcntl.LOCK_EX)
+            sys.stdout.write("held\\n"); sys.stdout.flush()
+            time.sleep(0.8)
+        """)], stdout=subprocess.PIPE, text=True)
+    check("a third process can take the lock", holder.stdout.readline(), "held\n")
+
+    runs = [t.start(dump, "--date", "2026-09-16") for dump in dumps]
+    holder.wait()
+    codes = [r.wait() for r in runs]
+
+    check("every run succeeds", set(codes), {0})
+    names = sorted(b["bug"] for b in t.bugs())
+    check("and every accepted append survives",
+          names, sorted(["DOC0011-202", "EO0031-17"] + [f"b-{i}" for i in range(8)]))
+    check("each under its own tool", len({b["tool"] for b in t.bugs()}), 9)
+
+
+def test_a_run_that_cannot_take_the_lock_refuses():
+    print("\na database another run is holding:")
+    t = Tree()
+    t.run(t.write("first.json", RUN1), "--date", "2026-03-04")
+    before = open(t.db, encoding="utf-8").read()
+    holder = subprocess.Popen(
+        [sys.executable, "-c", textwrap.dedent(f"""
+            import fcntl, sys, time
+            h = open({t.db + ".lock"!r}, "a+")
+            fcntl.flock(h.fileno(), fcntl.LOCK_EX)
+            sys.stdout.write("held\\n"); sys.stdout.flush()
+            time.sleep(2.0)
+        """)], stdout=subprocess.PIPE, text=True)
+    holder.stdout.readline()
+    try:
+        r = t.run(t.write("b.json", [{"bug": "b-1", "tool": "anoieu",
+                                      "description": "z"}]),
+                  "--lock-timeout", "0.2")
+        check("it refuses rather than waiting for ever", r.returncode == adb.BUSY,
+              f"{r.returncode}: {r.stderr}")
+        check("and says what it was waiting for",
+              "is held by another run" in r.stderr, r.stderr)
+        check("and the database is untouched",
+              open(t.db, encoding="utf-8").read() == before)
+
+        r = t.run(t.write("c.json", [{"bug": "c-1", "tool": "anoieu",
+                                      "description": "z"}]), "--no-lock")
+        check("--no-lock is the way past, for a caller holding its own",
+              r.returncode == 0, r.stderr)
+
+        r = t.run(t.write("e.json", [{"bug": "e-1", "tool": "anoieu",
+                                      "description": "z"}]),
+                  "--dry-run", "--lock-timeout", "0.2")
+        check("and a reading run never waited in the first place",
+              r.returncode == 0, r.stderr)
+    finally:
+        holder.wait()
+
+
+def test_an_interrupted_write_leaves_a_readable_database():
+    print("\na run killed between the write and the rename:")
+    t = Tree()
+    t.run(t.write("a.json", RUN1), "--date", "2026-03-04")
+    before = open(t.db, encoding="utf-8").read()
+    # What a killed run leaves behind: a temporary file named for its own
+    # process. A fixed name would be taken for ever and the next run would
+    # write over it.
+    stale = f"{t.db}.writing.999999"
+    open(stale, "w").write("half a fi")
+    r = t.run(t.write("b.json", [{"bug": "b-1", "tool": "anoieu",
+                                  "description": "z"}]), "--date", "2026-09-16")
+    check("a later run is unaffected by the leftovers", r.returncode == 0, r.stderr)
+    check("the database is whole and holds the new bug", len(t.bugs()) == 3)
+    check("and the old rows are still what they were",
+          before.count("EO0031-17") == 1 and t.bugs()[0]["bug"] == "EO0031-17")
+    os.remove(stale)
+
+
 def test_the_file_it_writes():
     print("\nwhat the database looks like on disk:")
     t = Tree()
@@ -228,9 +337,14 @@ def test_the_file_it_writes():
     check("known fields come first, in a fixed order, whatever the dump did",
           order == ["bug", "tool", "description", "first_seen", "last_seen", "zz"],
           str(order))
+    # `bugs.json.lock` is furniture rather than leftovers: `flock` needs a file
+    # to hold, and deleting it after a run is how two runs end up locking two
+    # different inodes and both proceeding. It is empty and carries no data.
     check("no leftover temporary file",
-          sorted(os.listdir(t.dir)) == ["a.json", "bugs.json"],
+          sorted(os.listdir(t.dir)) == ["a.json", "bugs.json", "bugs.json.lock"],
           str(sorted(os.listdir(t.dir))))
+    check("and the lock file holds nothing",
+          os.path.getsize(t.db + ".lock") == 0)
 
 
 if __name__ == "__main__":
@@ -243,6 +357,9 @@ if __name__ == "__main__":
                test_a_bad_dump_writes_nothing,
                test_dry_run_writes_nothing,
                test_a_database_is_also_a_dump,
+               test_two_runs_at_once_both_survive,
+               test_a_run_that_cannot_take_the_lock_refuses,
+               test_an_interrupted_write_leaves_a_readable_database,
                test_the_file_it_writes):
         fn()
     print()

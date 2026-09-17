@@ -8,11 +8,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: the policy, at the commit this repository pins
-        # The pin is `anoieu.lock`, moved by `eo_bump` and never by hand. That
-        # file also records why the pin and the checker path below move
-        # together: the checker moved from tools/ to scripts/ in anoieu after
-        # the pinned commit, so bumping one without the other breaks this job.
+        # The pin is `anoieu.lock`, moved by `eo_bump` and never by hand: a
+        # commit whose own CI was green there, and no other.
         run: |
           git clone --quiet https://github.com/ajreynol/anoieu /tmp/anoieu
           git -C /tmp/anoieu checkout --quiet "$(grep -v '^#' anoieu.lock | head -1)"
-      - run: python3 /tmp/anoieu/tools/policy_check.py --root .
+      # The contract is named rather than defaulted. Omitting it selects 1
+      # today and would go on selecting 1 after later contracts exist, so the
+      # version this tree was actually checked against would stop being
+      # readable from the file that decides it.
+      - run: python3 /tmp/anoieu/scripts/policy_check.py --policy-version 1 --root .

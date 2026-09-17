@@ -85,6 +85,48 @@ run adds nothing.
 That is the property that lets this be wired into a job instead of remembered.
 Re-running is free, so a run that half-failed can simply be run again.
 
+## Two runs at once
+
+**A run holds an exclusive lock on the database while it reads, merges and
+writes it.** *A bug is added once* is a claim about a file two tools append to,
+and without a lock it holds only for runs that happen not to overlap: both read
+the same database, both merge their own dump into what they read, and whichever
+replaces last throws the others' bugs away. **Nothing reports that**, because
+from inside every one of them everything worked.
+
+**And it is intermittent, which is the worse property.** Measured against this
+script with the lock bypassed: two overlapping appends lost one in 2 trials out
+of 12, and eight lost one in 5 out of 6. A record that loses an entry once in
+six runs, reporting success every time, is one nobody can tell is wrong by
+reading it — so `tests/test_append_db.py` runs eight writers rather than two,
+because two would have passed most days with the bug still in.
+
+```console
+$ koine_append_db run.json bugs.json --lock-timeout 60   # wait longer
+$ koine_append_db run.json bugs.json --no-lock           # I have arranged this
+```
+
+The lock is `<database>.lock` beside the database, taken with `flock`, and the
+kernel drops it when the process ends however it ends — so a killed run leaves a
+stale file and never a stale lock. **The file is furniture rather than data**: it
+is empty, it is not removed after a run (deleting it is how two runs end up
+locking two different inodes and both proceeding), and it belongs wherever the
+database is ignored or committed.
+
+**A run that cannot take the lock within `--lock-timeout` seconds refuses and
+writes nothing**, exiting `3` — a distinct code, because *somebody else is
+writing* and *you gave me a bad dump* call for different things from whatever
+wrapped the call. The dump is still there and re-running is free.
+
+**`--no-lock` is the way past.** It is for a caller that already serialises its
+own access to the database and would otherwise take the same lock twice, and it
+is the way past on a platform with no `flock`, where a run refuses rather than
+pretending to be serialised. A caller passing it owns the guarantee from there.
+
+**A reading run — `--dry-run` — takes no lock and needs none.** The database is
+replaced atomically, so a reader sees one whole version or another, never a
+half-written one.
+
 ## What it will not do
 
 - **It never edits a bug already in the database, and never removes one.** If a
@@ -95,9 +137,10 @@ Re-running is free, so a run that half-failed can simply be run again.
 - **Nothing is written unless the whole dump is readable.** One malformed entry
   and the run writes nothing at all, so a half-applied dump is not a state the
   database can be in.
-- **It does not write anything anywhere else**, fetch anything, or need a
-  network. It reads two files and replaces one of them, and the replacement is
-  atomic, so an interrupted run leaves the old database intact.
+- **It writes the database and its lock file and nothing else**, fetches
+  nothing, and needs no network. It reads two files and replaces one of them,
+  and the replacement is atomic, so an interrupted run leaves the old database
+  intact.
 
 ## The two files
 
@@ -120,7 +163,8 @@ $ python3 tests/test_append_db.py
 ```
 
 No dependencies and no network. `--dry-run` says what would change and writes
-nothing; `--date` records a run under a date other than today.
+nothing; `--date` records a run under a date other than today;
+`--lock-timeout` and `--no-lock` are above.
 
 **This program lives here** rather than in `scripts/`, one directory per
 purpose. It was at this repository's root until
