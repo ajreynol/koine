@@ -1,9 +1,9 @@
 # eo_cmd
 
-**The two commands a repository outside this ecosystem actually runs.** Both are
-meant to be run *inside the tree being started or joined*, rather than from the
-repository that keeps the rule — which is why they live with the tool whose job
-is shared machinery, and why
+**The commands a repository outside this ecosystem actually runs.** Each is meant
+to be run *inside somebody else's tree* — the one being started, joined, tidied
+or addressed — rather than from the repository that keeps the rule, which is why
+they live with the tool whose job is shared machinery, and why
 [`../scripts/install_eo_cmd`](../scripts/install_eo_cmd) exists to put them on a
 person's path.
 
@@ -13,7 +13,8 @@ person's path.
 | [`eo_init`](eo_init) | start a tool: write a README saying what it is for, complying with nothing |
 | [`eo_bump`](eo_bump) | move a pinned dependency onto a commit whose CI is green, and refuse otherwise |
 | [`eo_status`](eo_status) | who is in the ecosystem and on what footing. **Run only where the register is** |
-| [`eo_process_discussion`](eo_process_discussion) | work the topics another tool has addressed to you. Run in your own repository |
+| [`eo_respond`](eo_respond) | answer one topic another tool has addressed to you. Run in your own repository |
+| [`eo_housekeeping`](eo_housekeeping) | bring a repository up to date: its documentation, the topics addressed to it, its own tooling, and CI |
 | `koine_append_db` | add a run's new bugs to a database of every bug found. Installed from [`../bug_db/`](../bug_db), where it lives |
 
 **Every installed command carries a prefix saying whose it is**, because the
@@ -85,6 +86,13 @@ koine maintains these under **`R35`** in
 [kanon's `docs/roles.md`](https://github.com/ajreynol/kanon/blob/main/docs/roles.md):
 their text, their options, and what they ask an assistant to do.
 
+**`R35` is written as two commands and this directory holds more, and nothing
+compares the two statements.** The role names `eo_init` and `eo_join`; the table
+above is longer. Which of them the role is meant to cover is the office's to say
+and is not settled by this page listing them — recorded here because a register
+and a copy that disagree, with nothing that runs between them, is the thing the
+policy asks somebody to notice.
+
 **What joining costs, and what a member is held to, is `R4` and stays with the
 office.** This repository maintains the program that states the rule and **has
 no standing to change the rule.** `eo_join` is two hundred lines of argument
@@ -137,28 +145,86 @@ the repository works with, and saying it is **not** held to the policy. On a tre
 we do not own that is a second thing to ask agreement for, not a gentler version
 of the first.
 
-## eo_process_discussion
+## eo_respond
 
 ```console
-$ eo_process_discussion kanon        # read only: what have they addressed to us?
-$ eo_process_discussion kanon D14    # work that one topic
+$ eo_respond kanon D14    # answer that one topic
 ```
 
-Run it at the root of **your** repository, naming the one whose discussion file
-may address you. Their tree is read and never written; anything this changes is
+Run it at the root of **your** repository, naming the tool whose discussion file
+carries the topic. Their tree is read and never written; anything this changes is
 changed in your tree and left staged.
 
-**Naming a topic is what authorises acting on it**, and the command implements
-that rather than restating it: with no id the prompt is read-only and forbids
-changing a file or drafting a reply. With an id it works that topic, and first
-checks what the human asked against what the topic says — where they disagree
-it stops and says where, rather than taking the more plausible reading or doing
-the smaller safe part.
+**The topic is required, and that is the gate.** The ecosystem's one
+build-failing rule is that an agent answers a topic only where a human
+instructed it and **named which topic** — and this refuses in argv rather than
+asking a prompt to behave, which is strictly stronger than any wording. For *what
+has anybody addressed to us*, which names nothing, run
+[`eo_housekeeping`](eo_housekeeping): it sweeps every checkout at once and costs
+no turn per tool.
 
-This was kanon's `prompts/process_discussion`, written around kanon by name.
-**Nothing about the job is the office's** — every member has a discussion file
-and can be addressed in one — so "us" is worked out from the checkout you are
-standing in rather than written into the text.
+**What this does that housekeeping cannot: the disagreement check.** There are
+two independent accounts of what somebody wants — the human's instruction and the
+topic itself — and where they differ at least one is wrong. A housekeeping run has
+only the topic, so it can only take the topic at its word; this has both, and
+stops and says where they differ rather than reconciling them or doing the
+smaller safe part. **That is the whole of why both commands exist**, and it is
+why the gated one is what a contested or expensive topic gets.
+
+Two paragraphs, in the same shape as `eo_housekeeping`: pointers first — the
+president, whose tree holds `docs/policy.md` and so what a topic is and what a
+reply owes — then the job. The reply is drafted in `discussion-response.local.md`,
+unstaged, by the `*.local.md` convention for a document deliberately not
+committed.
+
+## eo_housekeeping
+
+```console
+$ eo_housekeeping             # bring the repository up to date, and stage it
+$ eo_housekeeping --report    # say what it would do, changing nothing
+```
+
+Run it at the root of the repository being tidied. **Two paragraphs.** The first
+is nothing but pointers: what the ecosystem is, **who the president is** and so
+where `docs/policy.md` and `docs/vision.md` are, this repository's own README and
+`docs/`, the checker, and the other tools checked out on this machine. The second
+is the goal — documentation made true of the tree, the topics other tools
+addressed to us answered, bugs in our own tooling fixed, a topic opened in
+`docs/discussion.md` for anything needing somebody else, and **CI green as the
+final step.**
+
+**The president is looked up, never written down.** The register names who holds
+the office and lives in the office's tree, so finding the file is finding the
+president — and the prompt keeps naming the right one after the office moves. The
+same pass yields the register's list of names, which the neighbour list is
+filtered to: a checkout the register does not name is somebody's working copy, and
+offering it as a tool to answer is how a topic gets read out of the wrong tree.
+
+**Why it points rather than restates, which is the whole design.** A prompt that
+paraphrased the policy would be a copy of somebody else's rules, installed on a
+stranger's PATH, with nothing keeping it current — the thing the policy's *Copies*
+section is about, and the thing this command is sent to find. It would also
+silently narrow the job to whatever the paraphrase happened to name. The first cut
+of this file did exactly that, at 1,749 words; `tests/test_eo_cmd.py` now holds it
+under five hundred and to two paragraphs.
+
+> **The discussion work runs under a standing override.** Every discussion file
+> opens with the ecosystem's one build-failing rule: a topic is answered only
+> where a human instructed it and **named the topic**. A command run on a habit
+> names none, so a run of this overrides that rule rather than satisfying it, on
+> the maintainer's standing instruction — recorded in
+> [`../docs/maintenance.md`](../docs/maintenance.md), which is where the policy's
+> escape hatch says an override belongs. **The prompt says so in as many words**,
+> and that is not ceremony: an assistant that reads the banner without it stops
+> there and is right to.
+>
+> What survives the override: a run answers only what names it, **writes in no
+> tree but its own**, and **sends nothing anywhere** — so what it produces is a
+> diff somebody reads before anybody else hears from us. It does not extend to
+> [`eo_respond`](eo_respond), which keeps the gate.
+
+**The finished prompt is refilled to one width before it is sent**, being
+assembled from fragments each wrapped at whatever width it was written at.
 
 ## eo_status
 

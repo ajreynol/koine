@@ -1,0 +1,197 @@
+#!/usr/bin/env bash
+# eo_respond -- answer one topic another tool has addressed to you.
+#
+# WHERE: run it at the root of YOUR repository -- the one the topic is
+#        addressed to -- naming the tool whose docs/discussion.md carries it.
+#        Their tree is read and never written.
+#
+# **THE TOPIC IS REQUIRED, AND THAT IS THE GATE.** The ecosystem's one
+#        build-failing rule is that an agent answers a topic only where a human
+#        instructed it and **named which topic**. This used to implement that by
+#        making the unnamed form read-only and asking the prompt nicely to
+#        behave. It is a refusal in argv now: a run with no id does not reach an
+#        assistant at all, which is a gate rather than a request for one.
+#
+#        The survey the old read-only form did -- *what has anybody addressed to
+#        us?* -- is `eo_housekeeping`, which sweeps every checkout at once and
+#        costs no turn per tool.
+#
+# **WHAT THIS IS FOR THAT HOUSEKEEPING IS NOT: the disagreement check.** Two
+#        independent accounts exist of what somebody wants -- the human's
+#        instruction and the topic itself -- and where they differ, at least one
+#        is wrong. A run of housekeeping has only the topic, so it can only take
+#        the topic at its word. This has both, and stops when they disagree.
+#        That is the whole of why both commands exist.
+#
+# THE PRESIDENT IS LOOKED UP, NEVER WRITTEN IN. The register says who holds the
+#        office and lives in the office's tree, so finding the file is finding
+#        the president -- and the prompt keeps pointing at the standard after
+#        the office moves. Duplicated from eo_housekeeping on purpose: each
+#        command is installed as one file and may import nothing from beside it.
+
+set -euo pipefail
+
+AGENT=claude
+PRINT=0
+SHOW=0
+NAME=""
+TOPIC=""
+
+usage() {
+  # --help is a request: stdout, exit 0. A mistake is stderr, 2.
+  local out=1 code=0
+  if [ "${1:-}" = "error" ]; then out=2 code=2; fi
+  cat >&$out <<'USAGE'
+eo_respond -- answer one topic another tool of the Eunoia ecosystem has
+addressed to you.
+
+Run it at the root of your own repository, naming the tool whose discussion file
+carries the topic. Their tree is read, never written; anything this changes is
+changed here and left staged for you to review.
+
+usage: eo_respond [--codex] [--print] [--show-prompt] NAME Dn
+
+  NAME            a directory, or a repository name looked for beside this one
+                  and under $ANOIEU_REPOS
+  Dn              the topic to answer. **Required**
+  --codex         run codex instead of claude
+  --print         run non-interactively and print the result
+  --show-prompt   print the prompt and exit, running nothing
+
+**Naming the topic is what authorises answering it**, so a run without one is
+refused rather than quietly narrowed. For *what has anybody addressed to us*,
+which names nothing and changes nothing, run eo_housekeeping instead.
+
+**It stops where your instruction and the topic disagree**, which is the one
+thing a habitual sweep cannot do: it says where they differ and waits, rather
+than reconciling them or doing the smaller safe part.
+USAGE
+  exit $code
+}
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --codex) AGENT=codex; shift ;;
+    --claude) AGENT=claude; shift ;;
+    --print) PRINT=1; shift ;;
+    --show-prompt) SHOW=1; shift ;;
+    -h|--help) usage ;;
+    -*) echo "eo_respond: unknown option $1" >&2; usage error ;;
+    *) if [ -z "$NAME" ]; then NAME="$1"
+       elif [ -z "$TOPIC" ]; then TOPIC="$1"
+       else echo "eo_respond: one topic at a time -- $TOPIC was already named" >&2
+            usage error
+       fi; shift ;;
+  esac
+done
+
+[ -n "$NAME" ] || { echo "eo_respond: name a repository" >&2; usage error; }
+[ -n "$TOPIC" ] || {
+  echo "eo_respond: name the topic. A human naming it is what authorises" >&2
+  echo "         answering it, and this refuses rather than guessing which." >&2
+  echo "         For what is addressed to you at all, run eo_housekeeping." >&2
+  exit 2; }
+
+if ! US_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); then
+  echo "eo_respond: not in a git repository -- run this in the repository the" >&2
+  echo "         topic is addressed to." >&2
+  exit 2
+fi
+US=$(basename "$US_ROOT")
+
+IFS=: read -ra ROOTS <<< "${ANOIEU_REPOS:-}"
+SEARCH=()
+for r in "${ROOTS[@]}" "$(dirname "$US_ROOT")" "$HOME"; do
+  [ -n "$r" ] && [ -d "$r" ] && SEARCH+=("$r")
+done
+
+TARGET=""
+if [ -d "$NAME" ]; then
+  TARGET=$(cd "$NAME" && pwd)
+else
+  for r in "${SEARCH[@]}"; do
+    [ -d "$r/$NAME" ] && { TARGET=$(cd "$r/$NAME" && pwd); break; }
+  done
+fi
+[ -n "$TARGET" ] || {
+  echo "eo_respond: no checkout of $NAME -- give a path, or put one beside" >&2
+  echo "         $US_ROOT, or set \$ANOIEU_REPOS" >&2
+  exit 2; }
+
+FILE="$TARGET/docs/discussion.md"
+[ -f "$FILE" ] || {
+  echo "eo_respond: $NAME keeps no docs/discussion.md, so nothing there is" >&2
+  echo "         addressed to anybody" >&2
+  exit 2; }
+
+PRES=""
+PRES_DIR=""
+for r in "${SEARCH[@]}"; do
+  for d in "$r"/*/; do
+    [ -f "$d/scripts/ecosystem/ecosystem.json" ] || continue
+    PRES=$(awk '
+      /^  "[^"]+": \{/ { n = $0; sub(/^  "/, "", n); sub(/": \{.*/, "", n) }
+      /"status"[[:space:]]*:[[:space:]]*"president"/ { print n; exit }
+    ' "$d/scripts/ecosystem/ecosystem.json")
+    [ -n "$PRES" ] && PRES_DIR=$(cd "$d" && pwd)
+    break 2
+  done
+done
+
+if [ -n "$PRES" ] && [ -f "$PRES_DIR/docs/policy.md" ]; then
+  STANDARD="Its **president** is **$PRES**, at \`$PRES_DIR\`, and holds the standard:
+\`docs/policy.md\`, which binds every repository here and says what a topic is,
+what each kind of topic claims, and what a reply owes."
+else
+  STANDARD="Its **president** holds the standard — \`docs/policy.md\`, which binds every
+repository here and says what a topic is and what a reply owes — and there is no
+checkout of it here; take it from the link this repository's own README carries."
+fi
+
+read -r -d '' PROMPT <<PROMPT_END || true
+You are answering correspondence in **$US**, at $US_ROOT — one repository of the
+**Eunoia ecosystem**, a group of tools built around the Eunoia language and the
+proofs cvc5 produces, sharing one repository policy and written mostly by AI
+agents under light human supervision. $STANDARD Read it, and this repository's
+own \`README.md\` and \`docs/\` for the conventions that are its own; this prompt
+restates none of it.
+
+**A human named $TOPIC in $NAME's \`$FILE\`, and that naming is what authorises
+answering it — so work $TOPIC and no other.** First check the two accounts of
+what is wanted against each other: what the human asked for by naming $TOPIC, and
+what $TOPIC says. **If they disagree, stop** — do not reconcile them, do not take
+the more plausible reading, and do not do the smaller safe part; say exactly where
+they differ and wait for a person. Otherwise make the change $TOPIC asks for here
+in $US and leave it staged, draft the reply in \`discussion-response.local.md\` at
+this root, unstaged, and finish with anything in $TOPIC that points at a defect on
+our side. **Read their tree, write in no tree but this one, and send nothing
+anywhere** — every message that reaches somebody who did not ask for it is sent by
+a person.
+PROMPT_END
+
+wrapped() {
+  if command -v fmt >/dev/null 2>&1; then
+    printf '%s\n' "$PROMPT" | awk -v RS='' '
+      NR > 1 { printf "\n" }
+      { cmd = "fmt -w 78"; print | cmd; close(cmd) }' \
+      | sed 's/\([.!?:;]\)  */\1 /g'
+  else
+    printf '%s\n' "$PROMPT"
+  fi
+}
+
+if [ "$SHOW" = 1 ]; then wrapped; exit 0; fi
+PROMPT=$(wrapped)
+
+command -v "$AGENT" >/dev/null 2>&1 || {
+  echo "eo_respond: $AGENT is not on PATH" >&2; exit 127; }
+
+echo "-- eo_respond: $NAME ($TARGET) $TOPIC -> $US, via $AGENT" >&2
+[ -n "$PRES_DIR" ] && echo "--   the standard: $PRES, at $PRES_DIR/docs" >&2
+
+cd "$US_ROOT"
+if [ "$AGENT" = codex ]; then
+  if [ "$PRINT" = 1 ]; then exec codex exec "$PROMPT"; else exec codex "$PROMPT"; fi
+else
+  if [ "$PRINT" = 1 ]; then exec claude -p "$PROMPT"; else exec claude "$PROMPT"; fi
+fi

@@ -42,6 +42,7 @@ import shutil
 import stat
 import subprocess
 import sys
+import textwrap
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 STORE = os.path.join(ROOT, "eo_cmd")
@@ -454,6 +455,35 @@ def do_uninstall(prefix, origin, config, dry_run):
     return 0
 
 
+def say_what_they_are(origin, prefix):
+    """One line per command saying what it is for, after the plan.
+
+    **The plan says what happened to each file; this says what each file is.**
+    Those are different questions and the first one answers neither: a row
+    reading `cp eo_cmd/eo_bump ~/bin/eo_bump (new)` tells somebody a name they
+    now have on their path and nothing whatever about when they would type it.
+
+    The text is the manifest's, which is the same text the READMEs are written
+    against -- so a command whose purpose moves says so here on the next
+    install, and this stays a copy with an original rather than a second
+    description going its own way.
+    """
+    rows = [(c["name"], (c.get("what") or "").strip()) for c in commands(origin)]
+    rows = [(n, w) for n, w in rows if w]
+    if not rows:
+        return
+    width = max(len(n) for n, _ in rows)
+    print(f"-- what each one is for, from {rel(os.path.join(STORE, 'commands.json'))}:")
+    for name, what in rows:
+        # One sentence is the purpose; anything after it is the caveat, and a
+        # roster is not where a caveat earns its room.
+        first = re.split(r"(?<=[.!?])\s+", what)[0].rstrip(".")
+        body = textwrap.wrap(first, width=max(40, 74 - width))
+        print(f"   {name:<{width}}  {body[0] if body else ''}")
+        for line in body[1:]:
+            print(f"   {'':<{width}}  {line}")
+
+
 def do_install(prefix, origin, config, dry_run, force, president_dir=None):
     """Install, and say in full what that means.
 
@@ -525,6 +555,8 @@ def do_install(prefix, origin, config, dry_run, force, president_dir=None):
     dests = max((len(row[2]) for row in plan), default=0)
     for v, src, dest, why in plan:
         print(f"   {v:<{verbs}} {src:<{width}}  {dest:<{dests}}   ({why})")
+
+    say_what_they_are(origin, prefix)
 
     if copied:
         print("-- a copy, not a move: the source keeps every file, and each one "

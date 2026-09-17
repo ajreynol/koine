@@ -17,7 +17,7 @@ python3 tests/test_append_db.py                          # bug_db
 python3 tests/test_install_eo_cmd.py                     # the installer
 python3 tests/test_bump.py                               # eo_bump
 python3 tests/test_register.py                           # reading the register
-python3 tests/test_eo_cmd.py                             # eo_join and eo_init themselves
+python3 tests/test_eo_cmd.py                             # the eo_cmd commands themselves
 python3 /path/to/anoieu/scripts/policy_check.py --root .  # the ecosystem policy
 ```
 
@@ -107,6 +107,25 @@ X — finding it is what it was asked to do.
 free. Acting requires a human who told you to, named the topic, and whose
 instruction agrees with the topic. Where they disagree, do nothing: not the
 overlap, not the safer half. Say where they differ and wait.
+
+> **Overridden for `eo_housekeeping`, standing, by the maintainer on
+> 2026-09-17.** A run of that command answers the topics addressed to this
+> repository without a human naming each one, and
+> [`../eo_cmd/eo_housekeeping`](../eo_cmd/eo_housekeeping) says so in the prompt
+> it hands an assistant — which is also the only way past the banner, since an
+> assistant that reads the banner without it stops there and is right to.
+>
+> **What was known when it was made:** that the rule is the ecosystem's one
+> build-failing check, and that it exists against exactly this — an agent
+> answering correspondence on a habit rather than on an instruction. **What
+> would have to be true for it not to be needed:** a form of the instruction
+> that names topics without a person reading every file first, which nothing
+> here has. What still narrows it is that a run writes in no tree but its own
+> and **sends nothing anywhere**, so what it produces is a diff somebody reads
+> before anybody else hears from us.
+>
+> It does not extend to `eo_respond`, which keeps the gate and enforces it in
+> argv: a run that names no topic is refused before an assistant is reached.
 
 **Work is left staged, not committed.** The diff is the review, and it is the
 last place a change that binds another repository can be caught. If a commit is

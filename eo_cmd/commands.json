@@ -54,11 +54,19 @@
       "kind": "program"
     },
     {
-      "name": "eo_process_discussion",
-      "what": "work the topics another tool has addressed to you. Run in your own repository; naming a topic is what authorises acting on it",
+      "name": "eo_respond",
+      "what": "answer one topic another tool has addressed to you. Run in your own repository; naming the topic is what authorises answering it, and a run without one is refused",
       "forms": [
-        "eo_process_discussion <name>",
-        "eo_process_discussion <name> <Dn>"
+        "eo_respond <name> <Dn>"
+      ],
+      "kind": "prompt"
+    },
+    {
+      "name": "eo_housekeeping",
+      "what": "bring a repository up to date: documentation made true of the tree, the topics other tools addressed to it answered, bugs in its own tooling fixed, and CI green. Two paragraphs that name where the rules are rather than paraphrasing them",
+      "forms": [
+        "eo_housekeeping",
+        "eo_housekeeping --report"
       ],
       "kind": "prompt"
     }

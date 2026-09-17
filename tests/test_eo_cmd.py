@@ -180,27 +180,176 @@ def test_the_dictated_marker_passes_the_checker():
     check("the dictated marker satisfies associate_in", problems, [])
 
 
-def test_the_gate_is_the_default():
-    """No topic named means read-only, and that is the gate not a convenience.
+def test_the_gate_is_in_argv():
+    """Naming the topic is what authorises answering it, so argv enforces it.
 
-    The ecosystem's rule is that a tool acts on another tool's discussion file
-    only where a human said so and named which topic. `eo_process_discussion`
-    implements it by making the unauthorised form the default one: run it with
-    a repository and no topic and the prompt forbids changing anything.
+    The ecosystem's one build-failing rule is that an agent answers a topic only
+    where a human instructed it and named which topic. `eo_respond` used to
+    implement that by making the unnamed form read-only and asking the prompt
+    nicely to behave -- a gate held up by prose the model was trusted to obey.
+    It refuses now, before an assistant is reached, which is strictly stronger
+    than any wording and is why the read-only form is gone: the survey it did is
+    `eo_housekeeping`, which sweeps every checkout and costs no turn per tool.
     """
-    print("the discussion gate")
-    read_only = show("eo_process_discussion", "kanon").stdout
-    ok("with no topic, the prompt is read-only", "Read only." in read_only)
-    ok("and forbids acting", "not authorised to act" in read_only)
-    ok("and forbids drafting a reply", "do not draft a reply" in read_only)
+    print("the discussion gate, in argv")
+    bare = subprocess.run([os.path.join(STORE, "eo_respond"), "kanon"],
+                          capture_output=True, text=True)
+    check("a run with no topic is refused", bare.returncode, 2)
+    ok("and says naming it is the authorisation",
+       "what authorises" in bare.stderr)
+    ok("and sends the survey to the command that does it",
+       "eo_housekeeping" in bare.stderr)
+    ok("and refuses on stderr, printing no prompt", bare.stdout.strip() == "")
 
-    worked = show("eo_process_discussion", "kanon", "D14").stdout
-    ok("naming a topic authorises that topic", "Work D14, and only D14" in worked)
+    worked = " ".join(show("eo_respond", "kanon", "D14").stdout.split())
+    ok("naming a topic authorises that topic",
+       "work D14 and no other" in worked)
     ok("and requires the two accounts to agree", "If they disagree" in worked)
     ok("and forbids the smaller safe part", "smaller safe part" in worked)
-
     ok("it names the repository it is run from, not a fixed one",
-       "You are working in **koine**" in read_only)
+       "correspondence in **koine**" in worked)
+    ok("the reply is drafted where an uncommitted document goes",
+       "discussion-response.local.md" in worked)
+    ok("and nothing is sent", "send nothing anywhere" in worked)
+    ok("it stays short enough to be read", len(worked.split()) < 500)
+
+
+def test_housekeeping_points_at_the_standard_rather_than_restating_it():
+    """The design of this command, which a rewrite could quietly undo.
+
+    An earlier version paraphrased the shared policy into five areas and
+    shipped the paraphrase at 1,749 words. That is a copy of somebody else's
+    rules, installed on a stranger's PATH, with nothing keeping it current --
+    the failure the policy's own *Copies* section is about, in the one command
+    sent to find it. It also narrowed the job to whatever the paraphrase
+    happened to name.
+
+    So the first paragraph is checked for being nothing but pointers: the
+    president, whose tree holds the standard, the two pages, this repository's
+    own, and the checker. The word count is checked because that is how the
+    regression actually looks from outside.
+    """
+    print("housekeeping sends the assistant to the standard")
+    for args in ([], ["--report"]):
+        label = " ".join(["eo_housekeeping", *args]) or "eo_housekeeping"
+        flat = " ".join(show("eo_housekeeping", *args).stdout.split())
+        ok(f"{label} says what the ecosystem is", "Eunoia ecosystem" in flat)
+        ok(f"{label} names the president in the second sentence",
+           re.match(r"[^.]+\.\s*Its \*\*president\*\*", flat) is not None)
+        ok(f"{label} sends it to the policy", "policy.md" in flat)
+        ok(f"{label} sends it to the vision", "vision.md" in flat)
+        ok(f"{label} sends it to this repository's own pages",
+           "README.md" in flat and "docs/" in flat)
+        ok(f"{label} says it is not restating them",
+           "restates none of it" in flat)
+        ok(f"{label} names the checker without making it the job",
+           "policy checker" in flat)
+        # It has been 1,749 words once, which is how a prompt stops being read
+        # at all. The number is a ceiling rather than a target.
+        ok(f"{label} stays short enough to be read", len(flat.split()) < 500)
+        ok(f"{label} is two paragraphs",
+           len([p for p in show("eo_housekeeping", *args).stdout.split("\n\n")
+                if p.strip()]) == 2)
+
+
+def test_housekeeping_states_the_goal_and_ends_on_ci():
+    """The four things a run is for, and the order the last one comes in.
+
+    The goal is the maintainer's, quoted into the prompt rather than derived:
+    documentation made true, topics other tools raised answered, bugs in our
+    own tooling fixed, and a topic opened for anything needing somebody else.
+    CI is last because it is the check on all of it, and a run that stops
+    before it has left the tree in a state nobody verified.
+    """
+    print("the goal, and CI at the end")
+    flat = " ".join(show("eo_housekeeping").stdout.split())
+    ok("documentation", "documentation up to date" in flat)
+    ok("the topics others raised", "answer the discussion items" in flat)
+    ok("bugs in our own tooling", "bugs in our own tooling" in flat)
+    ok("a topic for what needs somebody else",
+       "opening a topic in `docs/discussion.md`" in flat)
+    ok("and CI is the final step",
+       flat.rstrip().endswith("**Ensure CI passes here as a final step.**"))
+
+    report = " ".join(show("eo_housekeeping", "--report").stdout.split())
+    ok("--report changes nothing", "**Change nothing**" in report)
+    ok("and asks after CI rather than for it",
+       "say whether CI passes here" in report)
+
+
+def test_housekeeping_says_the_discussion_gate_is_overridden():
+    """The prompt has to say it is overriding, or it does not work at all.
+
+    Every discussion file opens with the ecosystem's one build-failing rule: a
+    topic is answered only where a human instructed it and named the topic. A
+    command run on a habit names none, so a run of this is an override rather
+    than a satisfaction of it -- the maintainer's, recorded in
+    `docs/maintenance.md`.
+
+    Saying so in the prompt is not ceremony. An assistant that reads that
+    banner without it stops there, correctly, and the command does nothing. So
+    what is checked is that the prompt claims the instruction, that the
+    narrowings which survive the override survive it, and that the record
+    exists where the policy says an override is recorded.
+    """
+    print("the discussion gate is overridden, and says so")
+    for args in ([], ["--report"]):
+        label = " ".join(["eo_housekeeping", *args]) or "eo_housekeeping"
+        flat = " ".join(show("eo_housekeeping", *args).stdout.split())
+        ok(f"{label} claims the human instruction those files require",
+           "maintainer instructs the discussion work standing" in flat)
+        ok(f"{label} answers only what names us", "only what names us" in flat)
+        ok(f"{label} writes in no other tree",
+           "no tree but this one" in flat)
+        ok(f"{label} sends nothing anywhere", "send nothing anywhere" in flat)
+
+    # The policy's escape hatch has three properties, and the third is that an
+    # override is recorded. A prompt that claims one without the record behind
+    # it is an agent granting itself permission.
+    notes = open(os.path.join(ROOT, "docs", "maintenance.md")).read()
+    ok("the override is recorded where standing instructions live",
+       "Overridden for `eo_housekeeping`" in notes)
+    ok("and says what would have to be true for it not to be needed",
+       "not to be needed" in notes)
+    ok("and does not extend to the command that keeps the gate",
+       "eo_respond" in notes)
+
+
+def test_housekeeping_names_the_president_it_was_told_of():
+    """Who holds the office is read, never written in.
+
+    The president's tree is where the policy and the vision are, so the prompt
+    has to name it -- and naming one in the text would be a claim about who
+    holds an office, going stale the moment it changes, in a file installed on
+    somebody else's path. The register says who holds it and the register lives
+    in the office's tree, so finding the file is finding the president.
+
+    Skipped where no register is beside this checkout: a test that needs
+    somebody else's tree to pass is one that fails for reasons that are not
+    about this repository.
+    """
+    print("the president is looked up, not written in")
+    register = os.path.join(os.path.dirname(ROOT), "kanon", "scripts",
+                            "ecosystem", "ecosystem.json")
+    if not os.path.exists(register):
+        print("  --   no register beside this one; skipped")
+        return
+
+    data = json.load(open(register))
+    holders = [k for k, v in data.items()
+               if isinstance(v, dict) and v.get("status") == "president"]
+    check("the register names exactly one president", len(holders), 1)
+    if not holders:
+        return
+
+    text = " ".join(show("eo_housekeeping").stdout.split())
+    ok("the prompt names the one the register names",
+       f"**{holders[0]}**" in text)
+
+    source = open(os.path.join(STORE, "eo_housekeeping")).read()
+    body = source[source.index("read -r -d '' PROMPT"):]
+    ok("and the prompt text itself names no president",
+       holders[0] not in body)
 
 
 def test_help_says_why_and_where():
@@ -276,7 +425,11 @@ def main():
                  test_no_prompt_names_a_command_that_is_gone,
                  test_associate_says_what_the_footing_needs,
                  test_the_dictated_marker_passes_the_checker,
-                 test_the_gate_is_the_default,
+                 test_the_gate_is_in_argv,
+                 test_housekeeping_points_at_the_standard_rather_than_restating_it,
+                 test_housekeeping_states_the_goal_and_ends_on_ci,
+                 test_housekeeping_says_the_discussion_gate_is_overridden,
+                 test_housekeeping_names_the_president_it_was_told_of,
                  test_help_says_why_and_where,
                  test_runs_as_an_installed_copy):
         test()

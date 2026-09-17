@@ -1,0 +1,270 @@
+#!/usr/bin/env bash
+# eo_housekeeping -- read the standard, then bring this repository up to date.
+#
+# WHERE: run it at the root of YOUR repository. Everything it changes, it
+#        changes here. Other checkouts are read and never written.
+#
+# WHAT IT HANDS AN ASSISTANT: two paragraphs. The first is nothing but
+#        pointers -- what the ecosystem is, who the **president** is and so
+#        where `docs/policy.md` and `docs/vision.md` are, this repository's own
+#        README and docs, the checker, and the other checkouts on this machine.
+#        The second is the goal: documentation made true, topics other tools
+#        addressed to us answered, bugs in our own tooling fixed, a topic opened
+#        for anything needing somebody else, and CI green at the end.
+#
+# **WHY IT POINTS RATHER THAN RESTATES, which is the whole design.** An earlier
+#        version paraphrased the policy into five areas and shipped the
+#        paraphrase at 1,749 words: a copy of somebody else's rules, installed
+#        on a stranger's PATH, with nothing keeping it current. The policy has a
+#        section about exactly that failure, so a command written to find stale
+#        documentation had become the most stale-prone thing in the tree. It
+#        also silently narrowed the job to whatever the paraphrase happened to
+#        name. `tests/test_eo_cmd.py` holds it under five hundred words now.
+#
+# **THE DISCUSSION WORK RUNS UNDER A STANDING OVERRIDE, and the prompt says so
+#        in as many words.** Every discussion file opens with a banner that is
+#        the ecosystem's one build-failing rule: an agent answers a topic only
+#        where a human instructed it and named the topic. A command run on a
+#        habit names no topic, so this does not satisfy that rule -- it
+#        overrides it, on the maintainer's standing instruction, recorded in
+#        `docs/maintenance.md`. Saying so in the prompt is not ceremony: an
+#        assistant that reads the banner without it stops there, correctly.
+#
+# THE PRESIDENT IS LOOKED UP, NEVER WRITTEN IN. The register says who holds the
+#        office and lives in the office's tree, so finding the file is finding
+#        the president -- and the prompt keeps naming the right one after the
+#        office moves. The same pass gives the register's list of names, which
+#        the neighbour list is filtered to: a checkout the register does not
+#        name is somebody's working copy, and offering it as a tool to answer
+#        is how a topic gets read out of the wrong tree.
+#
+set -euo pipefail
+
+AGENT=claude
+PRINT=0
+SHOW=0
+REPORT=0
+
+usage() {
+  # --help is a request: stdout, exit 0. A bad flag is a mistake: stderr, 2.
+  local out=1 code=0
+  if [ "${1:-}" = "error" ]; then out=2 code=2; fi
+  cat >&$out <<'USAGE'
+eo_housekeeping -- read the standard the president keeps, then bring this
+repository up to date.
+
+Run it at the root of the repository being tidied. Its goal is documentation
+that is true of the tree, the topics other tools of the Eunoia ecosystem have
+addressed to you answered, bugs in your own tooling fixed, and CI green.
+
+usage: eo_housekeeping [--report] [--codex] [--print] [--show-prompt]
+
+  --report        say what you would do; change nothing. The cautious first pass
+  --codex         run codex instead of claude
+  --print         run non-interactively and print the result
+  --show-prompt   print the prompt and exit, running nothing
+
+**It hands an assistant a place to read the rules, not the rules.** The
+president holds the policy and the vision, and this looks up who that currently
+is rather than naming one, so the prompt keeps pointing at the standard after
+the office moves. A prompt that paraphrased the policy would be a copy of it
+with nothing keeping it current -- which is the defect it goes looking for.
+
+**The discussion work runs under a standing override**, recorded in this
+repository's docs/maintenance.md. Every discussion file opens with the
+ecosystem's one build-failing rule: a topic is answered only where a human
+instructed it and named the topic. A command run on a habit names none, so the
+prompt says plainly that it is overriding, which is also the only way an
+assistant gets past the banner. It still writes in no tree but its own and
+sends nothing anywhere.
+USAGE
+  exit $code
+}
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --report) REPORT=1; shift ;;
+    --codex) AGENT=codex; shift ;;
+    --claude) AGENT=claude; shift ;;
+    --print) PRINT=1; shift ;;
+    --show-prompt) SHOW=1; shift ;;
+    -h|--help) usage ;;
+    -*) echo "eo_housekeeping: unknown option $1" >&2; usage error ;;
+    *) echo "eo_housekeeping: it takes no arguments -- what to look at is what" >&2
+       echo "         the policy and this repository's own pages say, which is" >&2
+       echo "         why they are read rather than summarised here" >&2
+       usage error ;;
+  esac
+done
+
+if ! US_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); then
+  # --show-prompt still prints what it would send, from wherever you are.
+  if [ "$SHOW" = 0 ]; then
+    echo "eo_housekeeping: not in a git repository -- run this at the root of" >&2
+    echo "         the repository being tidied. The work is left staged, which" >&2
+    echo "         needs somewhere to stage it." >&2
+    exit 2
+  fi
+  US_ROOT=$(pwd)
+fi
+US=$(basename "$US_ROOT")
+
+# Where other checkouts might be. The same three places eo_respond looks, and
+# for the same reason: no document here may name one machine, so
+# nothing records them and each run finds them again.
+IFS=: read -ra ROOTS <<< "${ANOIEU_REPOS:-}"
+SEARCH=()
+for r in "${ROOTS[@]}" "$(dirname "$US_ROOT")" "$HOME"; do
+  [ -n "$r" ] && [ -d "$r" ] && SEARCH+=("$r")
+done
+
+FOUND=""
+SEEN=" $US "
+for r in "${SEARCH[@]}"; do
+  for d in "$r"/*/; do
+    [ -d "$d" ] || continue
+    top=$(git -C "$d" rev-parse --show-toplevel 2>/dev/null) || continue
+    name=$(basename "$top")
+    case "$SEEN" in *" $name "*) continue ;; esac
+    SEEN="$SEEN$name "
+    FOUND="$FOUND$(dirname "$top") $name"$'\n'
+  done
+done
+
+# The office moves, so nothing here may name a president. The register says who
+# holds it, and the register lives in the tree that holds the office -- so
+# finding the file is finding the president, and reading it is confirming which
+# one. A tree with no register found means the prompt asks for the standard a
+# different way rather than guessing at a name.
+PRES=""
+PRES_DIR=""
+for r in "${SEARCH[@]}"; do
+  for d in "$r"/*/; do
+    [ -f "$d/scripts/ecosystem/ecosystem.json" ] || continue
+    PRES=$(awk '
+      /^  "[^"]+": \{/ { n = $0; sub(/^  "/, "", n); sub(/": \{.*/, "", n) }
+      /"status"[[:space:]]*:[[:space:]]*"president"/ { print n; exit }
+    ' "$d/scripts/ecosystem/ecosystem.json")
+    if [ -n "$PRES" ]; then
+      PRES_DIR=$(cd "$d" && pwd)
+      # Every name the register knows. A checkout it does not name is somebody's
+      # working copy rather than a repository of this ecosystem, and offering it
+      # as something to check a claim against is how a claim gets checked
+      # against the wrong tree.
+      KNOWN=" $(awk '
+        /^  "[^"]+": \{/ { n = $0; sub(/^  "/, "", n); sub(/": \{.*/, "", n); printf "%s ", n }
+      ' "$d/scripts/ecosystem/ecosystem.json") "
+    fi
+    break 2
+  done
+done
+
+if [ -n "${KNOWN:-}" ]; then
+  KEPT=""
+  while read -r parent name; do
+    [ -n "$name" ] || continue
+    case "$KNOWN" in *" $name "*) KEPT="$KEPT$parent $name"$'\n' ;; esac
+  done <<< "$FOUND"
+  FOUND="$KEPT"
+fi
+
+if [ -n "$PRES" ] && [ -f "$PRES_DIR/docs/policy.md" ]; then
+  STANDARD="Its **president** is **$PRES**, at \`$PRES_DIR\`, and holds the standard:
+\`docs/policy.md\`, which binds every repository here, and \`docs/vision.md\`, what
+the arrangement is *for*."
+elif [ -n "$PRES" ]; then
+  STANDARD="Its **president** is **$PRES**, which holds the standard — \`docs/policy.md\`
+and \`docs/vision.md\` — and is not checked out here; take them from the link this
+repository's own README carries."
+else
+  STANDARD="Its **president** holds the standard — \`docs/policy.md\` and \`docs/vision.md\`
+— and **nothing here says who that currently is**: take them from the link this
+repository's own README carries, and say so in your report."
+fi
+
+if [ -n "$FOUND" ]; then
+  NEIGHBOURS=$(printf '%s' "$FOUND" | sort | awk '
+    { if ($1 != d) { if (d) printf " (in %s); ", d; d = $1; printf "%s", $2 }
+      else printf ", %s", $2 }
+    END { if (d) printf " (in %s)", d }')
+  NEARBY="The other tools are checked out here — $NEIGHBOURS — and a topic addressed to us is one whose \`To:\` names **$US**, in that tool's \`docs/discussion.md\`."
+else
+  NEARBY="**No other tool of this ecosystem is checked out here**, so nothing can be read for topics addressed to us; say so in your report."
+fi
+
+# anoieu publishes the checker. Worth naming and no more than that: it decides
+# the decidable rules, which is not what a person runs this for.
+CHECKER=""
+for r in "${SEARCH[@]}"; do
+  if [ -f "$r/anoieu/scripts/policy_check.py" ]; then
+    CHECKER="$r/anoieu/scripts/policy_check.py"; break
+  fi
+done
+if [ -n "$CHECKER" ]; then
+  MECHANICAL="anoieu publishes the policy checker, \`python3 $CHECKER --root $US_ROOT\`, which decides the rules that are decidable."
+else
+  MECHANICAL="anoieu publishes a policy checker for the rules that are decidable, and there is no checkout of it here."
+fi
+
+if [ "$REPORT" = 1 ]; then
+  CLOSE="**Change nothing**: write what you would have done to \`housekeeping.local.md\`
+at the root instead, unstaged, and say whether CI passes here."
+else
+  CLOSE="**Ensure CI passes here as a final step.**"
+fi
+
+read -r -d '' PROMPT <<PROMPT_END || true
+You are doing housekeeping in **$US**, at $US_ROOT — one repository of the
+**Eunoia ecosystem**, a group of tools built around the Eunoia language and the
+proofs cvc5 produces, sharing one repository policy and written mostly by AI
+agents under light human supervision. $STANDARD Read both, and this repository's
+own \`README.md\` and \`docs/\` for the conventions that are its own; this prompt
+restates none of it. $MECHANICAL $NEARBY
+
+**Based on those, your goal is to bring this repository's documentation up to
+date, answer the discussion items other tools have raised with us, and fix any
+bugs in our own tooling**, opening a topic in \`docs/discussion.md\` for any
+request to another tool that arises. The maintainer instructs the discussion work
+standing, which is the human instruction those files require; answer only what
+names us, write in no tree but this one, and send nothing anywhere. $CLOSE
+PROMPT_END
+
+# Every paragraph above is assembled from fragments wrapped at whatever width
+# they were written at, so the finished text is refilled rather than trusted.
+# `fmt` is coreutils and is normally there; a prompt is still a prompt without
+# it, so its absence loses the wrapping and nothing else.
+wrapped() {
+  if command -v fmt >/dev/null 2>&1; then
+    printf '%s\n' "$PROMPT" | awk -v RS='' '
+      NR > 1 { printf "\n" }
+      { cmd = "fmt -w 78"; print | cmd; close(cmd) }' \
+      | sed 's/\([.!?:;]\)  */\1 /g'
+  else
+    printf '%s\n' "$PROMPT"
+  fi
+}
+
+if [ "$SHOW" = 1 ]; then wrapped; exit 0; fi
+PROMPT=$(wrapped)
+
+command -v "$AGENT" >/dev/null 2>&1 || {
+  echo "eo_housekeeping: $AGENT is not on PATH" >&2; exit 127; }
+
+WHAT="fixing what it can evidence"
+[ "$REPORT" = 1 ] && WHAT="reporting only, changing nothing"
+echo "-- eo_housekeeping: $US ($US_ROOT), $WHAT, via $AGENT" >&2
+if [ -n "$PRES_DIR" ]; then
+  echo "--   the standard: $PRES, at $PRES_DIR/docs" >&2
+elif [ -n "$PRES" ]; then
+  echo "--   the standard: $PRES, which is not checked out here" >&2
+else
+  echo "--   no register on this machine: the president is not named" >&2
+fi
+[ -n "$CHECKER" ] || echo "--   no checker on this machine: the decidable rules go unchecked" >&2
+
+cd "$US_ROOT"
+if [ "$AGENT" = codex ]; then
+  if [ "$PRINT" = 1 ]; then exec codex exec "$PROMPT"; else exec codex "$PROMPT"; fi
+else
+  if [ "$PRINT" = 1 ]; then exec claude -p "$PROMPT"; else exec claude "$PROMPT"; fi
+fi
