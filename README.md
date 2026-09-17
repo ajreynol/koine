@@ -27,14 +27,15 @@ judgement left to the reviewer.
 
 ## What it does
 
-Three jobs, and none of them is finding a bug. `koine_append_db` keeps the bug
-database, `koine_history` supports review of the ecosystem's history record, and
-`scripts/install_eo_cmd` puts the ecosystem's commands on a person's path.
+Three jobs, and none of them is finding a bug. Everything runnable is in
+[`scripts/`](scripts): `koine_append_db` keeps the bug database, `koine_history`
+supports review of the ecosystem's history record, and `install_eo_cmd` puts the
+ecosystem's commands on a person's path.
 
 ## Keeping the bug database
 
 ```
-koine_append_db <new bugs> <bug database>
+scripts/koine_append_db <new bugs> <bug database>
 ```
 
 A tool runs and dumps what it found this time. The database is every bug it has
@@ -56,7 +57,7 @@ anoieu runs and writes `run1.json`:
 There is no database yet, so one is made:
 
 ```console
-$ koine_append_db run1.json bugs.json
+$ scripts/koine_append_db run1.json bugs.json
 -- 2 new bug(s), 0 already known, 0 conflict(s)
 -- the database holds 2 bug(s) from 1 tool(s): anoieu 2
 -- wrote bugs.json (created)
@@ -66,7 +67,7 @@ Months later anoieu runs again. It finds the first bug still there, one new one,
 and dokimasia adds one of its own:
 
 ```console
-$ koine_append_db run2.json bugs.json
+$ scripts/koine_append_db run2.json bugs.json
 -- 2 new bug(s), 1 already known, 0 conflict(s)
 -- the database holds 4 bug(s) from 2 tool(s): anoieu 3, dokimasia 1
 -- wrote bugs.json
@@ -144,14 +145,21 @@ nothing else. There is no schema to agree on beyond the key.
 $ python3 tests/test_append_db.py
 ```
 
-No dependencies, no network, nothing to install. `--dry-run` says what would
-change and writes nothing; `--date` records a run under a date other than today.
+No dependencies and no network. `--dry-run` says what would change and writes
+nothing; `--date` records a run under a date other than today.
+
+**The commands live in [`scripts/`](scripts)**, which is where the ecosystem's
+policy says commands live. They were at this repository's root until
+2026-09-17; a customer who put the root on their path wants `scripts/` on it
+now, and [`koine_append_db`](koine_append_db) at the root is a tombstone that
+says so and exits non-zero. It comes out once the one consumer that probes for
+it has moved its pin.
 
 ## Reviewing the history record
 
 ```console
-$ ./koine_history /path/to/record-repository
-$ ./koine_history /path/to/record-repository --append
+$ scripts/koine_history /path/to/record-repository
+$ scripts/koine_history /path/to/record-repository --append
 ```
 
 `koine_history` reads changes to `docs/history.md` in a local Git checkout and
@@ -176,6 +184,25 @@ $ scripts/install_eo_cmd --prefix ~/bin   # install, and remember the directory
 $ scripts/install_eo_cmd                  # later runs need no arguments
 $ scripts/install_eo_cmd --status         # what is installed, and whether it is current
 ```
+
+**`--dry-run` names every operation, both paths and nothing else**, so what will
+happen is read rather than inferred:
+
+```console
+$ scripts/install_eo_cmd --dry-run
+-- would install 2, 0 already current, 0 skipped  ->  /home/you/bin
+   cp eo_cmd/eo_join  /home/you/bin/eo_join   (new)
+   cp eo_cmd/eo_init  /home/you/bin/eo_init   (new)
+-- a copy, not a move: eo_cmd/ keeps every file, and each one is written
+   to a temporary file beside the target, made executable, and renamed over
+   it, so an interrupted run leaves the old file in place
+-- dry run: nothing was written, and /home/you/bin is unchanged
+```
+
+A real run prints the same lines under `installed` rather than `would install`,
+so the two are compared by reading them. `--uninstall --dry-run` lists `rm` and
+its path; `--sync --dry-run` lists each file it would write and where it reads
+it from.
 
 Some commands in this ecosystem are meant to be run **in a repository that is
 not the one they live in** — the tree that is joining, the tree being started.

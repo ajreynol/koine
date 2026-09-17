@@ -17,7 +17,7 @@ import sys
 import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SCRIPT = os.path.join(ROOT, "koine_history")
+SCRIPT = os.path.join(ROOT, "scripts", "koine_history")
 
 _spec = importlib.util.spec_from_loader(
     "koine_history",

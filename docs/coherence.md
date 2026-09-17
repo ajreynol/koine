@@ -17,11 +17,13 @@ here find bugs in projects that are not their own; koine keeps the list of what
 they found. It does not find bugs, does not decide whether one is real, and has
 no opinion about what should be done with one.
 
-Today that is three jobs. [`../koine_append_db`](../koine_append_db) keeps the
-bug database, [`../koine_history`](../koine_history) supports review of the
+Today that is three jobs, and everything runnable is in
+[`../scripts/`](../scripts).
+[`koine_append_db`](../scripts/koine_append_db) keeps the bug database,
+[`koine_history`](../scripts/koine_history) supports review of the
 ecosystem's history record, and
-[`../scripts/install_eo_cmd`](../scripts/install_eo_cmd) puts the ecosystem's
-commands on a person's path. It reports mechanical signals and preserves human
+[`install_eo_cmd`](../scripts/install_eo_cmd) puts the ecosystem's commands on
+a person's path. It reports mechanical signals and preserves human
 readings in [`history-ledger.md`](history-ledger.md); it does not decide verdicts
 or write to the source record. [`../README.md`](../README.md) introduces all
 three.
@@ -51,15 +53,33 @@ Koine's test suite; the reviews remain advisory.
 
 ### Naming
 
-**One module or script per piece, at the root, named `koine_<piece>`.** Two
-reasons, and the second is why it should stay that way.
+**One module or script per piece, in [`../scripts/`](../scripts), named
+`koine_<piece>`.** The directory and the prefix answer different questions and
+neither is decoration.
 
-A directory named `koine` inside a repository named `koine` reads as a second
-thing, and a reader has to work out that it is not one. And a customer adopts
-koine by putting **the repository root** on their path — there is no package and
-no install step, deliberately — so anything at that root is a name claimed inside
-somebody else's process. `append_db` is a name another project may well want;
-`koine_append_db` cannot collide, and says whose it is at the point of use.
+**The directory is the ecosystem's, not ours.** `docs/policy.md` gives the
+layout every member uses, and `scripts/` is "commands, helpers and their data:
+generators, checks, the runner". The top level is for *the package itself, named
+after the tool*, and koine has no package.
+
+**The prefix is ours, and the reason survived the move.** A customer adopts koine
+by putting a directory of it on their path — `scripts/` now, the root before —
+and either way a file in it is a name claimed inside somebody else's process.
+`append_db` is a name another project may well want; `koine_append_db` cannot
+collide, and says whose it is at the point of use.
+
+**These were at the root until 2026-09-17**, on the argument that koine had no
+package and no install step so the root *was* the interface. That argument did
+not survive this repository acquiring an installer and a `scripts/` of its own:
+a tree with `install_eo_cmd` in `scripts/` and `koine_append_db` beside the
+README was following neither convention. The maintainer's instruction was to
+move and let the consumer fix, which the policy permits in as many words —
+*a member never told about an announcement has not been wronged.*
+
+**What that instruction does not buy is a silent break**, and this move had one
+waiting. [`../koine_append_db`](../koine_append_db) is a tombstone left at the
+old path; its docstring is the whole account of why a bare `git mv` would have
+degraded quietly rather than failed. Delete it once anoieu's pin has moved.
 
 **Two directories are deliberately not that, and the exception is the rule
 working rather than bending.**

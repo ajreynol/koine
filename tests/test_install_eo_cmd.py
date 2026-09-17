@@ -161,7 +161,13 @@ def test_install():
         prefix = sandbox(tmp)
 
         out = run(tmp, "--prefix", prefix, "--dry-run")
-        ok("a dry run says what it would do", "2 installed" in out.stdout)
+        ok("a dry run counts what it would do", "would install 2" in out.stdout)
+        ok("a dry run names the operation and both paths",
+           f"cp eo_cmd/eo_join  {os.path.join(prefix, 'eo_join')}" in out.stdout)
+        ok("a dry run says it is a copy and not a move",
+           "a copy, not a move" in out.stdout)
+        ok("a dry run says nothing was written",
+           "nothing was written" in out.stdout)
         ok("a dry run creates nothing", not os.path.exists(prefix))
 
         out = run(tmp, "--prefix", prefix)
@@ -212,6 +218,11 @@ def test_uninstall():
         # One of the two has been edited by the person since.
         with open(os.path.join(prefix, "eo_init"), "w") as handle:
             handle.write("#!/bin/sh\necho mine now\n")
+
+        out = run(tmp, "--uninstall", "--dry-run")
+        ok("a dry uninstall names the rm and the path",
+           f"rm {os.path.join(prefix, 'eo_join')}" in out.stdout)
+        ok("and removes nothing", os.path.exists(os.path.join(prefix, "eo_join")))
 
         out = run(tmp, "--uninstall")
         ok("what we installed is removed",

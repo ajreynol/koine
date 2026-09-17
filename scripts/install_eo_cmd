@@ -116,6 +116,22 @@ def digest(text):
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
+def rel(path):
+    """A path as a person would type it, from the checkout they ran this in."""
+    inside = os.path.relpath(path, ROOT)
+    return path if inside.startswith(os.pardir) else inside
+
+
+def plan_lines(rows):
+    """Left-aligned `<op> <src> <dest>` lines, so a column can be read down."""
+    if not rows:
+        return
+    width = max(len(row[0]) for row in rows)
+    for left, right, why in rows:
+        line = f"   {left:<{width}}  {right}" + (f"   ({why})" if why else "")
+        print(line.rstrip())
+
+
 def read_text(path):
     with open(path, encoding="utf-8") as handle:
         return handle.read()
@@ -185,31 +201,34 @@ def do_sync(args, origin):
         was = read_text(dest) if os.path.exists(dest) else None
         cmd["source"]["sha256"] = digest(original)
         cmd["sha256"] = digest(copied)
+        renamed = ", ".join(f"{a} -> {b}" for a, b in renames.items()
+                            if a in original)
+        row = (f"write {rel(dest)}", f"from {rel(src)}",
+               f"renamed {renamed}" if renamed else "verbatim")
         if was == copied:
             unchanged.append(cmd["name"])
             continue
         if args.dry_run:
-            updated.append(cmd["name"])
+            updated.append(row)
             continue
         tmp = dest + ".tmp"
         with open(tmp, "w", encoding="utf-8") as handle:
             handle.write(copied)
         os.chmod(tmp, os.stat(tmp).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
         os.replace(tmp, dest)
-        updated.append(cmd["name"])
+        updated.append(row)
 
     head = revision(source)
     if head:
         for cmd in commands(origin):
             cmd["source"]["commit"] = head
 
-    print(f"-- {len(updated)} copied, {len(unchanged)} already current, "
-          f"from {source}"
-          + (f" at {head[:7]}" if head else ""))
-    for name in updated:
-        print(f"   {name}")
+    verb = "would copy" if args.dry_run else "copied"
+    print(f"-- {verb} {len(updated)}, {len(unchanged)} already current  <-  "
+          f"{source}" + (f" at {head[:7]}" if head else ""))
+    plan_lines(updated)
     if args.dry_run:
-        print("-- dry run: eo_cmd/ is unchanged")
+        print("-- dry run: nothing was written, and eo_cmd/ is unchanged")
         return 0
     write_json(ORIGIN, origin)
     print(f"-- wrote {os.path.relpath(ORIGIN, ROOT)}")
@@ -309,7 +328,7 @@ def do_uninstall(prefix, origin, config, dry_run):
         if installed.get(name) != digest(read_text(dest)):
             left.append(name)
             continue
-        removed.append(name)
+        removed.append((f"rm {dest}", "", ""))
         if not dry_run:
             os.remove(dest)
             installed.pop(name, None)
@@ -317,11 +336,11 @@ def do_uninstall(prefix, origin, config, dry_run):
     for name in left:
         print(f"-- {name}: changed since this script installed it, and is left "
               "alone", file=sys.stderr)
-    print(f"-- {len(removed)} removed from {prefix}, {len(left)} left alone")
-    for name in removed:
-        print(f"   {name}")
+    verb = "would remove" if dry_run else "removed"
+    print(f"-- {verb} {len(removed)}, {len(left)} left alone  ->  {prefix}")
+    plan_lines(removed)
     if dry_run:
-        print(f"-- dry run: {prefix} is unchanged")
+        print(f"-- dry run: nothing was written, and {prefix} is unchanged")
         return 0
     config["installed"] = installed
     write_json(CONFIG, config)
@@ -351,7 +370,11 @@ def do_install(prefix, origin, config, dry_run, force):
             if not ours and not force:
                 skipped.append(name)
                 continue
-        written.append(name)
+            why = "replacing the copy this script installed" if ours \
+                else "replacing a file this script did not install, --force"
+        else:
+            why = "new"
+        written.append((f"cp {rel(src)}", dest, why))
         if not dry_run:
             install_file(src, dest)
             installed[name] = want
@@ -361,12 +384,18 @@ def do_install(prefix, origin, config, dry_run, force):
               "did not put it there -- left alone; --force replaces it",
               file=sys.stderr)
 
-    print(f"-- {len(written)} installed, {len(current)} already current, "
-          f"{len(skipped)} skipped, into {prefix}")
-    for name in written:
-        print(f"   {name}")
+    verb = "would install" if dry_run else "installed"
+    print(f"-- {verb} {len(written)}, {len(current)} already current, "
+          f"{len(skipped)} skipped  ->  {prefix}")
+    plan_lines(written)
+    if written:
+        print("-- a copy, not a move: eo_cmd/ keeps every file, and each one is "
+              "written")
+        print("   to a temporary file beside the target, made executable, and "
+              "renamed over")
+        print("   it, so an interrupted run leaves the old file in place")
     if dry_run:
-        print(f"-- dry run: {prefix} is unchanged")
+        print(f"-- dry run: nothing was written, and {prefix} is unchanged")
         return 0
 
     config["prefix"] = prefix

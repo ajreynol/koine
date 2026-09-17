@@ -23,7 +23,7 @@ import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-SCRIPT = os.path.join(ROOT, "koine_append_db")
+SCRIPT = os.path.join(ROOT, "scripts", "koine_append_db")
 
 _spec = importlib.util.spec_from_loader(
     "koine_append_db",

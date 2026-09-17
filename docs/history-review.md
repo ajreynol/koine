@@ -1,6 +1,6 @@
 # Reviewing the history record
 
-[`koine_history`](../koine_history) reads every change to a repository's
+[`koine_history`](../scripts/koine_history) reads every change to a repository's
 `docs/history.md`, reports what changed, and flags questions for a reviewer.
 With `--append`, it adds unreviewed changes to Koine's
 [`history-ledger.md`](history-ledger.md). A person, or an agent a person set to
@@ -11,9 +11,9 @@ work, supplies the verdict. The script never supplies one.
 From the Koine repository root:
 
 ```bash
-./koine_history /path/to/record-repository
-./koine_history /path/to/record-repository --since <sha> --append
-./koine_history /path/to/record-repository --file history.md
+scripts/koine_history /path/to/record-repository
+scripts/koine_history /path/to/record-repository --since <sha> --append
+scripts/koine_history /path/to/record-repository --file history.md
 python3 tests/test_history.py
 ```
 
