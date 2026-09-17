@@ -281,13 +281,25 @@ the page is right:
    Then say, in the same paragraph, **why** this is not on the front page: it is
    not published, it is one person's working tree, a declaration would oversell
    what is in it. That reason is yours and nobody grades it.
-2. **Add no membership declaration to README.md**, and remove one if it is
+2. **README.md must exist, ending with a section headed
+   "How this repository is maintained".** The policy asks this of every
+   repository: who is writing it, under what supervision, and what that
+   supervision does not cover. It is not something this ecosystem is owed -- it is what the footing
+   above is written *underneath*, and a marker on a page nobody can read from
+   the front of the repository is a claim with nowhere to stand.
+3. **Add no membership declaration to that section**, and remove one if it is
    there. A tree that records this footing and also declares membership is
    making two different claims, and the checker names the pair.
-3. Add the CI workflow the policy page gives, so the check can run and print a
+4. **Strongly recommended, and not required: say why the repository is called
+   what it is**, in a sentence somebody could disagree with. The policy asks
+   this of child projects by name and it is good practice anywhere. A name
+   whose explanation is strained usually means the scope has not been decided
+   yet, which is worth finding out now rather than later. **Skip it freely** --
+   nothing checks it and nothing here is owed it.
+5. Add the CI workflow the policy page gives, so the check can run and print a
    result. **What it prints is a measurement.** Nothing about a red run obliges
    this repository to anything.
-4. Run the same checker revision and command the workflow uses, and say what it
+6. Run the same checker revision and command the workflow uses, and say what it
    reports. Report which revision you checked. Do not substitute the latest
    checkout for a pinned revision, and do not claim a local run establishes CI.
 

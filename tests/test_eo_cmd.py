@@ -130,6 +130,11 @@ def test_associate_says_what_the_footing_needs():
     ok("sends a tree held to none of this to --soft", "eo_join --soft" in text)
     ok("cites the office's page as the authority",
        "kanon/blob/main/docs/policy.md" in text)
+    ok("asks for a README with a maintenance section",
+       "How this repository is maintained" in text)
+    ok("recommends the name explanation without requiring it",
+       "Strongly recommended, and not required" in text)
+    ok("and says that recommendation may be skipped", "Skip it freely" in text)
 
 
 def test_the_dictated_marker_passes_the_checker():
