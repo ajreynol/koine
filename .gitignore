@@ -13,3 +13,9 @@ scratch/
 
 __pycache__/
 *.pyc
+
+# Editor swap files. Kate writes one beside the file being edited, and until
+# this line existed the only thing keeping one out of a commit was nobody typing
+# `git add -A`.
+.*.kate-swp
+*~

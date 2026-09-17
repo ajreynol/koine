@@ -12,10 +12,12 @@ The convention is anoieu's, and so is the name.
 
 ## What koine is for
 
-**Every tool here is built to find something. koine is built to keep it.**
-The tools here find bugs in projects that are not their own; koine keeps the
-list of what they found. It does not find bugs, does not decide whether one is
-real, and has no opinion about what should be done with one.
+**koine takes responsibility for tooling that is either shared between the tools
+of this ecosystem, or that an existing tool does not want to maintain.** Both
+halves are load-bearing: the second is why work arrives here that is nobody's
+idea of interesting, and the first is why it is written once. koine finds
+nothing, settles nothing, and has no opinion about what anyone should do with
+what it keeps.
 
 **Two purposes, named by the maintainer on 2026-09-17.**
 [`../README.md`](../README.md) is where they are written for a reader; this is

@@ -1,33 +1,14 @@
 # koine
 
-**Every tool here is built to find something. koine is built to keep it.**
+**Maintains the shared tooling for the Eunoia ecosystem**
 
-The tools in this ecosystem exist to find bugs in projects that are not their
-own. [anoieu](https://github.com/ajreynol/anoieu) reads somebody else's Eunoia
-signatures and asks whether a signature and its semantics agree;
-[dokimasia](https://github.com/ajreynol/dokimasia) reads cvc5's proof-production
-C++ and asks whether the solver can reach a conclusion no proof step covers.
-Finding the bug is the work those tools were built for, and it is the part worth
-their attention.
+koine serves the tools of the Eunoia ecosystem by **taking responsibility** for
+tooling that is either shared between them, or that an existing tool does not
+want to maintain.
 
-Then there is the other half, which nobody built a tool to do and everybody
-needs done: keeping the list. Not losing the bug found in March. Not filing it
-again in September under a new name. Not letting this week's run quietly
-overwrite last week's record, or leaving two half-written files behind because a
-job was interrupted. It is unglamorous, it is fiddly, it is the same in every
-tool that has it, and it is exactly the kind of thing that gets written three
-times badly because writing it once well was nobody's job.
-
-**It is ours.** koine does not find bugs, does not decide whether a bug is real,
-and has no opinion about what should be done with one. Those belong to the tool
-that raised it, and they stay there. We keep the list, and we keep it properly,
-so that nobody else has to think about it again.
-
-**The same shape turned up again in the ecosystem's commands.** A script that
-serves every repository here still belongs to whichever one wrote it, and none
-of them is a natural place to put it on somebody's path. So they are kept here
-and installed from here, and not one word of them changes on the way. Again the
-interesting half stayed where it was, and the keeping came to us.
+It finds nothing, settles nothing, and has no opinion about what anyone should
+do with what it keeps. All three belong to the tool that raised the work, and
+they stay there.
 
 ## What koine is for
 
@@ -64,12 +45,6 @@ own, and [`tests/`](tests) drives both.
 [`discussion.md`](docs/discussion.md), the channel to the rest of the
 ecosystem. **No agent acts on the discussion file unbidden**
 — the rule is at the top of it.
-
-**An earlier version of this repository was a reporting-loop library** — a
-prompt-drift check, a branch-state reporter, a postmortem protocol and a findings
-record. It was deleted on 2026-09-16 when the repository was pointed at the job
-described above. It is in git history, nothing depends on it, and it is mentioned
-here only so that a reader who finds a reference to it knows where it went.
 
 ## The name
 
