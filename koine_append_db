@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""koine_append_db moved to `scripts/koine_append_db` on 2026-09-17.
+"""koine_append_db moved to `bug_db/koine_append_db` on 2026-09-17.
 
 **This file is a tombstone and is meant to be deleted.** It holds the old name
 so that the move fails loudly in the two places it would otherwise fail
@@ -37,7 +37,7 @@ takes somebody to notice.
 
 **To fix, in each:** `scripts/koine.py` names this path -- `MODULES` and
 `append_db()` in anoieu, the `path / "koine_append_db"` probe in dokimasia.
-Point them at `scripts/koine_append_db`, or accept either, and move
+Point them at `bug_db/koine_append_db`, or accept either, and move
 `scripts/koine.lock` to a koine commit at or after the move.
 """
 
@@ -45,11 +45,11 @@ import os
 import sys
 
 MOVED = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                     "scripts", "koine_append_db")
+                     "bug_db", "koine_append_db")
 
 MESSAGE = (
-    "koine_append_db moved to scripts/koine_append_db on 2026-09-17, when\n"
-    "koine's commands were put where the ecosystem policy says commands live.\n"
+    "koine_append_db moved to bug_db/koine_append_db on 2026-09-17, when\n"
+    "koine gave each of its two purposes a directory of its own.\n"
     f"    it is now: {MOVED}\n"
     "This file is a tombstone: it exists so this says so instead of a stale\n"
     "clone answering in its place. See its docstring for the two-line fix."

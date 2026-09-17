@@ -31,8 +31,26 @@ import subprocess
 import sys
 
 RECORD = "docs/history.md"
-LEDGER = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                      "docs", "history-ledger.md")
+def _ledger():
+    """The ledger in this checkout, found by walking up from this file.
+
+    Derived from this program's own directory until 2026-09-17, which made the
+    ledger follow the script when it moved and quietly pointed `--append` at a
+    path that did not exist. The ledger belongs to the checkout, not to
+    whichever directory the program happens to sit in today.
+    """
+    here = os.path.dirname(os.path.abspath(__file__))
+    while True:
+        found = os.path.join(here, "docs", "history-ledger.md")
+        if os.path.exists(found):
+            return found
+        up = os.path.dirname(here)
+        if up == here:
+            return found
+        here = up
+
+
+LEDGER = _ledger()
 
 EVIDENCE = re.compile(r"\]\(|\b[0-9a-f]{7,40}\b|\b20\d\d-\d\d-\d\d\b|#\d+")
 FIGURE = re.compile(r"\b\d{2,}\b|\d%|\b\d+%")

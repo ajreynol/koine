@@ -84,6 +84,15 @@ def build(tmp):
 
 
 def main():
+    # The ledger belongs to the checkout, not to the script's directory. This
+    # was wrong once: the path was derived from `__file__`'s directory, so
+    # moving the program moved the ledger with it and `--append` pointed at a
+    # file that was not there. Nothing else here would have caught it.
+    print("where the ledger is:")
+    check("LEDGER is this checkout's ledger", history.LEDGER,
+          os.path.join(ROOT, "docs", "history-ledger.md"))
+    check("and it is there", os.path.exists(history.LEDGER), True)
+
     tmp = tempfile.mkdtemp(prefix="koine-history-")
     try:
         repo = build(tmp)

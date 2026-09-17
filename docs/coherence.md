@@ -22,7 +22,8 @@ real, and has no opinion about what should be done with one.
 the same pair with what an agent needs added.
 
 1. **Tooling for keeping bug databases.**
-   [`koine_append_db`](../scripts/koine_append_db) takes a run's dump and adds
+   [`../bug_db/`](../bug_db) holds it.
+   [`koine_append_db`](../bug_db/koine_append_db) takes a run's dump and adds
    what is new to a database of everything a tool has ever found. **anoieu and
    dokimasia are the customers**, and each pins a commit of this repository and
    calls it from its own run — that pin is the whole of the integration on
@@ -286,7 +287,7 @@ Three things are outstanding and none is an agent's to settle:
 ## Where to start
 
 ```bash
-python3 tests/test_append_db.py                          # bug database
+python3 tests/test_append_db.py                          # bug_db
 python3 tests/test_history.py                            # history review
 python3 tests/test_install_eo_cmd.py                     # the command store and installer
 python3 /path/to/anoieu/scripts/policy_check.py --root .  # the ecosystem policy
