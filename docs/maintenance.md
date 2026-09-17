@@ -1,4 +1,4 @@
-# Coherence
+# Maintenance
 
 **If you are an agent working on this repository, start here.** What you may
 decide alone, what you may not, and what is not this repository's at all.
@@ -14,7 +14,8 @@ somebody deciding whether this is worth depending on.
 
 ```bash
 python3 tests/test_append_db.py                          # bug_db
-python3 tests/test_install_eo_cmd.py                     # eo_cmd, and the installer
+python3 tests/test_install_eo_cmd.py                     # the installer
+python3 tests/test_eo_cmd.py                             # eo_join and eo_init themselves
 python3 /path/to/anoieu/scripts/policy_check.py --root .  # the ecosystem policy
 ```
 
@@ -64,7 +65,8 @@ Do not design it, do not build it, do not have an opinion about it in the tree.
 | the discussion protocol, the role handoff, the channel model | **kanon's** | governance, not a shape |
 | the policy checker itself | **anoieu's** | our CI pins it and it is not ours to move |
 | auditing how a repository's history changed | **epikrisis's** | the register describes it as *audits repository histories against evidence*; koine held a second implementation until 2026-09-17 and should not have |
-| every prompt template; every position on publishing | **anoieu's and kanon's** | a position is what somebody signs |
+| **what joining costs, and what a member is held to** | **kanon's** | `R4`. koine maintains `eo_join`, which *states* that rule, and has no standing to change it |
+| `check_join_eo`, `global_audit`; every position on publishing | **anoieu's and kanon's** | a position is what somebody signs |
 
 **The test that puts something here:** somebody else maintains it, **or** being
 wrong about it reaches people who did not sign up for this. Either is enough.
@@ -72,10 +74,13 @@ wrong about it reaches people who did not sign up for this. Either is enough.
 **When a task lands on this list:** stop, say which row it is, and ask which
 repository was meant. Do not build the smaller safe part.
 
-**Copying something in does not move it off this list.**
-[`../eo_cmd/`](../eo_cmd) holds two of kanon's prompt templates and koine owns
-no word of them; [`../eo_cmd/README.md`](../eo_cmd/README.md) is how that is
-kept honest.
+**`eo_cmd/` is the edge of this list, and the edge moved.** Those two commands
+were kanon's, stored here as copies nobody could edit, until kanon deleted its
+pair on 2026-09-17 and `R35` was created to hold them. koine now writes them —
+their text, their options, what they ask. **What it still may not touch is what
+joining costs**, the row above: this repository maintains the program that
+states the rule, and a change to the rule is argued in kanon and then written
+here. [`../eo_cmd/README.md`](../eo_cmd/README.md) carries that line in full.
 
 ## Check who the instruction is addressed to, before the first edit
 
@@ -122,12 +127,12 @@ withdraw than it was to write.
   topics were written when koine was a reporting-loop library and none was ever
   carried. Whether they are withdrawn, rewritten or left is the maintainer's;
   **no agent works that file unbidden**, including to tidy it.
-- **[`history-ledger.md`](history-ledger.md) is a closed record** with no
-  program behind it. Keeping it here, handing it to epikrisis, or dropping it is
-  the maintainer's call.
 
 ## What was here before
 
 koine has been pointed at a new job twice: it was a reporting-loop library until
-2026-09-16, and held a history review tool until 2026-09-17. Both are in git
-history, nothing depends on either, and neither should be rebuilt from memory.
+2026-09-16, and held a history review tool until 2026-09-17. The history tool's
+ledger — one day's readings of anoieu's record — went with it on 2026-09-17, and
+is in git at `65d7b45` if anyone ever wants it handed to epikrisis, whose subject
+it was. All of it is in git history, nothing depends on any of it, and none of it
+should be rebuilt from memory.

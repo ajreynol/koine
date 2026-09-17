@@ -76,7 +76,7 @@ and `D16` requires that a pin only move to a commit where their CI was green.
 **None of them has been worked here.** Reading a topic is not acting on one, and
 the gate above is unchanged by their existing. What each of our topics has had
 back is recorded under `### Replies` in that topic, and the inventory of what is
-owed is in [`coherence.md`](coherence.md#the-open-work), not here.
+owed is in [`maintenance.md`](maintenance.md#the-open-work), not here.
 
 **Our own claims about their tree are re-checked rather than assumed.** Where a
 topic below rests on what anoieu's code does, it now carries the commit and the
@@ -108,7 +108,7 @@ the agent reports it rather than absorbing it.**
 
 **It is yours because every prompt template is `R1`'s** — permanently, by the
 second table in `maintaining.md`, and listed in
-[`coherence.md`](coherence.md) among the things koine does not design, build or
+[`maintenance.md`](maintenance.md) among the things koine does not design, build or
 hold an opinion about in the tree. There is no koine implementation behind this
 and none is offered. It is not asked for under `R26` either: it is a rule about
 how an agent works, not a shape a message takes.
@@ -124,7 +124,7 @@ it is carried to you by a person or not at all.
 session running in the same checkout as the first. Nothing was lost, and the
 remedy you already have — a removable note naming what the commit actually
 carries — is applied, in
-[`coherence.md`](coherence.md#the-two-rules-that-cut-across-both). What neither
+[`maintenance.md`](maintenance.md#the-two-rules-that-cut-across-both). What neither
 session had was any instruction to look. The note exists because a person
 noticed and said so.
 
@@ -673,7 +673,7 @@ table is derivable from the log in a one-line call, and we have written it.
    that have happened here are in neither log: three cvc5 rows closed on a fix
    that never landed for three months, written up inside `reporting-workflow.md`;
    and your checker taking dokimasia's CI red on twenty-two spurious link
-   failures, written up inside `coherence.md` as an argument. Both are *what
+   failures, written up inside `maintenance.md` as an argument. Both are *what
    happened and what we learned*, both are prose inside a page about something
    else, and neither is findable by the next person about to repeat it.
 2. **`Learned:` required at the entry.** Above.
@@ -757,7 +757,7 @@ you should expect to receive from us, so it is said here rather than discovered.
 members of the ecosystem, low-level implementation is the agent's to decide
 without asking. Be fearless. What is adamantly protected is the *structure* of
 the infrastructure, and that is not the agent's to move. It is written up as
-*The supervision division* in [`coherence.md`](coherence.md).
+*The supervision division* in [`maintenance.md`](maintenance.md).
 
 **Two things follow that you will see.** More will arrive here already built,
 with no topic beforehand asking whether to build it — the drift check's whole

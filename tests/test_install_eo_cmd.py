@@ -1,20 +1,16 @@
 #!/usr/bin/env python3
-"""The installer, and the property that makes the store trustworthy.
+"""The installer, against directories made and removed in a temporary place.
 
     python3 tests/test_install_eo_cmd.py
 
-Two things are worth testing here and they are not the same thing.
+That it puts files where it is told, that a second run changes nothing, that it
+says in plain terms what it is about to do, and that it refuses to overwrite a
+file of the same name it did not put there.
 
-The first is the **copy transform**: that a stored command is its original with
-the command's own name changed and nothing else, and in particular that the
-prompt text -- the part read by somebody outside this ecosystem -- comes through
-byte for byte. That is tested against a fixture built here, so it runs in CI
-with no checkout of anybody else's tree.
-
-The second is the **installer**: that it puts files where it is told, that a
-second run changes nothing, and that it refuses to overwrite a file of the same
-name it did not put there. That is tested against directories made and removed
-in a temporary directory.
+It once also tested a copy transform: `eo_cmd/` held byte-identical copies of
+kanon's joining prompts and the installer policed them. kanon handed those
+commands to koine on 2026-09-17, so there is nothing left to police and those
+tests went with the machinery.
 
 No network, no checkout, nothing left behind.
 """
@@ -53,71 +49,16 @@ def ok(name, condition):
     check(name, bool(condition), True)
 
 
-RENAMES = {"join_eo": "eo_join", "init_eo": "eo_init"}
-
-#: A script shaped like the ones this stores: a comment block, a `cat` heredoc
-#: holding its own usage, and a `read` heredoc holding the prompt it hands an
-#: assistant. The name appears in all three, and only two of them may move.
-FIXTURE = """#!/usr/bin/env bash
-# join_eo -- do the thing.
-#
-#   join_eo --show-prompt
-#   check_join_eo <id>    # run from kanon
-#   init_eo new           # the sibling
-
-usage() {
-  cat >&2 <<'USAGE'
-usage: join_eo [--soft]
-USAGE
-  exit 2
-}
-
-read -r -d '' PROMPT <<'PROMPT_END' || true
-Produced by `join_eo --soft`, a command kept in the kanon repository.
-
-  https://github.com/ajreynol/kanon/blob/main/prompts/join_eo
-
-`join_eo --soft --show-prompt` prints exactly this text.
-PROMPT_END
-
-echo "join_eo: $AGENT is not on PATH" >&2
-"""
-
-
-def test_transform():
-    print("the copy transform")
-    out = inst.transform(FIXTURE, RENAMES)
-    lines = out.split("\n")
-
-    check("the header comment is renamed", lines[1], "# eo_join -- do the thing.")
-    check("a usage example is renamed", lines[3], "#   eo_join --show-prompt")
-    check("check_join_eo is left alone", lines[4],
-          "#   check_join_eo <id>    # run from kanon")
-    check("the sibling is renamed", lines[5], "#   eo_init new           # the sibling")
-    ok("the cat heredoc is renamed", "usage: eo_join [--soft]" in out)
-    ok("the error message is renamed",
-       'echo "eo_join: $AGENT is not on PATH" >&2' in out)
-
-    prompt = out.split("<<'PROMPT_END' || true\n")[1].split("\nPROMPT_END")[0]
-    original = FIXTURE.split("<<'PROMPT_END' || true\n")[1].split("\nPROMPT_END")[0]
-    check("the prompt body is byte-identical", prompt, original)
-    ok("the prompt still names the original command", "`join_eo --soft`" in prompt)
-    ok("the prompt's URL is untouched",
-       "kanon/blob/main/prompts/join_eo" in prompt)
-    ok("no local alias leaks into the prompt", "eo_join" not in prompt)
-
-    check("applying it twice changes nothing more",
-          inst.transform(out, RENAMES), out)
-
-
-def test_boundaries():
-    print("what the rename does and does not match")
-    check("a bare name moves", inst.rename("join_eo", RENAMES), "eo_join")
-    check("a prefixed name does not",
-          inst.rename("check_join_eo", RENAMES), "check_join_eo")
-    check("a suffixed name does not",
-          inst.rename("join_eot", RENAMES), "join_eot")
-    check("a path moves", inst.rename("prompts/join_eo", RENAMES), "prompts/eo_join")
+def test_manifest():
+    """The real manifest lists commands that are actually in eo_cmd/."""
+    print("the manifest")
+    manifest = json.load(open(os.path.join(ROOT, "eo_cmd", "commands.json")))
+    names = [c["name"] for c in manifest["commands"]]
+    check("it lists both commands", sorted(names), ["eo_init", "eo_join"])
+    for name in names:
+        path = os.path.join(ROOT, "eo_cmd", name)
+        ok(f"{name} is in eo_cmd/", os.path.isfile(path))
+        ok(f"{name} is executable", os.access(path, os.X_OK))
 
 
 def run(tmp, *args, env=None):
@@ -140,17 +81,10 @@ def sandbox(tmp):
                        ("eo_init", "#!/bin/sh\necho two\n")):
         with open(os.path.join(tmp, "eo_cmd", name), "w") as handle:
             handle.write(body)
-    origin = {
-        "renames": RENAMES,
-        "commands": [
-            {"name": "eo_join", "sha256": inst.digest("#!/bin/sh\necho one\n"),
-             "source": {"repo": "kanon", "path": "prompts/join_eo"}},
-            {"name": "eo_init", "sha256": inst.digest("#!/bin/sh\necho two\n"),
-             "source": {"repo": "kanon", "path": "prompts/init_eo"}},
-        ],
-    }
-    with open(os.path.join(tmp, "eo_cmd", "origin.json"), "w") as handle:
-        json.dump(origin, handle)
+    manifest = {"commands": [{"name": "eo_join", "what": "join"},
+                             {"name": "eo_init", "what": "start"}]}
+    with open(os.path.join(tmp, "eo_cmd", "commands.json"), "w") as handle:
+        json.dump(manifest, handle)
     return os.path.join(tmp, "bin")
 
 
@@ -236,56 +170,8 @@ def test_uninstall():
         shutil.rmtree(tmp)
 
 
-def test_check():
-    print("checking the store")
-    tmp = tempfile.mkdtemp()
-    try:
-        sandbox(tmp)
-        out = run(tmp, "--check")
-        check("a clean store checks out", out.returncode, 0)
-
-        with open(os.path.join(tmp, "eo_cmd", "eo_join"), "a") as handle:
-            handle.write("# edited here\n")
-        out = run(tmp, "--check")
-        check("an edited copy is caught", out.returncode, 1)
-        ok("and the message says where it belongs",
-           "a store, not a source" in out.stderr)
-    finally:
-        shutil.rmtree(tmp)
-
-
-def test_against_kanon():
-    """If a kanon checkout is beside this one, hold the store against it.
-
-    Skipped where it is not -- CI has no kanon checkout, and a test that needs
-    somebody else's tree to pass is a test that fails for reasons that are not
-    about this repository.
-    """
-    print("against the originals, if they are here")
-    kanon = os.path.join(os.path.dirname(ROOT), "kanon")
-    origin_path = os.path.join(ROOT, "eo_cmd", "origin.json")
-    if not os.path.isdir(kanon) or not os.path.exists(origin_path):
-        print("  --   no kanon checkout beside this one; skipped")
-        return
-
-    origin = json.load(open(origin_path))
-    for cmd in origin["commands"]:
-        src = os.path.join(kanon, cmd["source"]["path"])
-        dest = os.path.join(ROOT, "eo_cmd", cmd["name"])
-        if not os.path.exists(src):
-            print(f"  --   {cmd['source']['path']} is not in that checkout; skipped")
-            continue
-        with open(src, encoding="utf-8") as handle:
-            expected = inst.transform(handle.read(), origin["renames"])
-        with open(dest, encoding="utf-8") as handle:
-            stored = handle.read()
-        ok(f"{cmd['name']} is {cmd['source']['path']}, renamed and no more",
-           stored == expected)
-
-
 def main():
-    for test in (test_transform, test_boundaries, test_install, test_uninstall,
-                 test_check, test_against_kanon):
+    for test in (test_manifest, test_install, test_uninstall):
         test()
     print()
     if FAILS:

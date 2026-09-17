@@ -178,7 +178,7 @@ present tense.
 
 **Comply with nothing.** There is a shared repository policy, and this is not
 the moment for it: no maintenance note, no discussion file, no CI, no layout, no
-documentation index. `join_eo` does that later, when there is something to join
+documentation index. `eo_join` does that later, when there is something to join
 with, and it will tell you exactly what to add. Do not add files in
 anticipation, and do not read the policy now — knowing what you are building is
 what makes the rest of it decidable, and that order is deliberate.

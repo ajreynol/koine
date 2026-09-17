@@ -1,0 +1,24 @@
+{
+  "what": "The commands install_eo_cmd puts on a person's path. koine maintains these under role R35 in kanon's docs/roles.md -- their text, their options, and what they ask an assistant to do. What joining costs and what a member is held to is R4's and stays with the office: this repository maintains the program that states the rule and has no standing to change the rule.",
+  "history": "Both were kanon's prompts/join_eo and prompts/init_eo until 2026-09-17, when kanon deleted them and R35 was created to hold them here. They were briefly stored as unmodifiable copies; that arrangement ended with the handover, and koine now writes them.",
+  "commands": [
+    {
+      "name": "eo_join",
+      "what": "join the Eunoia ecosystem, run inside the repository that is joining",
+      "forms": [
+        "eo_join",
+        "eo_join --unadvertised",
+        "eo_join --soft",
+        "eo_join --soft --affiliated"
+      ]
+    },
+    {
+      "name": "eo_init",
+      "what": "start a tool: write a README saying what it is for, complying with nothing",
+      "forms": [
+        "eo_init new",
+        "eo_init from-child <path>"
+      ]
+    }
+  ]
+}

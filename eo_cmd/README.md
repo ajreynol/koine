@@ -1,98 +1,88 @@
 # eo_cmd
 
-**The Eunoia ecosystem's commands, kept in one place.** Scripts useful across
-the ecosystem rather than inside any one repository, stored here and put on a
-person's path by [`../scripts/install_eo_cmd`](../scripts/install_eo_cmd).
+**The two commands a repository outside this ecosystem actually runs.** Both are
+meant to be run *inside the tree being started or joined*, rather than from the
+repository that keeps the rule — which is why they live with the tool whose job
+is shared machinery, and why
+[`../scripts/install_eo_cmd`](../scripts/install_eo_cmd) exists to put them on a
+person's path.
 
-**koine keeps these and does not write them.** The repository each one comes
-from is the authority for every word of it, and
-[`origin.json`](origin.json) records which repository, which path, which role
-and which commit. The rule is enforced rather than promised: see [Their content
-is not koine's to modify](#their-content-is-not-koines-to-modify).
+| command | what it does |
+| --- | --- |
+| [`eo_join`](eo_join) | join the Eunoia ecosystem, from inside the repository that is joining |
+| [`eo_init`](eo_init) | start a tool: write a README saying what it is for, complying with nothing |
 
-```console
-$ scripts/install_eo_cmd --prefix ~/bin   # install, and remember the directory
-$ scripts/install_eo_cmd                  # later runs need no arguments
-$ scripts/install_eo_cmd --status         # what is installed, and whether it is current
-```
+[`commands.json`](commands.json) is what the installer reads.
+**Read one before running it** — every form takes `--show-prompt`, which prints
+exactly what it would hand an assistant and does nothing else.
 
-**`--dry-run` names every operation, both paths and nothing else**, so what will
-happen is read rather than inferred:
+## What koine may change here, and what it may not
 
-```console
-$ scripts/install_eo_cmd --dry-run
--- would install 2, 0 already current, 0 skipped  ->  /home/you/bin
-   cp eo_cmd/eo_join  /home/you/bin/eo_join   (new)
-   cp eo_cmd/eo_init  /home/you/bin/eo_init   (new)
--- a copy, not a move: eo_cmd/ keeps every file, and each one is written
-   to a temporary file beside the target, made executable, and renamed over
-   it, so an interrupted run leaves the old file in place
--- dry run: nothing was written, and /home/you/bin is unchanged
-```
+koine maintains these under **`R35`** in
+[kanon's `docs/roles.md`](https://github.com/ajreynol/kanon/blob/main/docs/roles.md):
+their text, their options, and what they ask an assistant to do.
 
-A real run prints the same lines under `installed` rather than `would install`,
-so the two are compared by reading them. `--uninstall --dry-run` lists `rm` and
-its path; `--sync --dry-run` lists each file it would write and where it reads
-it from.
+**What joining costs, and what a member is held to, is `R4` and stays with the
+office.** This repository maintains the program that states the rule and **has
+no standing to change the rule.** `eo_join` is two hundred lines of argument
+about whose front page a declaration is; that argument is a position, and the
+tool doing the drafting is not the one that holds it. A change to what `eo_join`
+*asks of a repository* is a change to be argued in kanon, and then written here.
 
-Some commands in this ecosystem are meant to be run **in a repository that is
-not the one they live in** — the tree that is joining, the tree being started.
-Reaching those by typing a path into somebody else's checkout is the wrong shape
-for them, and nothing here put them anywhere better. `eo_cmd/` holds them, and
-this installs them.
+**They were kanon's until 2026-09-17**, as `prompts/join_eo` and
+`prompts/init_eo`, and were stored here as copies nobody was allowed to edit.
+kanon then deleted its pair and `R35` was created to hold them. The machinery
+that policed the copies — a `--sync` and a `--check` that re-derived each file
+from kanon's original — was removed with the arrangement it enforced.
 
-The chosen directory is remembered in `install_eo_cmd.local.json`, which the
-repository ignores. **It never overwrites a file it did not install**: a name
-already taken in the target directory is reported and skipped, and `--force` is
-how a person overrides that, because the file being replaced is theirs.
-`--uninstall` removes what it put there and leaves anything that has changed
-since. `--dry-run` says what would happen and writes nothing.
-
-Today there are two, and both are kanon's:
-
-| installed as | copied from | what it does |
-| --- | --- | --- |
-| `eo_join` | [`prompts/join_eo`](https://github.com/ajreynol/kanon/blob/main/prompts/join_eo) | join the Eunoia ecosystem, run from inside the repository that is joining |
-| `eo_init` | [`prompts/init_eo`](https://github.com/ajreynol/kanon/blob/main/prompts/init_eo) | start a tool: write a README saying what it is for, complying with nothing |
-
-They carry the ecosystem's prefix rather than koine's, because they are not
-koine's. Everything at this repository's root is named `koine_<piece>`; nothing
-in `eo_cmd/` is, and that is the distinction the directory exists to draw.
-
-## Their content is not koine's to modify
-
-**koine stores these and installs them. It does not own a word of them.** kanon
-does — they are part of its `R4`, the ecosystem's policy and joining it — and
-kanon's copy is the authority for every line. A question about what `eo_join`
-asks of a repository is a question for kanon, and an argument about whether it
-should ask it is an argument to have there.
-
-What this repository provides is the service: keeping the copies honest, and
-putting them where a person can run them.
-
-So the copies are held to a rule a program can check.
-[`origin.json`](origin.json) records where each one came from and
-at which commit, and a stored command must be its original with **one** change —
-the command's own name, which differs here because the installed names are
-prefixed:
+## eo_join
 
 ```console
-$ scripts/install_eo_cmd --check ../kanon
--- eo_join: is prompts/join_eo in /path/to/kanon, renamed and otherwise unchanged
--- eo_init: is prompts/init_eo in /path/to/kanon, renamed and otherwise unchanged
+$ eo_join                       # join, and say so on the front page
+$ eo_join --unadvertised        # the associate footing, on the maintenance page
+$ eo_join --soft                # the maintenance note only, joining nothing
+$ eo_join --soft --affiliated   # the same, naming this ecosystem, held to nothing
 ```
 
-`--sync ../kanon` re-copies them, and is the only sanctioned way a file in
-`eo_cmd/` changes. Editing one by hand is caught by `--check` and overwritten by
-the next `--sync`, which is the intended outcome rather than a hazard: the store
-is a copy, and a copy that has been improved locally is just a copy that is
-wrong.
+**The answer to *should we join* is often no.** A tool with conventions of its
+own, or maintainers who have agreed to none of this, is worse off adopting a
+policy it did not choose — which is what `--soft` is for. Every form opens by
+asking whether the repository is the runner's alone to speak for, because a
+declaration on a shared tree is not one maintainer's to make, and commit access
+is capability rather than voice.
 
-**The rename stops at the wrapper.** It is applied to each script's comments,
-usage text, error messages and banner, and **not** to the prompt it hands an
-assistant. That exception is the point of the rule rather than an edge of it.
-Those prompts are read by somebody outside this ecosystem, in their own
-repository, and they name the command so that a person handed one can check it
-against what the command actually says. The name that survives that check is the
-one in the tree they can read, which is kanon's. A local alias would name a
-command that exists on one machine and in no repository anywhere.
+### The four forms, and how they differ
+
+**`eo_join`** declares membership on the README, adds the pinned `anoieu /
+policy` workflow, and runs the checker.
+
+**`eo_join --unadvertised`** takes the **`associate`** footing. The repository
+holds itself to the policy on its own `docs/maintenance.md`, adds no front-page
+declaration, and **owes this ecosystem nothing.** Both halves matter and the
+second is the one a reader gets wrong: an associate is not a quieter member. The
+obligation is self-imposed and answered to by the repository alone; the check
+runs and prints a result, and that result is **a measurement rather than a
+shortfall** — a failure is nobody's fault and counts toward nothing. The marker
+is read strictly all the same, which is not a contradiction: strictness is the
+difference between a claim somebody can check and a word.
+
+**`eo_join --soft`** adds the maintenance note and stops: no membership, no
+workflow, no checker, and the note names no other project at all.
+
+**`eo_join --soft --affiliated`** is the same note naming this ecosystem as one
+the repository works with, and saying it is **not** held to the policy. On a tree
+we do not own that is a second thing to ask agreement for, not a gentler version
+of the first.
+
+## eo_init
+
+```console
+$ eo_init new                    # a repository with nothing in it yet
+$ eo_init from-child <path>      # work that already exists as a child project
+```
+
+The mode is required rather than defaulted: the wrong one produces a confident
+README about the wrong thing, and nothing downstream catches it. **It complies
+with nothing, deliberately.** A new tool with a clear purpose and no policy is
+worth more than a compliant one with nothing to say, and knowing what you are
+building is what makes the rest decidable later.

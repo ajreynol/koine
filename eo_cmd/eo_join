@@ -69,16 +69,21 @@ PRINT=0
 SHOW=0
 SOFT=0
 AFFIL=0
+UNADV=0
 
 usage() {
   cat >&2 <<'USAGE'
-usage: eo_join [--soft [--affiliated]] [--codex] [--print] [--show-prompt]
+usage: eo_join [--soft [--affiliated] | --unadvertised]
+               [--codex] [--print] [--show-prompt]
 
   --soft          add the maintenance note only: no membership declared, no
                   workflow, no checker run. The note says the repository is
                   independent and names no other project's ecosystem
   --affiliated    with --soft: the note names the Eunoia ecosystem as one this
                   repository works with, and says it is not held to its policy
+  --unadvertised  take the `associate` footing: the repository holds itself to
+                  the policy on its own maintenance page, owes this ecosystem
+                  nothing, and its check result is a measurement not a shortfall
   --codex         run codex instead of claude
   --print         run non-interactively and print the result
   --show-prompt   print the prompt and exit, running nothing
@@ -91,6 +96,7 @@ USAGE
 while [ $# -gt 0 ]; do
   case "$1" in
     --soft) SOFT=1; shift ;;
+    --unadvertised) UNADV=1; shift ;;
     --affiliated) AFFIL=1; shift ;;
     --codex) AGENT=codex; shift ;;
     --claude) AGENT=claude; shift ;;
@@ -108,7 +114,7 @@ repository's own voice, on its front page. If the tree is shared -- an
 organisation, a community, other maintainers with a say -- **that declaration is
 not the runner's alone to make, and commit access does not make it so.** In that
 case: change nothing, say which repository this looks like and who else would
-have to agree, and suggest **`join_eo --soft`**, which writes a maintenance note
+have to agree, and suggest **`eo_join --soft`**, which writes a maintenance note
 naming **no other project at all** — no membership, no workflow, no policy link,
 and not our name either. `--affiliated` names this ecosystem, and on a tree
 somebody else owns that is a second thing to get agreement for rather than a
@@ -141,13 +147,13 @@ repository -- that last one is worth more to us than a clean run.
 PROMPT_END
 
 read -r -d '' SOFT_PROMPT <<'SOFT_PROMPT_END' || true
-*Produced by `join_eo --soft`, a command kept in the kanon repository. **That
+*Produced by `eo_join --soft`, a command kept in the koine repository. **That
 script is the authority for what this prompt asks**, and it can be read without
 running anything:*
 
-  https://github.com/ajreynol/kanon/blob/main/prompts/join_eo
+  https://github.com/ajreynol/koine/blob/main/eo_cmd/eo_join
 
-*`join_eo --soft --show-prompt` prints exactly this text and does nothing else,
+*`eo_join --soft --show-prompt` prints exactly this text and does nothing else,
 so anybody handed this can check it against what the command actually says.*
 
 This repository is adopting one convention and joining nothing. One page defines
@@ -180,13 +186,13 @@ could not establish from the tree and left for a person to write.
 SOFT_PROMPT_END
 
 read -r -d '' AFFIL_PROMPT <<'AFFIL_PROMPT_END' || true
-*Produced by `join_eo --soft --affiliated`, a command kept in the kanon
+*Produced by `eo_join --soft --affiliated`, a command kept in the koine
 repository. **That script is the authority for what this prompt asks**, and it
 can be read without running anything:*
 
-  https://github.com/ajreynol/kanon/blob/main/prompts/join_eo
+  https://github.com/ajreynol/koine/blob/main/eo_cmd/eo_join
 
-*`join_eo --soft --affiliated --show-prompt` prints exactly this text and does
+*`eo_join --soft --affiliated --show-prompt` prints exactly this text and does
 nothing else, so anybody handed this can check it against what the command
 actually says.*
 
@@ -221,11 +227,81 @@ what the section now claims about who maintains this repository, and what you
 could not establish from the tree and left for a person to write.
 AFFIL_PROMPT_END
 
+read -r -d '' UNADV_PROMPT <<'UNADV_PROMPT_END' || true
+**First, one question, and stop if the answer is no.** Is this repository solely
+the runner's to speak for? This writes a footing onto its maintenance page, which
+is a claim about what the repository holds itself to. If the tree is shared -- an
+organisation, a community, other maintainers with a say -- **that is not the
+runner's alone to decide, and commit access does not make it so.** In that case:
+change nothing, say which repository this looks like and who else would have to
+agree, and suggest `eo_join --soft`, which claims nothing.
+
+This repository is taking the **associate** footing: it holds itself to the
+Eunoia ecosystem's shared repository policy, and **owes that ecosystem nothing.**
+
+**Read that second half carefully, because it is the whole of the footing.** An
+associate is not a quieter member. The obligation is one the repository imposes
+on *itself* and answers to by itself; nobody here is owed it. The check is run
+and the result is printed as a measurement, not a shortfall -- a failure is
+nobody's fault, no note asks anyone to fix it, and it counts toward nothing.
+
+**The marker is read strictly anyway, and that is not a contradiction.**
+Strictness here is not an obligation being enforced. It is the difference
+between a claim somebody can check and a word: a footing naming itself and no
+obligation leaves a reader nothing to hold it to, and leaves the checker nothing
+to measure against.
+
+One page defines this footing and it is the authority:
+
+  https://github.com/ajreynol/kanon/blob/main/docs/policy.md#the-footings
+
+Read it, then do what it says, here. Where that page and this prompt disagree,
+the page is right:
+
+1. In `docs/maintenance.md`, creating that page if there is not one, record the
+   footing. The line names it and says what this repository holds **itself** to,
+   and the paragraph under it gives this repository's own reason:
+
+       **Footing:** `associate` — held to the Eunoia ecosystem's shared
+       repository policy by this repository's own choice, and owing that
+       ecosystem nothing.
+
+   Then say, in the same paragraph, **why** this is not on the front page: it is
+   not published, it is one person's working tree, a declaration would oversell
+   what is in it. That reason is yours and nobody grades it.
+2. **Add no membership declaration to README.md**, and remove one if it is
+   there. A tree that records this footing and also declares membership is
+   making two different claims, and the checker names the pair.
+3. Add the CI workflow the policy page gives, so the check can run and print a
+   result. **What it prints is a measurement.** Nothing about a red run obliges
+   this repository to anything.
+4. Run the same checker revision and command the workflow uses, and say what it
+   reports. Report which revision you checked. Do not substitute the latest
+   checkout for a pinned revision, and do not claim a local run establishes CI.
+
+The footing line must say the repository **is held to** the policy and must not
+also say it is not; a marker carrying both says nothing. A tree that is held to
+none of this is **not** an associate -- it keeps the independent note that
+`eo_join --soft` writes. Change nothing the check does not ask for, and add no
+file it does not ask for.
+
+Leave the work staged and not committed: `git add` what you changed and stop
+there, so a maintainer reviews a diff rather than a history. Then say, in one
+paragraph: what the marker now claims, what reason you recorded and whether it
+came from the runner or from you, what the check reports, and anything the
+policy asked for that does not fit this repository.
+UNADV_PROMPT_END
+
 if [ "$SOFT" = 1 ]; then PROMPT=$SOFT_PROMPT; fi
 if [ "$SOFT" = 1 ] && [ "$AFFIL" = 1 ]; then PROMPT=$AFFIL_PROMPT; fi
 if [ "$SOFT" = 0 ] && [ "$AFFIL" = 1 ]; then
   echo "eo_join: --affiliated is a form of --soft; pass both" >&2; exit 2
 fi
+if [ "$UNADV" = 1 ] && [ "$SOFT" = 1 ]; then
+  echo "eo_join: --unadvertised holds this tree to the policy and --soft joins nothing; pass one" >&2
+  exit 2
+fi
+if [ "$UNADV" = 1 ]; then PROMPT=$UNADV_PROMPT; fi
 
 if [ "$SHOW" = 1 ]; then printf '%s\n' "$PROMPT"; exit 0; fi
 
@@ -241,6 +317,7 @@ fi
 WHAT=joining
 if [ "$SOFT" = 1 ]; then WHAT="the note only, independent"; fi
 if [ "$SOFT" = 1 ] && [ "$AFFIL" = 1 ]; then WHAT="the note only, affiliated"; fi
+if [ "$UNADV" = 1 ]; then WHAT="the associate footing, unadvertised"; fi
 echo "-- eo_join: $(basename "$ROOT") ($ROOT), $WHAT, via $AGENT" >&2
 
 cd "$ROOT"

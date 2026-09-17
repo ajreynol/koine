@@ -3,51 +3,28 @@
 
     scripts/install_eo_cmd                 # install to the remembered directory
     scripts/install_eo_cmd --prefix ~/bin  # install there, and remember it
-    scripts/install_eo_cmd --status        # what is installed, where, and whether it is current
+    scripts/install_eo_cmd --status        # what is installed, and whether it is current
     scripts/install_eo_cmd --uninstall     # remove what this script installed
 
-The commands live in `eo_cmd/` beside this checkout. They are meant to be run
-from anywhere -- in the repository that is joining, in the repository being
-started -- so reaching them by path into a koine checkout is the wrong shape.
-This puts them on a path instead.
+The commands in `eo_cmd/` are meant to be run from anywhere -- in the repository
+that is joining, in the repository being started -- so reaching them by path into
+a koine checkout is the wrong shape. This puts them on a path instead.
 
-## What this is, and what it is not
+`eo_cmd/commands.json` lists what is installable. koine maintains those commands
+under role `R35`; what joining *costs* is `R4`'s and stays with the office.
 
-**koine does not own what is in `eo_cmd/`.** Those files are copies, and the
-repository named in `eo_cmd/origin.json` is the authority for every word in
-them. koine provides one service and it is a boring one: keeping the copies
-honest, and installing them for a person who would otherwise be typing a path
-into somebody else's checkout.
-
-**So their content is not koine's to modify.** The only sanctioned way a file in
-`eo_cmd/` changes is `--sync`, which re-copies it from a checkout of the
-repository it came from. `--check` is the other half: it re-applies the copy
-transform to the original and compares, so "we did not modify it" is a fact a
-run can establish rather than a promise this file makes.
-
-## The copy transform
-
-A copy is the original with **one** change: the command's own name, which
-differs here because the installed names are prefixed. `join_eo` is installed as
-`eo_join`, `init_eo` as `eo_init`. The rename is applied to the script's own
-comments, usage text, error messages and banner -- and **not** to the prompt
-text it hands an assistant.
-
-That exception is the whole point of the rule. The prompts are read by somebody
-outside this ecosystem, in their own repository, and they name the command so
-that a person handed one can check it against what the command actually says.
-The name that survives that check is the one in the repository they can read,
-which is the original's. A local alias would name a command that exists on one
-machine and in no tree anywhere.
-
-Mechanically: a heredoc body opened by the shell's `read` builtin is the prompt
-and is copied byte for byte; everything else is the wrapper and is renamed.
+**They were copies until 2026-09-17**, kept byte-identical to kanon's
+`prompts/join_eo` and `prompts/init_eo`, and this script policed that with a
+`--sync` and a `--check` that re-derived each copy from its original. kanon then
+deleted its pair and the role moved here, so there is no original to check
+against and nothing left to police. Both options were removed rather than left
+pointing at a repository that no longer holds the files.
 
 ## The configuration
 
 `install_eo_cmd.local.json` at the root of this checkout, which the repository
 ignores by the ecosystem's `*.local.json` convention. It records the directory
-chosen and what was installed into it, so that a later run can tell a file it
+chosen and what was installed into it, so a later run can tell a file it
 installed from a file somebody else's tooling put there under the same name.
 
 **It never overwrites a file it did not install.** A name already taken in the
@@ -67,49 +44,13 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 STORE = os.path.join(ROOT, "eo_cmd")
-ORIGIN = os.path.join(STORE, "origin.json")
+MANIFEST = os.path.join(STORE, "commands.json")
 CONFIG = os.path.join(ROOT, "install_eo_cmd.local.json")
 
 #: Where the commands go when nobody has said otherwise. A person's own bin
 #: directory rather than anything shared: this installs somebody's tools for
 #: them, and has no business writing where another account would see it.
 DEFAULT_PREFIX = "~/bin"
-
-#: Opens a quoted heredoc. Only the ones the shell's `read` builtin opens are
-#: prompt text; `cat <<'USAGE'` is the script's own help and is renamed with the
-#: rest of the wrapper.
-HEREDOC = re.compile(r"<<-?'([A-Za-z_][A-Za-z0-9_]*)'")
-READ_LINE = re.compile(r"\s*read\b")
-
-
-def rename(text, renames):
-    """Apply the name map to one line of wrapper.
-
-    `\\b` does the work that matters: in `check_join_eo` the `join` is preceded
-    by a word character, so there is no boundary and the substring is left
-    alone. That command is run from the repository that owns it and is not
-    installed here, so a copy that renamed it would be pointing at nothing.
-    """
-    for was, now in renames.items():
-        text = re.sub(rf"\b{re.escape(was)}\b", now, text)
-    return text
-
-
-def transform(text, renames):
-    """The original, as it is stored here. Prompt heredocs pass through."""
-    out = []
-    delim = None
-    for line in text.split("\n"):
-        if delim is not None:
-            out.append(line)
-            if line == delim:
-                delim = None
-            continue
-        match = HEREDOC.search(line)
-        out.append(rename(line, renames))
-        if match and READ_LINE.match(line):
-            delim = match.group(1)
-    return "\n".join(out)
 
 
 def digest(text):
@@ -162,7 +103,7 @@ def install_file(src, dest):
 
 
 def commands(origin):
-    """The installable commands, in the order origin.json lists them."""
+    """The installable commands, in the order commands.json lists them."""
     return origin.get("commands", [])
 
 
@@ -178,121 +119,6 @@ def on_path(directory):
     entries = [os.path.abspath(os.path.expanduser(p))
                for p in os.environ.get("PATH", "").split(os.pathsep) if p]
     return directory in entries
-
-
-def do_sync(args, origin):
-    """Re-copy every command from a checkout of the repository that owns it."""
-    source = os.path.abspath(os.path.expanduser(args.sync))
-    if not os.path.isdir(source):
-        print(f"-- refused: {source} is not a directory", file=sys.stderr)
-        return 1
-
-    renames = origin.get("renames", {})
-    updated, unchanged = [], []
-    for cmd in commands(origin):
-        src = os.path.join(source, cmd["source"]["path"])
-        if not os.path.exists(src):
-            print(f"-- refused: {src} does not exist, and nothing was written",
-                  file=sys.stderr)
-            return 1
-        original = read_text(src)
-        copied = transform(original, renames)
-        dest = os.path.join(STORE, cmd["name"])
-        was = read_text(dest) if os.path.exists(dest) else None
-        cmd["source"]["sha256"] = digest(original)
-        cmd["sha256"] = digest(copied)
-        renamed = ", ".join(f"{a} -> {b}" for a, b in renames.items()
-                            if a in original)
-        row = (f"write {rel(dest)}", f"from {rel(src)}",
-               f"renamed {renamed}" if renamed else "verbatim")
-        if was == copied:
-            unchanged.append(cmd["name"])
-            continue
-        if args.dry_run:
-            updated.append(row)
-            continue
-        tmp = dest + ".tmp"
-        with open(tmp, "w", encoding="utf-8") as handle:
-            handle.write(copied)
-        os.chmod(tmp, os.stat(tmp).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
-        os.replace(tmp, dest)
-        updated.append(row)
-
-    head = revision(source)
-    if head:
-        for cmd in commands(origin):
-            cmd["source"]["commit"] = head
-
-    verb = "would copy" if args.dry_run else "copied"
-    print(f"-- {verb} {len(updated)}, {len(unchanged)} already current  <-  "
-          f"{source}" + (f" at {head[:7]}" if head else ""))
-    plan_lines(updated)
-    if args.dry_run:
-        print("-- dry run: nothing was written, and eo_cmd/ is unchanged")
-        return 0
-    write_json(ORIGIN, origin)
-    print(f"-- wrote {os.path.relpath(ORIGIN, ROOT)}")
-    return 0
-
-
-def revision(checkout):
-    """The commit the copies were taken at, for the record in origin.json."""
-    try:
-        out = subprocess.run(["git", "-C", checkout, "rev-parse", "HEAD"],
-                             capture_output=True, text=True, check=True)
-        return out.stdout.strip()
-    except (OSError, subprocess.CalledProcessError):
-        return None
-
-
-def do_check(args, origin):
-    """Is what is stored here the original, plus the documented rename?"""
-    renames = origin.get("renames", {})
-    problems = 0
-
-    for cmd in commands(origin):
-        dest = os.path.join(STORE, cmd["name"])
-        if not os.path.exists(dest):
-            print(f"-- {cmd['name']}: missing from eo_cmd/", file=sys.stderr)
-            problems += 1
-            continue
-        stored = read_text(dest)
-        if digest(stored) != cmd.get("sha256"):
-            print(f"-- {cmd['name']}: edited here since it was copied -- "
-                  "eo_cmd/ is a store, not a source; --sync to restore it",
-                  file=sys.stderr)
-            problems += 1
-            continue
-        print(f"-- {cmd['name']}: matches what was copied")
-
-    if args.check is True or not args.check:
-        print("-- checked against origin.json only; pass a checkout of the "
-              "source repository to compare against the originals themselves")
-        return 1 if problems else 0
-
-    source = os.path.abspath(os.path.expanduser(args.check))
-    if not os.path.isdir(source):
-        print(f"-- refused: {source} is not a directory", file=sys.stderr)
-        return 1
-
-    for cmd in commands(origin):
-        src = os.path.join(source, cmd["source"]["path"])
-        dest = os.path.join(STORE, cmd["name"])
-        if not os.path.exists(src):
-            print(f"-- {cmd['name']}: {cmd['source']['path']} is not in "
-                  f"{source}", file=sys.stderr)
-            problems += 1
-            continue
-        expected = transform(read_text(src), renames)
-        if not os.path.exists(dest) or read_text(dest) != expected:
-            print(f"-- {cmd['name']}: differs from {source} -- the original "
-                  "moved, or this copy did; --sync takes the original",
-                  file=sys.stderr)
-            problems += 1
-        else:
-            print(f"-- {cmd['name']}: is {cmd['source']['path']} in {source}, "
-                  "renamed and otherwise unchanged")
-    return 1 if problems else 0
 
 
 def do_status(prefix, origin, config):
@@ -417,12 +243,6 @@ def main():
                         help="what is installed, where, and whether it is current")
     parser.add_argument("--uninstall", action="store_true",
                         help="remove the files this script installed")
-    parser.add_argument("--check", nargs="?", const=True, metavar="CHECKOUT",
-                        help="verify the stored copies; with a checkout of the "
-                             "repository they came from, compare against the originals")
-    parser.add_argument("--sync", metavar="CHECKOUT",
-                        help="re-copy the commands from a checkout of the "
-                             "repository that owns them")
     parser.add_argument("--force", action="store_true",
                         help="replace a file of the same name this script did not install")
     parser.add_argument("--dry-run", action="store_true",
@@ -430,15 +250,10 @@ def main():
     args = parser.parse_args()
 
     try:
-        origin = read_json(ORIGIN)
+        origin = read_json(MANIFEST)
     except (OSError, ValueError) as exc:
         print(f"-- refused: {exc}", file=sys.stderr)
         return 1
-
-    if args.sync:
-        return do_sync(args, origin)
-    if args.check is not None:
-        return do_check(args, origin)
 
     try:
         config = read_json(CONFIG, missing_ok=True)

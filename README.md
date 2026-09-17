@@ -25,14 +25,15 @@ a commit of this repository and calls it from its own run.
 **[`bug_db/README.md`](bug_db/README.md) is the whole of it** — the worked
 example, the one rule that makes it a database, and what it refuses to do.
 
-**2. [`eo_cmd/`](eo_cmd), the ecosystem's commands.** Scripts that are useful
-across the Eunoia ecosystem rather than inside any one repository, kept together
-and put on a person's path by
-[`scripts/install_eo_cmd`](scripts/install_eo_cmd). **koine keeps these and does
-not write them** — the repository each one comes from is the authority for every
-word of it, and the copies are held to that mechanically rather than by promise.
-**[`eo_cmd/README.md`](eo_cmd/README.md) is the whole of it** — what is in
-there, where each one came from, and how a copy is proved unmodified.
+**2. [`eo_cmd/`](eo_cmd), the commands a repository outside this ecosystem
+runs.** `eo_join` joins it; `eo_init` starts a tool. Both run *inside the tree
+being started or joined* rather than from the repository that keeps the rule,
+which is why they live with the tool whose job is shared machinery and why
+[`scripts/install_eo_cmd`](scripts/install_eo_cmd) puts them on a person's path.
+**koine maintains what they ask and has no standing to change what joining
+costs** — that stays with the office.
+**[`eo_cmd/README.md`](eo_cmd/README.md) is the whole of it** — the four forms
+of `eo_join`, and where the line between the two falls.
 
 ## What else is in this tree
 
