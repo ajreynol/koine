@@ -1,6 +1,6 @@
 # koine
 
-**koine maintains the tooling that nobody else wants to maintain.**
+**Every tool here is built to find something. koine is built to keep it.**
 
 The tools in this ecosystem exist to find bugs in projects that are not their
 own. [anoieu](https://github.com/ajreynol/anoieu) reads somebody else's Eunoia
@@ -21,18 +21,37 @@ times badly because writing it once well was nobody's job.
 **It is ours.** koine does not find bugs, does not decide whether a bug is real,
 and has no opinion about what should be done with one. Those belong to the tool
 that raised it, and they stay there. We keep the list, and we keep it properly,
-so that nobody else has to think about it again. We also maintain a history
-review tool: it lists changes and preserves reviewers' readings, with the
-judgement left to the reviewer.
+so that nobody else has to think about it again.
 
-## What it does
+**The same shape turned up again in the ecosystem's commands.** A script that
+serves every repository here still belongs to whichever one wrote it, and none
+of them is a natural place to put it on somebody's path. So they are kept here
+and installed from here, and not one word of them changes on the way. Again the
+interesting half stayed where it was, and the keeping came to us.
 
-Three jobs, and none of them is finding a bug. Everything runnable is in
-[`scripts/`](scripts): `koine_append_db` keeps the bug database, `koine_history`
-supports review of the ecosystem's history record, and `install_eo_cmd` puts the
-ecosystem's commands on a person's path.
+## What koine is for
 
-## Keeping the bug database
+Two things, and a reader who needs one of them can stop after it.
+
+**1. Tooling for keeping bug databases.** A tool runs over somebody else's
+project and dumps what it found *this time*; its database is everything it has
+ever found. [`scripts/koine_append_db`](scripts/koine_append_db) is the trip
+between the two, and it is the same trip in every tool that has one — which is
+why it is written once here instead of three times badly elsewhere.
+[anoieu](https://github.com/ajreynol/anoieu) and
+[dokimasia](https://github.com/ajreynol/dokimasia) are the customers: each pins
+a commit of this repository and calls it from its own run.
+
+**2. [`eo_cmd/`](eo_cmd), the ecosystem's commands.** Scripts that are useful
+across the Eunoia ecosystem rather than inside any one repository, kept together
+and put on a person's path by
+[`scripts/install_eo_cmd`](scripts/install_eo_cmd). **koine keeps these and does
+not write them** — the repository each one comes from is the authority for every
+word of it, and the copies are held to that mechanically rather than by promise.
+
+Everything runnable is in [`scripts/`](scripts).
+
+## 1. Keeping a bug database
 
 ```
 scripts/koine_append_db <new bugs> <bug database>
@@ -152,32 +171,10 @@ nothing; `--date` records a run under a date other than today.
 policy says commands live. They were at this repository's root until
 2026-09-17; a customer who put the root on their path wants `scripts/` on it
 now, and [`koine_append_db`](koine_append_db) at the root is a tombstone that
-says so and exits non-zero. It comes out once the one consumer that probes for
-it has moved its pin.
+says so and exits non-zero. It comes out once anoieu and dokimasia have moved
+their pins.
 
-## Reviewing the history record
-
-```console
-$ scripts/koine_history /path/to/record-repository
-$ scripts/koine_history /path/to/record-repository --append
-```
-
-`koine_history` reads changes to `docs/history.md` in a local Git checkout and
-reports what each change touched, added, and removed, along with questions for a
-reviewer. `--append` adds changes not yet recorded to
-[`docs/history-ledger.md`](docs/history-ledger.md) in this Koine checkout. It
-preserves every existing row and handwritten verdict. Without `--append`, it
-only prints the report; it never writes to the source record.
-
-The [review standard and design decisions](docs/history-review.md) distinguish
-checkable meaning from technical progress. The script supplies signals, and a
-reviewer supplies the judgement. This is advisory and does not gate a deployment.
-
-Both tools keep earlier records, separate evidence from decisions, and work
-locally without a network. The history tool also needs Git. Run its tests with
-`python3 tests/test_history.py`; every test script here runs in Koine's CI.
-
-## Installing the ecosystem's commands
+## 2. Keeping the ecosystem's commands
 
 ```console
 $ scripts/install_eo_cmd --prefix ~/bin   # install, and remember the directory
@@ -265,6 +262,33 @@ repository, and they name the command so that a person handed one can check it
 against what the command actually says. The name that survives that check is the
 one in the tree they can read, which is kanon's. A local alias would name a
 command that exists on one machine and in no repository anywhere.
+
+## Also here: reviewing the history record
+
+**This is neither of the two above.** `koine_history` came in on 2026-09-16 at
+the maintainer's instruction, when the history review child project was
+dissolved into this tree. It is maintained, tested and in CI, and its only
+consumer is this ecosystem's own record.
+
+```console
+$ scripts/koine_history /path/to/record-repository
+$ scripts/koine_history /path/to/record-repository --append
+```
+
+`koine_history` reads changes to `docs/history.md` in a local Git checkout and
+reports what each change touched, added, and removed, along with questions for a
+reviewer. `--append` adds changes not yet recorded to
+[`docs/history-ledger.md`](docs/history-ledger.md) in this Koine checkout. It
+preserves every existing row and handwritten verdict. Without `--append`, it
+only prints the report; it never writes to the source record.
+
+The [review standard and design decisions](docs/history-review.md) distinguish
+checkable meaning from technical progress. The script supplies signals, and a
+reviewer supplies the judgement. This is advisory and gates no deployment.
+
+Like the bug database, it keeps earlier records and separates evidence from
+decisions; unlike it, this one needs Git. Run its tests with `python3
+tests/test_history.py`; every test script here runs in Koine's CI.
 
 ## What else is in this tree
 

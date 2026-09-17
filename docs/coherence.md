@@ -12,29 +12,40 @@ The convention is anoieu's, and so is the name.
 
 ## What koine is for
 
-**koine maintains the tooling that nobody else wants to maintain.** The tools
-here find bugs in projects that are not their own; koine keeps the list of what
-they found. It does not find bugs, does not decide whether one is real, and has
-no opinion about what should be done with one.
+**Every tool here is built to find something. koine is built to keep it.**
+The tools here find bugs in projects that are not their own; koine keeps the
+list of what they found. It does not find bugs, does not decide whether one is
+real, and has no opinion about what should be done with one.
 
-Today that is three jobs, and everything runnable is in
-[`../scripts/`](../scripts).
-[`koine_append_db`](../scripts/koine_append_db) keeps the bug database,
-[`koine_history`](../scripts/koine_history) supports review of the
-ecosystem's history record, and
-[`install_eo_cmd`](../scripts/install_eo_cmd) puts the ecosystem's commands on
-a person's path. It reports mechanical signals and preserves human
-readings in [`history-ledger.md`](history-ledger.md); it does not decide verdicts
-or write to the source record. [`../README.md`](../README.md) introduces all
-three.
+**Two purposes, named by the maintainer on 2026-09-17.**
+[`../README.md`](../README.md) is where they are written for a reader; this is
+the same pair with what an agent needs added.
 
-**The third arrived on 2026-09-17, at the maintainer's instruction, and it is a
-different shape from the other two.** They are koine's own work. The installer
-is a *service*: [`../eo_cmd/`](../eo_cmd) stores commands another repository
-owns, and this repository's whole contribution is keeping the copies honest and
-installing them. See [Storing somebody else's command](#storing-somebody-elses-command)
-below, which is where the rule that keeps it from becoming ownership is written
-down.
+1. **Tooling for keeping bug databases.**
+   [`koine_append_db`](../scripts/koine_append_db) takes a run's dump and adds
+   what is new to a database of everything a tool has ever found. **anoieu and
+   dokimasia are the customers**, and each pins a commit of this repository and
+   calls it from its own run — that pin is the whole of the integration on
+   either side, and it is also what makes a path here somebody else's problem to
+   change.
+2. **[`../eo_cmd/`](../eo_cmd), the ecosystem's commands.** Scripts useful
+   across the ecosystem rather than inside any one repository, stored here and
+   put on a person's path by
+   [`install_eo_cmd`](../scripts/install_eo_cmd). **This one is a service and
+   not koine's own work**: another repository owns every word of what is in
+   there. See [Storing somebody else's command](#storing-somebody-elses-command)
+   below, which is where the rule that keeps it from becoming ownership is
+   written down.
+
+**[`koine_history`](../scripts/koine_history) is neither of them**, and knowing
+that matters before an instruction arrives assuming it is one. It came in on
+2026-09-16 when the history review child project was dissolved into this tree.
+It reports mechanical signals and preserves human readings in
+[`history-ledger.md`](history-ledger.md); it decides no verdict and writes
+nothing to the source record. It is maintained, tested and in CI, and where it
+sits against the two purposes is [open work](#the-open-work).
+
+Everything runnable is in [`../scripts/`](../scripts).
 
 **This replaced an earlier direction on 2026-09-16**, at the maintainer's
 instruction. koine had been the shared half of a reporting loop: a prompt-drift
@@ -251,7 +262,15 @@ the tools that use it and invents nothing on its own. A feature nobody has asked
 for is a guess about somebody else's needs — likely wrong, and more expensive to
 withdraw than it was to write.
 
-Two things are outstanding and neither is an agent's to settle:
+Three things are outstanding and none is an agent's to settle:
+
+- **Where [`koine_history`](../scripts/koine_history) sits.** The maintainer
+  named two purposes on 2026-09-17 — bug-database tooling, and the ecosystem's
+  commands — and the history tool is in neither. It may belong under the first
+  read more broadly, it may be a third purpose, or it may be work this
+  repository no longer wants. **All three are answers and none has been given**,
+  so it stays where it is, documented as neither. Do not resolve this by
+  quietly filing it under a purpose that nearly fits, and do not delete it.
 
 - **A publishing stance**, owed by this repository — whether there is a paper
   in the work, or a plan for one, or nothing

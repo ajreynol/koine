@@ -2,20 +2,22 @@
 """koine_append_db moved to `scripts/koine_append_db` on 2026-09-17.
 
 **This file is a tombstone and is meant to be deleted.** It holds the old name
-so that the move fails loudly in the one place it would otherwise fail silently,
-and it comes out once the consumer below has moved its pin.
+so that the move fails loudly in the two places it would otherwise fail
+silently, and it comes out once both consumers below have moved their pins.
 
 ## Why a moved file needs a marker at all
 
+Two repositories depend on this path, and neither by accident.
 [anoieu](https://github.com/ajreynol/anoieu) finds koine by probing three
 directories -- `$KOINE`, `../koine`, then a clone of its own -- and asks of each
 whether `koine_append_db` is a file at its root. That probe is not a path
 lookup; it is anoieu's test for *is this directory koine at all*, and its own
 comment says as much: "A directory without this is not koine, whatever it is
-called."
+called." [dokimasia](https://github.com/ajreynol/dokimasia) keeps its own copy
+of the same shim, joins the same path, and pins the same commit.
 
-So moving the file does not break anoieu. It makes a checkout of koine stop
-being koine. What follows is worse than a break:
+So moving the file does not break either of them. It makes a checkout of koine
+stop being koine. What follows is worse than a break:
 
 - **With cloning on**, which is the default and what CI does, `../koine` fails
   the probe and a clone at the pinned commit wins instead. That clone has the
@@ -33,9 +35,10 @@ happened the moment anything uses it. A wrong answer delivered loudly costs an
 afternoon; a right-looking answer from the wrong tree costs however long it
 takes somebody to notice.
 
-**To fix:** in anoieu, `scripts/koine.py` -- `MODULES` and `append_db()` both
-name this path. Point them at `scripts/koine_append_db`, or accept either, and
-move `scripts/koine.lock` to a koine commit at or after the move.
+**To fix, in each:** `scripts/koine.py` names this path -- `MODULES` and
+`append_db()` in anoieu, the `path / "koine_append_db"` probe in dokimasia.
+Point them at `scripts/koine_append_db`, or accept either, and move
+`scripts/koine.lock` to a koine commit at or after the move.
 """
 
 import os
