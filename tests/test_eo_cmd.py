@@ -70,10 +70,10 @@ def test_every_advertised_form_runs():
 
 def test_refusals():
     print("forms that contradict each other")
-    both = subprocess.run([os.path.join(STORE, "eo_join"), "--unadvertised", "--soft"],
+    both = subprocess.run([os.path.join(STORE, "eo_join"), "--associate", "--soft"],
                           capture_output=True, text=True)
-    check("--unadvertised with --soft is refused", both.returncode, 2)
-    ok("and says why", "joins nothing" in both.stderr)
+    check("--associate with --soft is refused", both.returncode, 2)
+    ok("and says why", "claims nothing" in both.stderr)
 
     bare = subprocess.run([os.path.join(STORE, "eo_join"), "--affiliated"],
                           capture_output=True, text=True)
@@ -102,7 +102,7 @@ def test_no_prompt_names_a_command_that_is_gone():
            "kanon/blob/main/prompts/" not in text)
 
 
-def test_unadvertised_says_what_the_footing_needs():
+def test_associate_says_what_the_footing_needs():
     """The `associate` footing, as the policy page defines it.
 
     The two halves are both load-bearing and the second is the one a reader
@@ -110,8 +110,8 @@ def test_unadvertised_says_what_the_footing_needs():
     ecosystem nothing. A prompt that said only the first would produce a
     quieter member, which is the reading the footings table exists to refuse.
     """
-    print("the unadvertised form")
-    text = show("eo_join", "--unadvertised").stdout
+    print("the associate form")
+    text = show("eo_join", "--associate").stdout
     ok("names the footing", "`associate`" in text)
     ok("puts it on the maintenance page", "docs/maintenance.md" in text)
     ok("says the repository holds itself to the policy", "holds itself to" in text)
@@ -154,7 +154,7 @@ def test_the_dictated_marker_passes_the_checker():
     pc = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(pc)
 
-    text = show("eo_join", "--unadvertised").stdout
+    text = show("eo_join", "--associate").stdout
     # The indented block the prompt tells an assistant to write.
     block = re.search(r"\n((?:       \S.*\n)+)", text)
     ok("the prompt spells out a marker", block is not None)
@@ -169,7 +169,7 @@ def test_the_dictated_marker_passes_the_checker():
 def main():
     for test in (test_every_advertised_form_runs, test_refusals,
                  test_no_prompt_names_a_command_that_is_gone,
-                 test_unadvertised_says_what_the_footing_needs,
+                 test_associate_says_what_the_footing_needs,
                  test_the_dictated_marker_passes_the_checker):
         test()
     print()

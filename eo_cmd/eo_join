@@ -6,6 +6,7 @@
 # and at the checker; it does not carry the instructions itself.
 #
 #   eo_join                 # do it
+#   eo_join --associate     # the associate footing, on the maintenance page
 #   eo_join --soft          # the maintenance note only, joining nothing
 #   eo_join --soft --affiliated
 #                           # the same, for a repository happy to be named
@@ -69,11 +70,11 @@ PRINT=0
 SHOW=0
 SOFT=0
 AFFIL=0
-UNADV=0
+ASSOC=0
 
 usage() {
   cat >&2 <<'USAGE'
-usage: eo_join [--soft [--affiliated] | --unadvertised]
+usage: eo_join [--soft [--affiliated] | --associate]
                [--codex] [--print] [--show-prompt]
 
   --soft          add the maintenance note only: no membership declared, no
@@ -81,7 +82,7 @@ usage: eo_join [--soft [--affiliated] | --unadvertised]
                   independent and names no other project's ecosystem
   --affiliated    with --soft: the note names the Eunoia ecosystem as one this
                   repository works with, and says it is not held to its policy
-  --unadvertised  take the `associate` footing: the repository holds itself to
+  --associate     take the `associate` footing: the repository holds itself to
                   the policy on its own maintenance page, owes this ecosystem
                   nothing, and its check result is a measurement not a shortfall
   --codex         run codex instead of claude
@@ -96,7 +97,7 @@ USAGE
 while [ $# -gt 0 ]; do
   case "$1" in
     --soft) SOFT=1; shift ;;
-    --unadvertised) UNADV=1; shift ;;
+    --associate) ASSOC=1; shift ;;
     --affiliated) AFFIL=1; shift ;;
     --codex) AGENT=codex; shift ;;
     --claude) AGENT=claude; shift ;;
@@ -227,7 +228,7 @@ what the section now claims about who maintains this repository, and what you
 could not establish from the tree and left for a person to write.
 AFFIL_PROMPT_END
 
-read -r -d '' UNADV_PROMPT <<'UNADV_PROMPT_END' || true
+read -r -d '' ASSOC_PROMPT <<'ASSOC_PROMPT_END' || true
 **First, one question, and stop if the answer is no.** Is this repository solely
 the runner's to speak for? This writes a footing onto its maintenance page, which
 is a claim about what the repository holds itself to. If the tree is shared -- an
@@ -290,18 +291,18 @@ there, so a maintainer reviews a diff rather than a history. Then say, in one
 paragraph: what the marker now claims, what reason you recorded and whether it
 came from the runner or from you, what the check reports, and anything the
 policy asked for that does not fit this repository.
-UNADV_PROMPT_END
+ASSOC_PROMPT_END
 
 if [ "$SOFT" = 1 ]; then PROMPT=$SOFT_PROMPT; fi
 if [ "$SOFT" = 1 ] && [ "$AFFIL" = 1 ]; then PROMPT=$AFFIL_PROMPT; fi
 if [ "$SOFT" = 0 ] && [ "$AFFIL" = 1 ]; then
   echo "eo_join: --affiliated is a form of --soft; pass both" >&2; exit 2
 fi
-if [ "$UNADV" = 1 ] && [ "$SOFT" = 1 ]; then
-  echo "eo_join: --unadvertised holds this tree to the policy and --soft joins nothing; pass one" >&2
+if [ "$ASSOC" = 1 ] && [ "$SOFT" = 1 ]; then
+  echo "eo_join: --associate holds this tree to the policy and --soft claims nothing; pass one" >&2
   exit 2
 fi
-if [ "$UNADV" = 1 ]; then PROMPT=$UNADV_PROMPT; fi
+if [ "$ASSOC" = 1 ]; then PROMPT=$ASSOC_PROMPT; fi
 
 if [ "$SHOW" = 1 ]; then printf '%s\n' "$PROMPT"; exit 0; fi
 
@@ -317,7 +318,7 @@ fi
 WHAT=joining
 if [ "$SOFT" = 1 ]; then WHAT="the note only, independent"; fi
 if [ "$SOFT" = 1 ] && [ "$AFFIL" = 1 ]; then WHAT="the note only, affiliated"; fi
-if [ "$UNADV" = 1 ]; then WHAT="the associate footing, unadvertised"; fi
+if [ "$ASSOC" = 1 ]; then WHAT="the associate footing"; fi
 echo "-- eo_join: $(basename "$ROOT") ($ROOT), $WHAT, via $AGENT" >&2
 
 cd "$ROOT"

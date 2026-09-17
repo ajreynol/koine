@@ -7,7 +7,7 @@
       "what": "join the Eunoia ecosystem, run inside the repository that is joining",
       "forms": [
         "eo_join",
-        "eo_join --unadvertised",
+        "eo_join --associate",
         "eo_join --soft",
         "eo_join --soft --affiliated"
       ]

@@ -39,7 +39,7 @@ from kanon's original — was removed with the arrangement it enforced.
 
 ```console
 $ eo_join                       # join, and say so on the front page
-$ eo_join --unadvertised        # the associate footing, on the maintenance page
+$ eo_join --associate        # the associate footing, on the maintenance page
 $ eo_join --soft                # the maintenance note only, joining nothing
 $ eo_join --soft --affiliated   # the same, naming this ecosystem, held to nothing
 ```
@@ -56,7 +56,7 @@ is capability rather than voice.
 **`eo_join`** declares membership on the README, adds the pinned `anoieu /
 policy` workflow, and runs the checker.
 
-**`eo_join --unadvertised`** takes the **`associate`** footing. The repository
+**`eo_join --associate`** takes the **`associate`** footing. The repository
 holds itself to the policy on its own `docs/maintenance.md`, adds no front-page
 declaration, and **owes this ecosystem nothing.** Both halves matter and the
 second is the one a reader gets wrong: an associate is not a quieter member. The
