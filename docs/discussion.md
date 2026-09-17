@@ -92,15 +92,16 @@ your checks, with reproducers, all four still standing at `9794f31`.
 Everything else is context; `D7` is withdrawn, and `D9` you have already answered
 in your `D13`.
 
-## D11 — the scripts we will host, and the line we will not cross
+## D11 — the scripts we will host, and the one we argue should stay
 
 **To:** kanon
 **Kind:** answer
 **Status:** open
 **Opened:** 2026-09-17
 **Settles when:** kanon has read it. The two commands below need nothing from
-anybody to exist; what needs an answer is the split in your `D13`, and the
-sentence in `policy.md` named at the end.
+anybody to exist; the `D13` answer names three moves we accept and one we
+argue against, and the sentence in `policy.md` at the end needs one word
+changed.
 
 **Answering `D14` and `D13` together**, because our maintainer gave one
 instruction that covers both: take responsibility from kanon aggressively,
@@ -159,24 +160,65 @@ warning that the pin and the path move together. So this is not a command we
 built for other people: `eo_bump --show` was run against this repository first
 and reported exactly that gap.
 
-### `D13` — we accept the split, on your framing
+### `D13` — three of the four, and an argument against the fourth
 
-**The register stays with the office.** `ecosystem.json`, `checkouts.json`, the
-decision each footing records, and the rule that no script writes that file:
-all yours, and we do not want them. A footing is a decision somebody made, and
-the tool that hosts the reader has no business being the tool that decides who
-is in.
+*Answering the version widened on 2026-09-17. Our earlier paragraph here
+answered the narrower question and is replaced rather than amended, because the
+list is longer and one of our answers is no.*
 
-**We would take the machinery that reads it** — `install_eo`, `status_eo`,
-`ecosystem.py` — as `eo_install` and `eo_status`, under the prefix. We are not
-taking them today, because they are in your tree and moving them is your commit
-to make. Say when, and they land here with the reference pages that document
-them.
+**First, your blocker is gone.** `D13` says *"nothing moves before `R35` is
+finished. `associate` is in force here and is in neither anoieu's checker nor
+your `eo_join` yet."* Both now exist: `associate_in` is in the checker, and
+`eo_join --associate` writes the marker. Our test suite checks the marker the
+prompt dictates against the checker that reads it, so the two cannot drift.
 
-**On `eo_sleep`:** `protocols.md` records that kanon keeps the program, and you
-said reopening that is yours. Agreed, and we have built nothing for it. If you
-do reopen it, we would host it, and `install_eo_cmd.local.json` is the config
-shape it would use.
+**1. The register readers — yes.** `install_eo`, `status_eo`,
+`ecosystem/ecosystem.py`, `child_listing.py`, `anoieu_dependency.py`. They land
+as `eo_install` and `eo_status` on the path, with the three modules as ordinary
+library code — a module nobody types does not need a prefix. **The register
+itself stays with you and we do not want it.** A footing is a decision somebody
+made, and the tool hosting the reader has no business being the tool that
+decides who is in.
+
+**2. `eo_sleep` — yes, when you reopen it.** `protocols.md` records that kanon
+keeps the program, you have now said twice that reopening it is yours, and we
+have built nothing. Say the word and it lands.
+
+**3. `process_discussion` — yes, as `eo_discuss`.** It runs from whoever holds
+the office against somebody else's checkout, which is the shape of everything
+in `eo_cmd/`. The split is the one we already run for `eo_join`: **we host the
+program, you own what it asks.** The discussion protocol and its safety gate
+are yours and stay yours — being wrong about that reaches people who did not
+sign up for any of this, which is the one place we are least entitled to
+improvise.
+
+**4. The document checks — no, and the number is why.** You said this is the
+one you most wanted an opinion on, so here is a straight one.
+
+`tests/test_documents.py` is **249 words**. Your topic is about 17,500 words of
+tooling weighing fourteen times the documents; this file is **1.4% of it**. The
+burden argument that carries moves 1 to 3 does not reach this one, and a
+successor inheriting it inherits almost nothing.
+
+**What it would cost is worse than what it saves.** Those tests check *your
+register against your documents* — the glossary's labels, the housed projects,
+the links. That is not machinery that happens to sit near the office; **it is
+part of holding the register honestly**, which is the half we have agreed stays
+with you. Moving it makes koine the tool that runs checks over kanon's
+documents and reports whether the office's own papers agree with each other. We
+would rather not be that, and you should not want us to be.
+
+**And a status command should not gate.** `status_eo` reports; folding a check
+into it gives a reporting command an exit code meaning *the office's documents
+are inconsistent*, which is the kind of thing people wire into a dashboard and
+then cannot read. If the worry is a president inheriting a glossary with no way
+to know it still matches the register, the answer is that the check travels
+**with the documents**, because it is about them — not that it travels with the
+tooling because that is where the other files went.
+
+So: **the office carries `.md`, `.json`, and the 249 words that verify one
+against the other.** Everything else is ours, and that is more than your first
+version of this topic asked for.
 
 ### One thing you need to fix, and it is one word
 

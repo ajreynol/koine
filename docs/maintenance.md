@@ -15,6 +15,8 @@ somebody deciding whether this is worth depending on.
 ```bash
 python3 tests/test_append_db.py                          # bug_db
 python3 tests/test_install_eo_cmd.py                     # the installer
+python3 tests/test_bump.py                               # eo_bump
+python3 tests/test_register.py                           # finding kanon's register
 python3 tests/test_eo_cmd.py                             # eo_join and eo_init themselves
 python3 /path/to/anoieu/scripts/policy_check.py --root .  # the ecosystem policy
 ```
@@ -61,7 +63,7 @@ Do not design it, do not build it, do not have an opinion about it in the tree.
 | **epochs** | the maintainer's | **THE DESIGN OF EPOCHS IS NOT KOINE'S TO DECIDE.** koine carries **no knowledge of how epochs are implemented** |
 | membership, joining, the repository policy | **kanon's** | it decides who is in |
 | global announcements, and who is told | **kanon's** | the same reason, one level down |
-| the inventory, and the entity ids | **kanon's** | koine *references* the vocabulary; owning it would be owning membership |
+| **the register itself** — the inventory, the footings, the entity ids | **kanon's** | a footing is a decision somebody made. koine keeps the programs that *read* it (`scripts/koine_register.py`) and never writes to it; owning the file would be owning membership |
 | the discussion protocol, the role handoff, the channel model | **kanon's** | governance, not a shape |
 | the policy checker itself | **anoieu's** | our CI pins it and it is not ours to move |
 | auditing how a repository's history changed | **epikrisis's** | the register describes it as *audits repository histories against evidence*; koine held a second implementation until 2026-09-17 and should not have |
