@@ -1,14 +1,27 @@
 #!/usr/bin/env python3
-"""install_eo_cmd -- put the ecosystem's commands on a person's path.
+"""install_eo_cmd -- set up the Eunoia ecosystem on this machine.
 
-    scripts/install_eo_cmd                 # install to the remembered directory
-    scripts/install_eo_cmd --prefix ~/bin  # install there, and remember it
+    scripts/install_eo_cmd --prefix ~/bin  # install the commands, and remember where
+    scripts/install_eo_cmd                 # later runs need no arguments
     scripts/install_eo_cmd --status        # what is installed, and whether it is current
+    scripts/install_eo_cmd --init-clone    # clone the ecosystem's repositories
     scripts/install_eo_cmd --uninstall     # remove what this script installed
 
-The commands in `eo_cmd/` are meant to be run from anywhere -- in the repository
-that is joining, in the repository being started -- so reaching them by path into
-a koine checkout is the wrong shape. This puts them on a path instead.
+**Two jobs, and between them they are what a machine needs before any of this
+is usable.**
+
+**The commands, onto a PATH.** Everything in `eo_cmd/` is written to run *inside
+somebody else's repository* -- the one being started, joined, tidied or answered
+-- rather than inside this one. A command shaped like that is no use sitting in
+a checkout whose path somebody has to remember, so this copies each onto a
+directory on their PATH and remembers which directory, so that later runs need
+no arguments.
+
+**The repositories, onto the disk.** `--init-clone` reads the register the
+president holds and clones what is missing beside it. Several of the installed
+commands go looking for sibling checkouts -- for the policy and the vision, for
+the register, for another tool's discussion file -- and do strictly less without
+them, so a fresh machine wants this before it wants anything else.
 
 `eo_cmd/commands.json` lists what is installable. koine maintains those commands
 under role `R35`; what joining *costs* is `R4`'s and stays with the office.
@@ -578,9 +591,50 @@ def do_install(prefix, origin, config, dry_run, force, president_dir=None):
     return 1 if skipped else 0
 
 
+#: --help has to answer *why would I run this*, which the option list cannot:
+#: a reader who does not already know what `eo_cmd/` is learns from `--prefix
+#: DIR  install here` only that something gets installed somewhere. Both jobs
+#: are named, because the second one is usually wanted first and was invisible
+#: from the option list entirely.
+WHY = """\
+Set up the Eunoia ecosystem on this machine. Two jobs, and a fresh machine
+usually wants the second one first.
+
+  the commands, onto a PATH
+      Everything in eo_cmd/ is written to run INSIDE somebody else's
+      repository -- the one being started, joined, tidied or answered --
+      rather than inside this one. A command shaped like that is no use
+      sitting in a checkout whose path somebody has to remember, so this
+      copies each onto a directory on your PATH and remembers which, so
+      later runs need no arguments. A run lists every command with a line
+      saying what it is for.
+
+  the repositories, onto the disk
+      --init-clone reads the register the president holds and clones the
+      repositories named in it. Several of the installed commands look for
+      sibling checkouts -- for the policy and the vision, for the register,
+      for another tool's discussion file -- and do strictly less without
+      them. It installs no commands, and --dry-run prints the git clone
+      lines without running one.\
+"""
+
+HOW = """\
+examples:
+  install_eo_cmd --prefix ~/bin   install, and remember the directory
+  install_eo_cmd                  later runs need no arguments
+  install_eo_cmd --status         what is installed, and whether it is current
+  install_eo_cmd --init-clone     put the ecosystem's repositories on this machine
+  install_eo_cmd --dry-run        say what would happen, and write nothing
+
+It never overwrites a file it did not install; that row is skipped and says so,
+and --force is a person's decision because the file being replaced is theirs.\
+"""
+
+
 def main():
     parser = argparse.ArgumentParser(
-        description="Put the ecosystem's commands on a person's path.")
+        description=WHY, epilog=HOW,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--prefix", metavar="DIR",
                         help=f"install here and remember it (default {DEFAULT_PREFIX})")
     parser.add_argument("--status", action="store_true",

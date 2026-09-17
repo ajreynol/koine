@@ -416,8 +416,38 @@ def test_an_orphan_is_noticed():
         shutil.rmtree(tmp)
 
 
+def test_help_answers_why_and_not_only_what():
+    """--help has to say why somebody would run this, not just what it accepts.
+
+    An option list cannot answer it. `--prefix DIR  install here` tells a reader
+    who does not already know what `eo_cmd/` is that something gets installed
+    somewhere, which is the part they could guess. The two reasons are that
+    these commands are written to run inside *somebody else's* repository and so
+    are useless in a checkout, and that the ecosystem is a set of sibling
+    checkouts somebody has to get onto the disk first.
+
+    The second was invisible from the option list, which listed `--init-clone`
+    among seven flags and nowhere said that cloning is half of what this is for.
+    """
+    print("--help says why, not only what")
+    out = subprocess.run([sys.executable, SCRIPT, "--help"],
+                         capture_output=True, text=True)
+    check("--help exits 0", out.returncode, 0)
+    ok("and writes to stdout", len(out.stdout.strip()) > 400)
+    flat = " ".join(out.stdout.split())
+    ok("it names the ecosystem", "Eunoia ecosystem" in flat)
+    ok("it says the commands run in somebody else's repository",
+       "INSIDE somebody else's repository" in flat)
+    ok("it says what a PATH is for here", "onto a PATH" in flat)
+    ok("it names the other job, which the option list hid",
+       "the repositories, onto the disk" in flat)
+    ok("and says cloning installs nothing", "installs no commands" in flat)
+    ok("it gives examples", "examples:" in out.stdout)
+
+
 def main():
     for test in (test_install, test_the_register_is_baked_in,
+                 test_help_answers_why_and_not_only_what,
                  test_init_clone_is_not_a_command_it_installs,
                  test_init_clone_refuses_without_a_register,
                  test_an_orphan_is_noticed,

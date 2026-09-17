@@ -42,12 +42,20 @@ exactly what it would hand an assistant and does nothing else.
 $ ../scripts/install_eo_cmd --prefix ~/bin   # install, and remember the directory
 $ ../scripts/install_eo_cmd                  # later runs need no arguments
 $ ../scripts/install_eo_cmd --status         # what is installed, and whether it is current
+$ ../scripts/install_eo_cmd --init-clone     # put the ecosystem's repositories on this machine
 $ ../scripts/install_eo_cmd --uninstall      # remove what it installed
 ```
 
-**`--dry-run` lists every command with the verb that applies to it**, so a run
-on a machine that is already up to date still says what the command does —
-which is when somebody is most likely to be asking:
+**`--help` says why somebody would run it**, which is the question an option list
+cannot answer: these commands are written to run inside *somebody else's*
+repository and so are useless sitting in a checkout, and the ecosystem is a set
+of sibling checkouts that has to get onto the disk before most of them are worth
+much. Both jobs are named there; the second was invisible from the flags alone.
+
+**Every run lists every command twice over** — once with the verb that applies
+to it, and once with a line saying what it is for. A machine that is already up
+to date therefore still answers *what are these*, which is when somebody is most
+likely to be asking:
 
 ```console
 $ ../scripts/install_eo_cmd --dry-run
@@ -55,11 +63,19 @@ $ ../scripts/install_eo_cmd --dry-run
    skip eo_cmd/eo_join    /home/you/bin/eo_join     (already current)
    cp   eo_cmd/eo_status  /home/you/bin/eo_status   (new)
    skip eo_cmd/eo_bump    /home/you/bin/eo_bump     (exists and is not ours; --force replaces it)
+-- what each one is for, from eo_cmd/commands.json:
+   eo_join    join the Eunoia ecosystem, run inside the repository that is joining
+   eo_status  who is in the Eunoia ecosystem and on what footing, as the register says it
+   eo_bump    move a pinned dependency onto a commit whose CI is green, and refuse otherwise
 -- a copy, not a move: the source keeps every file, and each one is written
    to a temporary file beside the target, made executable, and renamed over
    it, so an interrupted run leaves the old file in place
 -- dry run: nothing was written, and /home/you/bin is unchanged
 ```
+
+**That roster is the manifest's own text**, not a second description written
+here: [`commands.json`](commands.json) is the ground truth, so a command whose
+purpose moves says so on the next install rather than drifting quietly.
 
 A real run prints the same rows under `installed` rather than `would install`,
 so the two are compared by reading them. **It never overwrites a file it did
