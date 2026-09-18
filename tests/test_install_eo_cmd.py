@@ -49,6 +49,16 @@ def ok(name, condition):
     check(name, bool(condition), True)
 
 
+def flat(text):
+    """One line, so an assertion is about the words and not where they wrap.
+
+    Messages are wrapped to the width of a terminal, so where one breaks is a
+    property of how long it is rather than of what it says. A test that asserts
+    on the wrapped text fails the day somebody makes a sentence one word
+    longer, which teaches the next person to stop writing sentences.
+    """
+    return " ".join(text.split())
+
 
 def run(tmp, *args, env=None):
     """The script, against a checkout copied into a temporary directory."""
@@ -84,14 +94,19 @@ def test_install():
         prefix = sandbox(tmp)
 
         out = run(tmp, "--prefix", prefix, "--dry-run")
-        ok("a dry run counts what it would do", "would install 2" in out.stdout)
-        ok("a dry run names the verb per row", "cp " in out.stdout)
-        ok("a dry run names the operation and both paths",
-           f"cp eo_cmd/eo_join  {os.path.join(prefix, 'eo_join')}" in out.stdout)
+        ok("a dry run counts what it would do", "2 installed" in out.stdout)
+        ok("and says up front that it will write nothing",
+           "dry run: nothing will be written" in flat(out.stdout))
+        # The directory is named once, in the sentence every count is about,
+        # and each row then says only what differs: which command, and where
+        # its file comes from. Repeating the destination on every row made the
+        # longest string on the page the one that never changed.
+        ok("a dry run names the directory once", prefix in out.stdout)
+        ok("and names each command and where its file comes from",
+           "install" in out.stdout and "eo_join" in out.stdout
+           and "from eo_cmd/eo_join" in out.stdout)
         ok("a dry run says it is a copy and not a move",
            "a copy, not a move" in out.stdout)
-        ok("a dry run says nothing was written",
-           "nothing was written" in out.stdout)
         ok("a dry run creates nothing", not os.path.exists(prefix))
 
         out = run(tmp, "--prefix", prefix)
@@ -105,8 +120,12 @@ def test_install():
            == prefix)
 
         out = run(tmp)
-        ok("a second run needs no --prefix", "2 already current" in out.stdout)
+        ok("a second run needs no --prefix",
+           "2 already up to date" in flat(out.stdout))
         check("a second run returns 0", out.returncode, 0)
+        ok("and does not print the file-by-file table unasked",
+           "file by file" not in out.stdout)
+        ok("--verbose asks for it", "file by file" in run(tmp, "--verbose").stdout)
 
         out = run(tmp, "--status")
         ok("status says current", out.stdout.count("current") >= 2)
@@ -115,11 +134,15 @@ def test_install():
         with open(os.path.join(prefix, "eo_join"), "w") as handle:
             handle.write("#!/bin/sh\necho theirs\n")
         out = run(tmp)
-        ok("a file we did not install is skipped", "1 skipped" in out.stdout)
-        # The reason sits in the plan beside the file it applies to, rather
-        # than on stderr away from the row it explains.
-        ok("and the skip is explained in the plan",
-           "exists and is not ours" in out.stdout)
+        ok("a file we did not install is left alone",
+           "1 left alone" in flat(out.stdout))
+        # Not a word in a column for the reader to interpret: a sentence
+        # naming the file, saying why it was not touched, and saying what to
+        # do about it.
+        ok("and the run says which file, and why",
+           "eo_join was left alone" in flat(out.stdout)
+           and "did not put it there" in flat(out.stdout))
+        ok("and says what replaces it", "--force" in out.stdout)
         ok("and every command is listed, not only the changed ones",
            out.stdout.count("eo_join") >= 1 and out.stdout.count("eo_init") >= 1)
         check("and the run reports it", out.returncode, 1)
@@ -150,11 +173,13 @@ def test_a_dry_run_with_nothing_to_do_still_says_what_it_would_do():
         prefix = sandbox(tmp)
         run(tmp, "--prefix", prefix)
         out = run(tmp, "--dry-run")
-        ok("it reports nothing to install", "would install 0" in out.stdout)
-        ok("and still lists every command", out.stdout.count("skip ") == 2)
-        ok("saying why each is skipped", "already current" in out.stdout)
-        ok("and naming both paths",
-           os.path.join(prefix, "eo_join") in out.stdout)
+        ok("it reports nothing to do",
+           "2 already up to date" in flat(out.stdout))
+        ok("and still lists every command",
+           out.stdout.count("up to date  ") == 2)
+        ok("and still says what each command is for",
+           "eo_join" in out.stdout and "join" in out.stdout)
+        ok("and names the directory it is talking about", prefix in out.stdout)
     finally:
         shutil.rmtree(tmp)
 
@@ -231,8 +256,12 @@ def test_the_register_is_baked_in():
 
         out = run(tmp, "--prefix", prefix, "--president", office)
         check("installing returns 0", out.returncode, 0)
-        ok("the plan says the register was baked in",
-           "register baked in" in out.stdout)
+        # Which register a command carries is not a detail of the copy: it
+        # is the difference between an answer about today's ecosystem and an
+        # answer about a snapshot, so a plain run says it.
+        ok("the run says which register the command now carries",
+           "carries a snapshot of the register" in flat(out.stdout)
+           and "from kanon" in flat(out.stdout))
 
         installed = open(os.path.join(prefix, "eo_join")).read()
         ok("the data is in the installed file",
@@ -285,8 +314,16 @@ def test_no_president_is_a_warning_not_a_failure():
         finally:
             del os.environ["KANON"]
         check("it still installs", out.returncode, 0)
-        ok("and says what the commands will and will not do",
-           "work only where the register is" in out.stderr)
+        ok("and names the command it is about",
+           "eo_join will install without a register snapshot"
+           in flat(out.stderr))
+        ok("and says what that command will and will not do",
+           "work only in the tree that holds the register" in flat(out.stderr))
+        # The warning is about one command; the run is about a directory, and
+        # said so with a variable the warning had quietly taken over.
+        ok("and the run still says where it installed",
+           f"Installing Eunoia ecosystem scripts into {prefix}"
+           in flat(out.stdout))
     finally:
         shutil.rmtree(tmp)
 
@@ -352,11 +389,14 @@ def test_init_clone_is_not_a_command_it_installs():
 
         out = run(tmp, "--init-clone", into, "--president", office, "--dry-run")
         check("a dry run returns 0", out.returncode, 0)
-        ok("it names the clone command", "git clone https://example.invalid/a" in out.stdout)
+        ok("it names the clone command",
+           "git clone https://example.invalid/a" in flat(out.stdout))
         ok("a child is never cloned", "kid" not in out.stdout)
         ok("an outsider is never cloned", "them" not in out.stdout)
+        # One sentence naming them, not one line each: the same sentence
+        # repeated per repository is a wall a reader skips.
         ok("a directory already there is left alone",
-           "here: already there, left alone" in out.stdout)
+           "here is already there and left alone" in flat(out.stdout))
         ok("and it says where the register came from", "from kanon" in out.stdout)
         ok("nothing was cloned", not os.path.exists(os.path.join(into, "a")))
 
@@ -432,7 +472,7 @@ def test_a_named_president_is_used_or_refused_never_replaced():
                   env={"KANON": os.path.join(tmp, "nowhere")})
         check("KANON is read the same way", out.returncode, 0)
         ok("and the fallback register is not baked in behind somebody's back",
-           "work only where the register is" in out.stderr)
+           "work only in the tree that holds the register" in flat(out.stderr))
         ok("and the warning names the tree that was named",
            os.path.join(tmp, "nowhere") in out.stderr)
     finally:
@@ -473,16 +513,22 @@ def test_an_orphan_is_noticed():
 def test_a_finished_install_ends_by_saying_what_to_type():
     """The last thing printed is addressed to the person, not to the record.
 
-    A run used to end on its own bookkeeping -- what was copied where, which
-    file was remembered in which config -- and the roster of commands sat in
-    the middle of it. The person running this wants one thing at the end of it:
-    am I set up, and what do I type. So the roster goes last, under a sentence
-    saying they are ready.
+    A run used to end on its own bookkeeping -- what was copied to which path,
+    which config remembered the directory, how a copy is made atomically -- and
+    the one thing a person wanted, the list of commands they now have, sat in
+    the middle of it. So the run opens by saying what it is doing and where,
+    and ends on the roster under a sentence saying they are ready.
 
-    **It only says that when it is true.** A dry run wrote nothing and an
-    install into a directory off their PATH left them files they cannot type
-    the names of; both still print the roster, under a heading that promises
-    nothing.
+    **It says ready whether or not this shell can see the directory.** The
+    default is `~/bin`, which a login shell puts on PATH on every system these
+    commands are meant for, so a run that withheld *ready* and explained PATH
+    instead was interrupting almost everybody to fix almost nobody. The
+    directory that cannot be seen gets one line, not a lecture -- and a run
+    from cron or a Makefile has a PATH that says nothing about the one the
+    person types in, so it is advice and never a verdict.
+
+    A dry run is the one that does not say it: it wrote nothing, so there is
+    nothing to be ready with.
     """
     print("a finished install says what to type")
     tmp = tempfile.mkdtemp()
@@ -490,27 +536,70 @@ def test_a_finished_install_ends_by_saying_what_to_type():
         prefix = sandbox(tmp)
 
         out = run(tmp, "--prefix", prefix, "--dry-run")
+        ok("it opens by saying what it is doing and where",
+           f"Installing Eunoia ecosystem scripts into {prefix}"
+           in flat(out.stdout))
         ok("a dry run does not claim they are ready",
-           "now ready" not in out.stdout)
-        ok("and still says what the commands are for",
-           "what each one is for" in out.stdout and "join" in out.stdout)
+           "now ready" not in flat(out.stdout))
+        ok("and still says what each command is for",
+           "A real run would put these on your PATH" in flat(out.stdout)
+           and "eo_join" in out.stdout)
 
         out = run(tmp, "--prefix", prefix)
-        ok("an install off their PATH does not claim they are ready",
-           "now ready" not in out.stdout)
-        ok("and says why not", "not on your PATH" in out.stdout)
+        ok("an install says they are ready",
+           "You are now ready to use the Eunoia ecosystem" in flat(out.stdout))
+        ok("and offers the commands as a quick start",
+           "For quick start, try these:" in flat(out.stdout))
+        # One line, and the line that fixes it, rather than a paragraph about
+        # shell startup files: this shell is not the shell they will use.
+        ok("a directory this shell cannot see gets one quiet line",
+           f'ensure that {prefix} is in your PATH: export PATH="{prefix}'
+           in flat(out.stdout))
+        ok("and it is one line, not a block",
+           flat(out.stdout).count("in your PATH") == 1)
 
         out = run(tmp, env={"PATH": prefix + os.pathsep + os.environ["PATH"]})
-        ok("an install onto their PATH says they are ready",
-           "You are now ready to use the Eunoia ecosystem" in out.stdout)
-        ok("and offers the commands as a quick start",
-           "quick start" in out.stdout and "root of repos" in out.stdout)
-        ok("naming every one of them",
+        ok("a directory this shell can see is not mentioned at all",
+           "PATH" not in out.stdout)
+        ok("naming every command",
            "eo_join" in out.stdout and "eo_init" in out.stdout)
-        ok("and saying where the rest of each is",
-           "takes --help" in out.stdout)
-        ok("the roster is the last thing printed, after the bookkeeping",
-           out.stdout.index("now ready") > out.stdout.index("remembered"))
+        ok("and saying where they are run, and where to read more",
+           "root of the repository" in flat(out.stdout)
+           and "takes --help" in flat(out.stdout))
+        ok("the roster is the last thing printed, after what the run did",
+           out.stdout.index("now ready")
+           > out.stdout.index("Installing Eunoia ecosystem scripts"))
+    finally:
+        shutil.rmtree(tmp)
+
+
+def test_one_sentence_however_many_files_it_is_about():
+    """A message repeated once per file is a wall, and a reader skips walls.
+
+    Uninstalling a directory somebody had edited printed the same sentence nine
+    times, once per file, differing only in the name at the front. The names
+    belong in one sentence.
+    """
+    print("one sentence, however many files")
+    tmp = tempfile.mkdtemp()
+    try:
+        prefix = sandbox(tmp)
+        run(tmp, "--prefix", prefix)
+        for name in ("eo_join", "eo_init"):
+            with open(os.path.join(prefix, name), "w") as handle:
+                handle.write("#!/bin/sh\necho mine now\n")
+
+        out = run(tmp)
+        ok("install says it once, naming both",
+           flat(out.stdout).count("were left alone") == 1
+           and "eo_join and eo_init were left alone" in flat(out.stdout))
+
+        out = run(tmp, "--uninstall")
+        ok("uninstall says it once, naming both",
+           flat(out.stderr).count("were left alone") == 1
+           and "eo_join and eo_init were left alone" in flat(out.stderr))
+        ok("and the count is on the run's own line",
+           "2 left alone" in flat(out.stdout))
     finally:
         shutil.rmtree(tmp)
 
@@ -547,6 +636,7 @@ def test_help_answers_why_and_not_only_what():
 def main():
     for test in (test_install, test_the_register_is_baked_in,
                  test_a_finished_install_ends_by_saying_what_to_type,
+                 test_one_sentence_however_many_files_it_is_about,
                  test_help_answers_why_and_not_only_what,
                  test_init_clone_is_not_a_command_it_installs,
                  test_init_clone_refuses_without_a_register,

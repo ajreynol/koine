@@ -6,6 +6,7 @@
     scripts/install_eo_cmd --status        # what is installed, and whether it is current
     scripts/install_eo_cmd --init-clone    # clone the ecosystem's repositories
     scripts/install_eo_cmd --uninstall     # remove what this script installed
+    scripts/install_eo_cmd --verbose       # and show every file, one row each
 
 **Two jobs, and between them they are what a machine needs before any of this
 is usable.**
@@ -79,8 +80,104 @@ def rel(path):
     return path if inside.startswith(os.pardir) else inside
 
 
+#: How wide a message is allowed to get. A terminal is 80 and a line that runs
+#: to the edge is read twice.
+WIDTH = 78
+
+
+def say(text, stream=None, lead="-- "):
+    """One message, wrapped, with continuation lines hung under the first.
+
+    **Every message here used to be wrapped by hand** in the middle of a string
+    literal, so each broke at whatever column the *source* happened to reach and
+    the second half started at the left margin looking like a new statement. A
+    person reading a dozen of those cannot see where one message ends and the
+    next begins, which is most of why a run of this script was hard to read.
+    So messages are written as one sentence and wrapped here, and everything
+    after the first line is indented to sit under it.
+
+    Long paths are never broken: half a path on each of two lines is not a path
+    anybody can copy, and copying it is the whole reason it was printed.
+    """
+    body = textwrap.fill(" ".join(text.split()), width=WIDTH,
+                         initial_indent=lead, subsequent_indent=" " * len(lead),
+                         break_long_words=False, break_on_hyphens=False)
+    # Both streams, every time: a report that mixes them comes out shuffled the
+    # moment somebody pipes it, which is when a warning is most likely to end
+    # up above the line it is a warning about.
+    sys.stdout.flush()
+    sys.stderr.flush()
+    out = stream or sys.stdout
+    print(body, file=out)
+    out.flush()
+
+
+def table(rows, head=None, indent="   "):
+    """Columns that line up, so a reader can go down one instead of across all.
+
+    The last column is never padded, so a long note at the end of a row costs
+    nothing to the rows above it.
+    """
+    rows = [tuple(str(cell) for cell in row) for row in rows]
+    if not rows:
+        return
+    body = ([tuple(str(h) for h in head)] if head else []) + rows
+    widths = [max(len(r[i]) for r in body) for i in range(len(body[0]) - 1)]
+    for row in body:
+        line = indent + "  ".join(
+            cell.ljust(widths[i]) if i < len(widths) else cell
+            for i, cell in enumerate(row))
+        print(line.rstrip())
+
+
+def these(names):
+    """`a`, `a and b`, `a, b and c` -- a list of names inside a sentence.
+
+    Printed one per line, a message that applies to nine files is the same
+    sentence nine times and a reader skips all nine. Said once, with the names
+    in it, it is a sentence they read.
+    """
+    names = list(names)
+    if len(names) < 3:
+        return " and ".join(names)
+    return ", ".join(names[:-1]) + " and " + names[-1]
+
+
+def homely(path):
+    """A path as somebody would write it, with their home directory as `~`.
+
+    The absolute path to a directory under somebody's home is the longest thing
+    this script prints and the least informative part of what it prints:
+    `/home/andrew/bin` and `~/bin` name the same directory and only one of them
+    wraps onto a second line.
+    """
+    home = os.path.expanduser("~")
+    if home and (path == home or path.startswith(home + os.sep)):
+        return "~" + path[len(home):]
+    return path
+
+
+def shell_path(path):
+    """The same path for a line somebody pastes into a shell.
+
+    `~` is not it: inside the double quotes that `export PATH="..."` wants, a
+    tilde is a literal tilde and the line silently does nothing. `$HOME` is
+    what expands there.
+    """
+    home = os.path.expanduser("~")
+    if home and (path == home or path.startswith(home + os.sep)):
+        return "$HOME" + path[len(home):]
+    return path
+
+
 def plan_lines(rows):
-    """Left-aligned `<op> <src> <dest>` lines, so a column can be read down."""
+    """Left-aligned `<op> <path>` lines, so a column can be read down.
+
+    What `--uninstall` prints, where the path is the point: a preview of files
+    about to be deleted names each one in full, and `~` is the one shortening
+    that costs nothing -- it is the reader's own home, and the line still
+    pastes into a shell and means what it says.
+    """
     if not rows:
         return
     width = max(len(row[0]) for row in rows)
@@ -334,18 +431,18 @@ def do_init_clone(president, into, dry_run, named_dir=None):
     if not president:
         named = named_president(named_dir)
         if named:
-            print(f"-- refused: {named} does not hold {REGISTER}, and nothing "
-                  f"else is\n   read once a tree has been named. Name the one "
-                  f"that holds the register", file=sys.stderr)
+            say(f"refused: {homely(named)} does not hold {REGISTER}, and "
+                f"nothing else is read once a tree has been named. Name the "
+                f"one that holds the register.", stream=sys.stderr)
         else:
-            print("-- refused: no checkout holding the register was found, and "
-                  "the register\n   is what says who to clone. Pass "
-                  "--president DIR", file=sys.stderr)
+            say("refused: no checkout holding the register was found, and the "
+                "register is what says who to clone. Pass --president DIR.",
+                stream=sys.stderr)
         return 2
     try:
         data, where = snapshot(president)
     except (OSError, ValueError) as exc:
-        print(f"-- refused: {president}: {exc}", file=sys.stderr)
+        say(f"refused: {homely(president)}: {exc}", stream=sys.stderr)
         return 2
 
     todo, here = [], []
@@ -358,32 +455,37 @@ def do_init_clone(president, into, dry_run, named_dir=None):
         (here if os.path.exists(path) else todo).append(
             (name, entry["status"], entry["url"], path))
 
-    print(f"-- the register {where}")
-    print(f"-- {len(todo)} to clone into {into}, {len(here)} already there")
-    for name, footing, url, path in todo:
-        print(f"   git clone {url} {path}")
-    for name, footing, _, path in here:
-        print(f"   -- {name}: already there, left alone")
+    say(f"the register {where}")
+    say(f"{len(todo) or 'nothing'} to clone into {homely(into)}"
+        + (f"; {these(n for n, _, _, _ in here)} "
+           f"{'is' if len(here) == 1 else 'are'} already there and left alone"
+           if here else ""))
+    # The lines a real run executes, as a person would type them: the point of
+    # a dry run here is to read the git commands before they run.
+    table([("git clone", url, homely(path)) for _, _, url, path in todo])
     if not todo:
         return 0
     if dry_run:
-        print("-- dry run: nothing was cloned. The lines above are what a real "
-              "run executes")
+        say("dry run: nothing was cloned. The lines above are what a real run "
+            "executes")
         return 0
 
-    failed = []
+    cloned, failed = [], []
     for name, footing, url, path in todo:
         os.makedirs(os.path.dirname(path), exist_ok=True)
         out = subprocess.run(["git", "clone", url, path],
                              capture_output=True, text=True)
         if out.returncode == 0:
-            print(f"-- {name}: cloned")
+            cloned.append(name)
         else:
             failed.append(name)
-            print(f"-- {name}: did not clone -- "
-                  f"{(out.stderr or out.stdout).strip()}", file=sys.stderr)
-    print(f"-- {len(todo) - len(failed)} cloned, {len(failed)} failed"
-          + (f": {', '.join(failed)}" if failed else ""))
+            say(f"{name} did not clone: {(out.stderr or out.stdout).strip()}",
+                stream=sys.stderr)
+    if cloned:
+        say(f"cloned {these(cloned)}, into {homely(into)}")
+    if failed:
+        say(f"{these(failed)} did not clone; the error from git is above",
+            stream=sys.stderr)
     return 1 if failed else 0
 
 
@@ -407,7 +509,17 @@ def orphans(prefix, origin, config):
 
 
 def do_status(prefix, origin, config):
-    print(f"-- {prefix}" + ("" if on_path(prefix) else "  (not on PATH)"))
+    """What is on this machine, in one table with its columns named.
+
+    A row used to be three bare cells, so `eo_init  not ours  a file of that
+    name...` left a reader to work out that the middle cell was a state and
+    that the states were a closed set. The header names them, and the line
+    under the table says what a person does about the two that are not
+    `current`.
+    """
+    where = homely(prefix)
+    say(f"the Eunoia commands in {where}, which is "
+        + ("on your PATH" if on_path(prefix) else "NOT on your PATH"))
     installed = record(config, prefix)
     rows = []
     for cmd in commands(origin):
@@ -427,20 +539,34 @@ def do_status(prefix, origin, config):
             # Never byte-identical to its source: the register is written into
             # it at install time. What it carries says when, so that is read
             # back rather than guessed at from a hash.
-            rows.append((name, "installed", embedded_note(dest)))
+            note = embedded_note(dest)
+            rows.append((name, "installed",
+                         f"carries {note[0].lower()}{note[1:]}" if note else ""))
         elif there == here:
             rows.append((name, "current", ""))
         else:
-            rows.append((name, "stale", "the source has moved; re-run to update"))
+            rows.append((name, "stale", "this checkout has a newer one"))
     for name, dest, ours in orphans(prefix, origin, config):
         rows.append((name, "orphaned",
                      "installed from here once and no longer offered"
                      + ("; --uninstall removes it" if ours
                         else ", and changed since, so --uninstall leaves it")))
-    width = max((len(r[0]) for r in rows), default=0)
-    state = max((len(r[1]) for r in rows), default=0)
-    for name, said, note in rows:
-        print(f"   {name:<{width}}  {said:<{state}}  {note}".rstrip())
+    table(rows, head=("command", "state", "note"))
+    states = {r[1] for r in rows}
+    if "stale" in states or "not installed" in states:
+        say("run this script with no arguments to install what is missing and "
+            "bring the stale ones up to date")
+    if "not ours" in states:
+        say("a file this script did not install is never overwritten; --force "
+            "is how you say to replace it anyway")
+    if "installed" in states:
+        # The one state that is not a comparison, and a reader is owed the
+        # reason: a command carrying a register snapshot is never
+        # byte-identical to the file it was copied from, so *current* is a
+        # question this cannot answer about it.
+        say("a command carrying a register snapshot cannot be compared to this "
+            "checkout byte for byte, so it reads as installed rather than "
+            "current; re-run this script to refresh the snapshot")
     return 0
 
 
@@ -456,6 +582,12 @@ def embedded_note(dest):
 
 
 def do_uninstall(prefix, origin, config, dry_run):
+    """Remove what this script put there, and say what it would not touch.
+
+    The files it declines to remove are the point of the report: a command
+    somebody has edited is their file now, and a run that removed eight things
+    and silently kept one owes them the sentence saying which and why.
+    """
     installed = record(config, prefix)
     removed, left = [], []
     # Orphans too: a command this script installed and no longer offers is
@@ -469,19 +601,28 @@ def do_uninstall(prefix, origin, config, dry_run):
         if installed.get(name) != digest(read_text(dest)):
             left.append(name)
             continue
-        removed.append((f"rm {dest}", "", ""))
+        removed.append((f"rm {homely(dest)}", "", ""))
         if not dry_run:
             os.remove(dest)
             installed.pop(name, None)
 
-    for name in left:
-        print(f"-- {name}: changed since this script installed it, and is left "
-              "alone", file=sys.stderr)
-    verb = "would remove" if dry_run else "removed"
-    print(f"-- {verb} {len(removed)}, {len(left)} left alone  ->  {prefix}")
+    where = homely(prefix)
+    counted = f"{len(removed)} " + ("removed" if not dry_run else "to remove")
+    if left:
+        counted += f", {len(left)} left alone"
+    say((f"dry run: nothing was removed. The Eunoia commands in {where}: "
+         if dry_run else f"the Eunoia commands in {where}: ") + counted)
     plan_lines(removed)
+    if left:
+        one = len(left) == 1
+        say(f"{these(left)} {'was' if one else 'were'} left alone: "
+            f"{'it has' if one else 'they have'} changed since this script "
+            f"installed {'it' if one else 'them'}, which makes "
+            f"{'it somebody' if one else 'them somebody'}'s own "
+            f"{'file' if one else 'files'} and not this script's to delete. "
+            f"Remove {'it' if one else 'them'} by hand to be rid of "
+            f"{'it' if one else 'them'}.", stream=sys.stderr)
     if dry_run:
-        print(f"-- dry run: nothing was written, and {prefix} is unchanged")
         return 0
     record(config, prefix).clear()
     record(config, prefix).update(installed)
@@ -489,61 +630,91 @@ def do_uninstall(prefix, origin, config, dry_run):
     return 0
 
 
-def say_ready(origin, ready):
+def short_of(cmd):
+    """The one line a command gets beside its name in the roster.
+
+    **The manifest's `short` if it has one, and the first sentence of `what` if
+    it does not.** The register already carries the same pair for the same
+    reason: `what` is the paragraph somebody reads once, `short` is the line
+    that fits in a column. Cutting the long one down at its first full stop is
+    what this did until 2026-09-18, and it produced cells three lines deep that
+    stopped wherever the prose happened to have a full stop -- a roster nobody
+    reads is a roster that may as well not print.
+    """
+    text = " ".join((cmd.get("short") or "").split())
+    if text:
+        return text
+    what = " ".join((cmd.get("what") or "").split())
+    return re.split(r"(?<=[.!?])\s+", what)[0].rstrip(".") if what else ""
+
+
+#: What the roster is introduced with, by what the run actually left behind.
+#: Only the first of these says *ready*, because only the first is.
+LEADS = {
+    "ready": "You are now ready to use the Eunoia ecosystem. For quick start, "
+             "try these:",
+    "dry-run": "Nothing was written. A real run would put these on your PATH:",
+}
+
+
+def say_ready(origin, how):
     """Close the run on what the person can now type, not on bookkeeping.
 
-    **The plan says what happened to each file; this says what to do with
-    them.** Those are different questions and the first one answers neither: a
-    row reading `cp eo_cmd/eo_status ~/bin/eo_status (new)` tells somebody a name
-    they now have on their path and nothing whatever about when they would type
-    it. So a run that leaves somebody able to use the ecosystem ends by saying
-    so and handing them the roster, and this goes last because the last thing
-    printed is the thing that gets read.
+    **The report above says what happened; this says what to do with it.**
+    Those are different questions and the first answers neither: a line reading
+    `9 commands installed into /home/you/bin` tells somebody that names they
+    have never seen are now on their path. So the run ends on the roster,
+    addressed to them, and it goes last because the last thing printed is the
+    thing that gets read.
 
-    **A run that did not leave them ready prints the same roster and claims
-    nothing** -- a dry run wrote nothing, and a prefix that is not on their PATH
-    is a set of files they cannot yet type the names of. Both say why
-    immediately above this, so the heading here just stops promising.
+    **It says *ready* only where that is true.** A dry run wrote nothing and a
+    prefix off their PATH left files whose names they cannot type; both print
+    the same roster under a lead that promises neither.
 
     The text is the manifest's, which is the same text the READMEs are written
     against -- so a command whose purpose moves says so here on the next
     install, and this stays a copy with an original rather than a second
     description going its own way.
     """
-    rows = [(c["name"], (c.get("what") or "").strip()) for c in commands(origin)]
+    rows = [(c["name"], short_of(c)) for c in commands(origin)]
     rows = [(n, w) for n, w in rows if w]
     if not rows:
         return
-    width = max(len(n) for n, _ in rows)
-    if ready:
-        print("-- You are now ready to use the Eunoia ecosystem. For a quick "
-              "start, here is")
-        print("   a list of possible commands, to run in the root of repos:")
-    else:
-        print("-- what each one is for, to run in the root of repos, from "
-              f"{rel(os.path.join(STORE, 'commands.json'))}:")
-    for name, what in rows:
-        # One sentence is the purpose; anything after it is the caveat, and a
-        # roster is not where a caveat earns its room.
-        first = re.split(r"(?<=[.!?])\s+", what)[0].rstrip(".")
-        body = textwrap.wrap(first, width=max(40, 74 - width))
-        print(f"   {name:<{width}}  {body[0] if body else ''}")
-        for line in body[1:]:
-            print(f"   {'':<{width}}  {line}")
-    print("-- every one of them takes --help, which says what it does and what "
-          "forms it takes")
+    print()
+    print(textwrap.fill(LEADS[how], width=WIDTH))
+    print()
+    # No header over these two columns: a name and the line saying what it is
+    # for need no label, and a roster of nine rows is short enough that a
+    # header is one more line between the sentence and the thing it introduced.
+    table(rows)
+    print()
+    say("run them in the root of the repository you are working in; every one "
+        "takes --help, which says what it does and what forms it takes")
+    say("run this script again to update them; --status says what is "
+        "installed, --verbose shows every file")
 
 
-def do_install(prefix, origin, config, dry_run, force, president_dir=None):
-    """Install, and say in full what that means.
+def do_install(prefix, origin, config, dry_run, force, verbose=False,
+               president_dir=None):
+    """Install, and report it to the person who ran it.
 
-    **Every command is listed every time**, with the verb that applies to it.
-    A dry run that printed only what would change said nothing at all once a
-    machine was up to date, which is exactly when somebody runs it to find out
-    what the command does.
+    **A run says three things, in the order somebody wants them**: what it did,
+    anything they now have to do about it, and what they can type. Everything
+    else -- which file went to which path, that a copy is written to a
+    temporary name and renamed over the target, which config remembered the
+    directory -- is true, was printed every run, and buried those three under a
+    wall nobody read. It is still printed, under `--verbose`, and a dry run
+    turns it on because inspecting exactly that is what a dry run is for.
+
+    **Nothing that went wrong is left to be inferred from a table.** A file this
+    script will not overwrite, a directory that is not on a PATH, a register
+    that could not be read: each says what happened and what to do about it, in
+    a sentence, near the top.
     """
     installed = dict(record(config, prefix))
-    plan, copied, current, skipped = [], 0, 0, 0
+    plan, copied, refreshed, current, left_alone = [], 0, 0, 0, []
+    detail = verbose or dry_run
+    where = homely(prefix)
 
     # Read once, so every command baked in this run carries the same snapshot.
     embed = None
@@ -552,83 +723,137 @@ def do_install(prefix, origin, config, dry_run, force, president_dir=None):
         try:
             embed = snapshot(president)
         except (OSError, ValueError) as exc:
-            print(f"-- the register at {president} could not be read: {exc}",
-                  file=sys.stderr)
+            say(f"the register at {president} could not be read: {exc}",
+                stream=sys.stderr)
     elif any(c.get("needs") == "register" for c in commands(origin)):
         named = named_president(president_dir)
-        where = (f"{named} does not hold {REGISTER}"
-                 if named else "no president checkout found")
-        print(f"-- {where}, so commands that read the "
-              "register will\n   install without a snapshot and work only "
-              "where the register is", file=sys.stderr)
+        readers = ", ".join(c["name"] for c in commands(origin)
+                            if c.get("needs") == "register")
+        missing = (f"{homely(named)} does not hold {REGISTER}"
+                   if named else "no checkout holding the register was found")
+        say(f"{readers} will install without a register snapshot, because "
+            f"{missing}. It will then work only in the tree that holds the "
+            f"register; --president DIR names that tree.", stream=sys.stderr)
 
     for cmd in commands(origin):
         name = cmd["name"]
         src = source_of(cmd)
         dest = os.path.join(prefix, name)
         if not os.path.exists(src):
-            print(f"-- refused: {rel(src)} is missing, and nothing was "
-                  "installed", file=sys.stderr)
+            say(f"refused: {rel(src)} is missing, and nothing was installed",
+                stream=sys.stderr)
             return 1
         want = digest(read_text(src))
 
-        verb, why = "cp", "new"
+        wants = cmd.get("needs") == "register"
+        action, why = "install", f"from {rel(src)}"
         if os.path.exists(dest):
             there = digest(read_text(dest))
             ours = installed.get(name) == there
-            if there == want or (cmd.get("needs") == "register"
-                                 and installed.get(name) == there and not embed):
-                verb, why = "skip", "already current"
+            if there == want or (wants and ours and not embed):
+                action, why = "up to date", ""
                 current += 1
                 installed[name] = there
             elif ours:
-                why = "replacing the copy this script installed"
+                # A command carrying the register is never byte-identical to
+                # its source, so *ours and different* is the ordinary case for
+                # one of those and means a fresh snapshot, not a new version.
+                action = "refresh" if wants and embed else "update"
+                why = (f"from {rel(src)}, with a register snapshot taken now"
+                       if action == "refresh" else f"from {rel(src)}")
             elif force:
-                why = "replacing a file this script did not install, --force"
+                action = "replace"
+                why = f"from {rel(src)}, over a file this script did not install"
             else:
-                verb, why = "skip", "exists and is not ours; --force replaces it"
-                skipped += 1
-        wants = cmd.get("needs") == "register"
-        plan.append((verb, rel(src), dest,
-                     ("refreshing the baked-in register"
-                      if wants and embed and why.startswith("replacing")
-                      else why + (", register baked in" if wants and embed else
-                                  ", no register to bake in" if wants else ""))))
-        if verb == "cp":
+                action = "left alone"
+                why = ("a file of that name is there that this script did not "
+                       "install")
+                left_alone.append(name)
+        if wants and action in ("install", "update", "replace"):
+            why += (", with the register baked in" if embed
+                    else ", with no register to bake in")
+        plan.append((action, name, why))
+        if action != "up to date" and action != "left alone":
             copied += 1
+            refreshed += action == "refresh"
             if not dry_run:
                 install_file(src, dest, embed if wants else None)
                 installed[name] = digest(read_text(dest))
 
-    verb = "would install" if dry_run else "installed"
-    print(f"-- {verb} {copied}, {current} already current, {skipped} skipped"
-          f"  ->  {prefix}")
-    verbs = max((len(row[0]) for row in plan), default=0)
-    width = max((len(row[1]) for row in plan), default=0)
-    dests = max((len(row[2]) for row in plan), default=0)
-    for v, src, dest, why in plan:
-        print(f"   {v:<{verbs}} {src:<{width}}  {dest:<{dests}}   ({why})")
+    # What it did, in one sentence, with the directory named first: the
+    # directory is the one thing every clause is about, and a count nobody can
+    # place is not worth printing.
+    counted = []
+    if copied - refreshed:
+        counted.append(f"{copied - refreshed} installed")
+    if refreshed:
+        # Said in full on its own line below: a count here and the sentence
+        # there would be the same fact printed twice.
+        counted.append(f"{refreshed} refreshed")
+    if current:
+        counted.append(f"{current} already up to date")
+    if left_alone:
+        counted.append(f"{len(left_alone)} left alone")
+    summary = ", ".join(counted) or "nothing to do"
+    say(f"what a real run would do: {summary}" if dry_run else summary)
 
-    if copied:
-        print("-- a copy, not a move: the source keeps every file, and each one "
-              "is written")
-        print("   to a temporary file beside the target, made executable, and "
-              "renamed over")
-        print("   it, so an interrupted run leaves the old file in place")
+    # Which register an installed command is carrying is not a detail: it is
+    # the difference between a command that answers with today's ecosystem and
+    # one that answers with a snapshot of it, and only this run knows when the
+    # snapshot was taken.
+    carriers = [name for action, name, _ in plan
+                if action in ("install", "update", "replace", "refresh")
+                and any(c["name"] == name and c.get("needs") == "register"
+                        for c in commands(origin))]
+    if carriers and embed:
+        say(f"{these(carriers)} now carr{'ies' if len(carriers) == 1 else 'y'} "
+            f"a snapshot of the register, {embed[1]}; run this script again "
+            f"whenever the register moves")
+
+    if detail:
+        say(f"file by file, in {where}:")
+        table(plan, head=("action", "command", "where from, or why not"))
+        say("a copy, not a move: the source keeps every file, and each is "
+            "written to a temporary file beside the target, made executable "
+            "and renamed over it, so an interrupted run leaves the old file "
+            "in place")
+
+    # Anything the person has to decide about, said as a sentence rather than
+    # left as a word in a column -- and said once, however many files it is
+    # about.
+    if left_alone:
+        one = len(left_alone) == 1
+        say(f"{these(left_alone)} {'was' if one else 'were'} left alone: "
+            f"{'a file' if one else 'files'} of that name "
+            f"{'is' if one else 'are'} already in {where} and this script did "
+            f"not put {'it' if one else 'them'} there. Re-run with --force to "
+            f"replace {'it' if one else 'them'}.")
+
     if dry_run:
-        print(f"-- dry run: nothing was written, and {prefix} is unchanged")
-        say_ready(origin, ready=False)
+        say_ready(origin, "dry-run")
         return 0
 
+    news = config.get("prefix") != prefix
     config["prefix"] = prefix
     record(config, prefix).update(installed)
     write_json(CONFIG, config)
-    print(f"-- remembered {prefix} in {os.path.relpath(CONFIG, ROOT)}")
+    if news and prefix != os.path.abspath(os.path.expanduser(DEFAULT_PREFIX)):
+        # Only when it is news worth having: remembering the default is not a
+        # thing anybody needs telling, since a run with no arguments would
+        # have gone there anyway.
+        say(f"remembered {where}, so later runs of this script need no "
+            f"arguments")
     if not on_path(prefix):
-        print(f"-- note: {prefix} is not on your PATH, so the commands above "
-              "are installed and not yet reachable")
-    say_ready(origin, ready=on_path(prefix))
-    return 1 if skipped else 0
+        # One line, and only when this shell cannot see the directory. The
+        # default is `~/bin`, which a login shell puts on PATH on every system
+        # these commands are meant for, so a run that stopped to explain PATH
+        # was interrupting almost everybody to fix almost nobody -- and a run
+        # started from cron or a Makefile has a PATH that says nothing about
+        # the one the person types in.
+        say(f"ensure that {where} is in your PATH: "
+            f'export PATH="{shell_path(prefix)}:$PATH"')
+    say_ready(origin, "ready")
+    return 1 if left_alone else 0
 
 
 #: --help has to answer *why would I run this*, which the option list cannot:
@@ -646,8 +871,8 @@ usually wants the second one first.
       rather than inside this one. A command shaped like that is no use
       sitting in a checkout whose path somebody has to remember, so this
       copies each onto a directory on your PATH and remembers which, so
-      later runs need no arguments. A run lists every command with a line
-      saying what it is for.
+      later runs need no arguments. A run ends with the list of commands
+      and a line saying what each is for, which is the part worth reading.
 
   the repositories, onto the disk
       --init-clone reads the register the president holds and clones the
@@ -665,9 +890,11 @@ examples:
   install_eo_cmd --status         what is installed, and whether it is current
   install_eo_cmd --init-clone     put the ecosystem's repositories on this machine
   install_eo_cmd --dry-run        say what would happen, and write nothing
+  install_eo_cmd --verbose        and show every file, one row each
 
-It never overwrites a file it did not install; that row is skipped and says so,
-and --force is a person's decision because the file being replaced is theirs.\
+It never overwrites a file it did not install: that file is left alone, the run
+says which one and why, and --force is a person's decision because the file
+being replaced is theirs.\
 """
 
 
@@ -692,6 +919,9 @@ def main():
                              "another")
     parser.add_argument("--force", action="store_true",
                         help="replace a file of the same name this script did not install")
+    parser.add_argument("--verbose", action="store_true",
+                        help="also show every file, where it came from and "
+                             "what happened to it (a dry run always does)")
     parser.add_argument("--dry-run", action="store_true",
                         help="say what would happen and write nothing")
     args = parser.parse_args()
@@ -699,22 +929,22 @@ def main():
     try:
         origin = read_json(MANIFEST)
     except (OSError, ValueError) as exc:
-        print(f"-- refused: {exc}", file=sys.stderr)
+        say(f"refused: {MANIFEST}: {exc}", stream=sys.stderr)
         return 1
 
     try:
         config = read_json(CONFIG, missing_ok=True)
     except ValueError as exc:
-        print(f"-- refused: {CONFIG}: {exc}", file=sys.stderr)
+        say(f"refused: {CONFIG}: {exc}", stream=sys.stderr)
         return 1
 
     prefix = prefix_from(args, config)
 
     bad = misnamed(origin)
     if bad:
-        print(f"-- refused: {', '.join(bad)} start with none of "
-              + " or ".join(f"`{x}`" for x in PREFIXES)
-              + ", which every installed command carries", file=sys.stderr)
+        say(f"refused: {', '.join(bad)} start with none of "
+            + " or ".join(f"`{x}`" for x in PREFIXES)
+            + ", which every installed command carries", stream=sys.stderr)
         return 1
 
     if args.init_clone is not None:
@@ -730,19 +960,27 @@ def main():
     if args.uninstall:
         return do_uninstall(prefix, origin, config, args.dry_run)
 
+    # The first line says what this is about to do and where, because a
+    # person who typed one command wants that answered before anything else --
+    # and because the directory is read out of a config they last saw a while
+    # ago and may not be the one they have in mind.
+    say(f"Installing Eunoia ecosystem scripts into {homely(prefix)}"
+        + (" (dry run: nothing will be written)" if args.dry_run else ""))
+
     if not os.path.isdir(prefix):
         if args.dry_run:
-            print(f"-- dry run: {prefix} does not exist and would be created")
+            say(f"dry run: {homely(prefix)} does not exist and would be "
+                f"created")
         else:
             try:
                 os.makedirs(prefix)
             except OSError as exc:
-                print(f"-- refused: {exc}", file=sys.stderr)
+                say(f"refused: {exc}", stream=sys.stderr)
                 return 1
-            print(f"-- created {prefix}")
+            say(f"created {homely(prefix)}")
 
     return do_install(prefix, origin, config, args.dry_run, args.force,
-                      args.president)
+                      args.verbose, args.president)
 
 
 if __name__ == "__main__":

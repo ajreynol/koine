@@ -67,38 +67,67 @@ repository and so are useless sitting in a checkout, and the ecosystem is a set
 of sibling checkouts that has to get onto the disk before most of them are worth
 much. Both jobs are named there; the second was invisible from the flags alone.
 
-**Every run lists every command twice over** — once with the verb that applies
-to it, and once with a line saying what it is for. A machine that is already up
-to date therefore still answers *what are these*, which is when somebody is most
-likely to be asking.
-
-**The second list goes last, and a finished install introduces it.** The
-bookkeeping — what was copied where, which directory was remembered — answers
-the question the script has about the run; the person who ran it is asking
-whether they are set up and what to type, so that is what the run ends on:
+**A run says three things, in the order somebody wants them**: what it is
+doing and where, what it did, and what they can now type. Everything else was
+printed too — which file went to which path, that a copy is written to a
+temporary name and renamed over the target, which config remembered the
+directory — and those three sat buried in the middle of it:
 
 ```console
-$ ../scripts/install_eo_cmd --prefix ~/bin
--- installed 1, 1 already current, 1 skipped  ->  /home/you/bin
-   skip eo_cmd/eo_join    /home/you/bin/eo_join     (already current)
-   cp   eo_cmd/eo_status  /home/you/bin/eo_status   (new)
-   skip eo_cmd/eo_init    /home/you/bin/eo_init     (exists and is not ours; --force replaces it)
--- a copy, not a move: the source keeps every file, and each one is written
-   to a temporary file beside the target, made executable, and renamed over
-   it, so an interrupted run leaves the old file in place
--- remembered /home/you/bin in install_eo_cmd.local.json
--- You are now ready to use the Eunoia ecosystem. For a quick start, here is
-   a list of possible commands, to run in the root of repos:
-   eo_join    join the Eunoia ecosystem, run inside the repository that is joining
-   eo_status  who is in the Eunoia ecosystem and on what footing, as the register says it
-   eo_init    start a tool: write a README saying what it is for, complying with nothing
--- every one of them takes --help, which says what it does and what forms it takes
+$ ./scripts/install_eo_cmd
+-- Installing Eunoia ecosystem scripts into ~/bin
+-- created ~/bin
+-- 9 installed
+-- eo_status now carries a snapshot of the register, from kanon at ad18fb2, on
+   2026-09-18; run this script again whenever the register moves
+
+You are now ready to use the Eunoia ecosystem. For quick start, try these:
+
+   eo_join          declare where this repository stands with the ecosystem
+   eo_init          start a tool, with a README saying what it is for
+   eo_status        who is in the ecosystem, and on what footing
+   koine_append_db  add a run's new bugs to a bug database
+   eo_topic         open one topic, addressed to another tool
+   eo_child         start a child project, tools/<name>/, in this repository
+   eo_respond       answer one topic another tool addressed to you
+   eo_brainstorm    look for what this tool could do next
+   eo_housekeeping  bring this repository up to date
+
+-- run them in the root of the repository you are working in; every one takes
+   --help, which says what it does and what forms it takes
+-- run this script again to update them; --status says what is installed,
+   --verbose shows every file
 ```
 
-**It says *ready* only where that is true.** A dry run wrote nothing, and an
-install into a directory that is not on your PATH leaves you files whose names
-you cannot yet type; both print the same roster under a heading that promises
-nothing, immediately below the line saying which of the two happened.
+**The directory defaults to `~/bin` and is meant to work without being
+configured**, because a login shell puts `~/bin` on PATH on every system these
+commands are meant for. So a run does not stop to explain PATH: when this shell
+cannot see the directory it says `ensure that ~/bin is in your PATH:` with the
+line that does it, once, and carries on. A run from cron or a Makefile has a
+PATH that says nothing about the one the person types in, which is the other
+reason that is advice and not a verdict.
+
+**The file-by-file table is still printed, under `--verbose`**, and a `--dry-run`
+turns it on because inspecting exactly that is what a dry run is for. It says
+which command, what happened to it, and where its file came from; the directory
+is named once, in the line that opens the run, rather than repeated on every row
+as the longest and least varying string on the page.
+
+**Nothing that went wrong is left to be inferred from a word in a column.** A
+file this script will not overwrite, a register that could not be read, a
+directory this shell cannot see: each gets a sentence saying what happened and
+what to do about it — and one sentence however many files it is about, because
+the same sentence printed nine times is a wall a reader skips.
+
+**A dry run is the one run that does not say *ready***: it wrote nothing, so
+there is nothing to be ready with. It prints the same roster under a lead that
+says so.
+
+**The roster's lines are the manifest's `short` field**, one line per command,
+and `what` is the paragraph beside it that says the same thing with its
+caveats. A roster built by cutting `what` down to its first sentence is what
+this printed until 2026-09-18: three-line cells that stopped wherever the prose
+happened to have a full stop.
 
 **That roster is the manifest's own text**, not a second description written
 here: [`commands.json`](commands.json) is the ground truth, so a command whose
