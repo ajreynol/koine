@@ -1,20 +1,23 @@
-# bug_db
+# bug_db_manager
 
-**Tooling for keeping a bug database.** A tool runs over somebody else's project
-and dumps what it found *this time*; its database is everything it has ever
-found. [`koine_append_db`](koine_append_db) is the trip between the two.
+**Tooling for owners to maintain their bug databases. Koine does not maintain
+those databases.** Anoieu and dokimasia own their records, evidence, triage,
+cleanup, and close/reopen decisions. Koine maintains the shared programs they
+invoke. [`koine_append_db`](koine_append_db) adds a run's findings to the
+owner's persistent database.
 
 [anoieu](https://github.com/ajreynol/anoieu) and
 [dokimasia](https://github.com/ajreynol/dokimasia) are the customers, checked on
-2026-09-18. Each pins
-a commit of this repository in its own `scripts/koine.lock` and calls this from
-its own run; **that pin is the whole of the integration on either side.**
+2026-09-18. Each records a dependency pin and calls this from its own run.
+Dokimasia uses `scripts/koine.lock`; anoieu's published `5835c6f` uses that path
+too, while its local work moves it to `config/koine.lock`. Resolving and
+enforcing those pins is the consumer's responsibility.
 `scripts/install_eo` also puts this program on a person's PATH and that is a
 different thing — PATH gives whatever the operator last installed, so a pinned
 consumer keeps resolving through its lock.
 
 ```
-bug_db/koine_append_db <new bugs> <bug database>
+bug_db_manager/koine_append_db <new bugs> <bug database>
 ```
 
 ## A worked example
@@ -33,7 +36,7 @@ anoieu runs and writes `run1.json`:
 There is no database yet, so one is made:
 
 ```console
-$ bug_db/koine_append_db run1.json bugs.json
+$ bug_db_manager/koine_append_db run1.json bugs.json
 -- 2 new bug(s), 0 already known, 0 conflict(s)
 -- the database holds 2 bug(s) from 1 tool(s): anoieu 2
 -- wrote bugs.json (created)
@@ -43,7 +46,7 @@ Months later anoieu runs again. It finds the first bug still there, one new one,
 and dokimasia adds one of its own:
 
 ```console
-$ bug_db/koine_append_db run2.json bugs.json
+$ bug_db_manager/koine_append_db run2.json bugs.json
 -- 2 new bug(s), 1 already known, 0 conflict(s)
 -- the database holds 4 bug(s) from 2 tool(s): anoieu 3, dokimasia 1
 -- wrote bugs.json
@@ -144,6 +147,44 @@ half-written one.
   and the replacement is atomic, so an interrupted run leaves the old database
   intact.
 
+## Cleanup and closure tooling
+
+**Appending is implemented; cleanup and closure assessment are not.** Owners
+can safely replay dumps, but this command cannot decide that a finding is
+fixed, merge different identities, replace conflicting evidence, or delete
+historical findings. An absent finding remains in the database.
+
+Anoieu's latest published update, `5835c6f` (checked against remote `main` on
+2026-09-18), gives its static analyzer and fuzzer one database at
+`bug_db/bugs.json`. Its
+[maintenance plan](https://github.com/ajreynol/anoieu/blob/5835c6fdbe1a64afa4480f8e8b7f20b33255d7e7/docs/maintenance.md#replace-the-deprecated-reporting-policy)
+identifies the missing capability: assess closure from successful, comparable
+runs with recorded coverage, preserving the finding and its evidence. Its
+uncommitted work also provides a GitHub browsing view and relocates its adapter;
+neither supplies closure evidence. Re-exporting a fuzzer record updates its
+ingestion date without replaying the reproducer.
+
+The next useful shared tooling needs these inputs and guarantees:
+
+| Owner supplies | Shared tooling could support |
+| --- | --- |
+| Run scope, source and analyzer versions, enabled checks, failures and skips | Store run evidence and establish whether an observation is comparable before assessing absence |
+| Stable finding identities and explicit identity changes | Distinguish unmatched findings from closure candidates without silently merging records |
+| Fresh fuzzer replay results and their evidence | Assess the replay without treating a stored export as a fresh observation |
+| Reviewed corrections and close/reopen decisions under the owner's reporting policy | Record changes with their evidence and history, using locked, atomic writes and a preview |
+
+This is a capability assessment, not an implemented interface or a reporting
+policy. The owners must define the evidence and decision rules; koine can
+provide the storage, validation and update mechanics. Cleanup must preserve
+original findings, ids, dates, verdicts and evidence. Incomplete or incomparable
+runs must leave closure unassessed. A retention or archival decision belongs to
+the database owner as well.
+
+The local databases inspected on 2026-09-18 contain 60 records for anoieu and
+197 for dokimasia, with no duplicate identities. There is no demonstrated need
+for a duplicate-removal command in those snapshots. Neither database was
+modified during this assessment.
+
 ## The two files
 
 They are the same shape, so a database can be fed back in as a dump:
@@ -171,10 +212,12 @@ No dependencies and no network. `--dry-run` says what would change and writes
 nothing; `--date` records a run under a date other than today;
 `--lock-timeout` and `--no-lock` are above.
 
-**The executable is [`bug_db/koine_append_db`](koine_append_db).** The root
+**The executable is [`bug_db_manager/koine_append_db`](koine_append_db).** The root
 [`koine_append_db`](../koine_append_db) is a tombstone: it prints the executable's
-location and exits non-zero. Consumers should probe and invoke the executable
-inside `bug_db/`.
+location and exits non-zero. [`bug_db/koine_append_db`](../bug_db/koine_append_db)
+is a compatibility launcher that delegates to this implementation. Consumers
+should probe and invoke `bug_db_manager/koine_append_db`; the installed command
+remains `koine_append_db`, with the same arguments and JSON format.
 
 Also to a consumer's account: `bug_reports.writer` and any other caller that
 already serialises its own access wants `--no-lock`, not a second lock.

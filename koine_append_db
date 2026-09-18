@@ -1,58 +1,22 @@
 #!/usr/bin/env python3
-"""koine_append_db moved to `bug_db/koine_append_db` on 2026-09-17.
+"""Retired root entry point; use bug_db_manager/koine_append_db.
 
-**This file is a tombstone and is meant to be deleted.** It holds the old name
-so that the move fails loudly in the two places it would otherwise fail
-silently, and it comes out once both consumers below have moved their pins.
-
-## Why a moved file needs a marker at all
-
-Two repositories depend on this path, and neither by accident.
-[anoieu](https://github.com/ajreynol/anoieu) finds koine by probing three
-directories -- `$KOINE`, `../koine`, then a clone of its own -- and asks of each
-whether `koine_append_db` is a file at its root. That probe is not a path
-lookup; it is anoieu's test for *is this directory koine at all*, and its own
-comment says as much: "A directory without this is not koine, whatever it is
-called." [dokimasia](https://github.com/ajreynol/dokimasia) keeps its own copy
-of the same shim, joins the same path, and pins the same commit.
-
-So moving the file does not break either of them. It makes a checkout of koine
-stop being koine. What follows is worse than a break:
-
-- **With cloning on**, which is the default and what CI does, `../koine` fails
-  the probe and a clone at the pinned commit wins instead. That clone has the
-  old layout, so everything works, and a machine that develops both repositories
-  quietly stops testing the checkout it is editing.
-- **With cloning off**, the probe fails everywhere and the error says koine is
-  not on this machine and asks for a checkout at the path where one already is.
-
-Neither says that a file moved, which is the only fact that would fix it.
-
-## What this does instead
-
-It keeps the probe passing, so `../koine` is still selected, and then says what
-happened the moment anything uses it. A wrong answer delivered loudly costs an
-afternoon; a right-looking answer from the wrong tree costs however long it
-takes somebody to notice.
-
-**To fix, in each:** `scripts/koine.py` names this path -- `MODULES` and
-`append_db()` in anoieu, the `path / "koine_append_db"` probe in dokimasia.
-Point them at `bug_db/koine_append_db`, or accept either, and move
-`scripts/koine.lock` to a koine commit at or after the move.
+This remains a tombstone for consumers probing the root path. Current callers
+should probe and invoke the implementation in bug_db_manager and choose their
+koine dependency pin themselves. The compatibility launcher for bug_db callers
+is separate, at bug_db/koine_append_db.
 """
 
 import os
 import sys
 
 MOVED = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                     "bug_db", "koine_append_db")
-
+                     "bug_db_manager", "koine_append_db")
 MESSAGE = (
-    "koine_append_db moved to bug_db/koine_append_db on 2026-09-17, when\n"
-    "koine gave each of its two purposes a directory of its own.\n"
-    f"    it is now: {MOVED}\n"
-    "This file is a tombstone: it exists so this says so instead of a stale\n"
-    "clone answering in its place. See its docstring for the two-line fix."
+    "koine_append_db is at bug_db_manager/koine_append_db.\n"
+    f"    use: {MOVED}\n"
+    "This root entry point is a tombstone and does not append.\n"
+    "Update your consumer's probe and invocation path together."
 )
 
 if __name__ == "__main__":

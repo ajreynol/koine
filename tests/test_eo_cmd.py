@@ -248,9 +248,13 @@ def test_the_soft_note_the_prompt_asks_for_passes_the_checker():
     about this repository.
     """
     print("the note the prompt asks for, through anoieu's reader")
-    checker = os.path.join(os.path.dirname(ROOT), "anoieu", "scripts",
-                           "policy_check.py")
-    if not os.path.exists(checker):
+    anoieu = os.path.join(os.path.dirname(ROOT), "anoieu")
+    # Recent anoieu separates the implementation from its CLI launcher.
+    checker = next((path for path in (
+        os.path.join(anoieu, "policy_check", "checker.py"),
+        os.path.join(anoieu, "scripts", "policy_check.py"),
+    ) if os.path.isfile(path)), None)
+    if checker is None:
         print("  --   no anoieu checkout beside this one; skipped")
         return
 

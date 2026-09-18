@@ -6,9 +6,9 @@ koine serves the tools of the Eunoia ecosystem by **taking responsibility** for
 tooling that is either shared between them, or that an existing tool does not
 want to maintain.
 
-It finds nothing, settles nothing, and has no opinion about what anyone should
-do with what it keeps. All three belong to the tool that raised the work, and
-they stay there.
+**Koine maintains the tooling, not the bug databases.** Anoieu and dokimasia
+own and maintain their databases: their findings, evidence, triage, cleanup,
+and closure decisions. Koine supplies the programs they use to do that work.
 
 ## What koine is for
 
@@ -16,16 +16,16 @@ Two things, and a reader who needs one of them can stop after it.
 
 **1. Tooling for keeping bug databases.** A tool runs over somebody else's
 project and dumps what it found *this time*; its database is everything it has
-ever found. [`bug_db/koine_append_db`](bug_db/koine_append_db) is the trip
+ever found. [`bug_db_manager/koine_append_db`](bug_db_manager/koine_append_db) is the trip
 between the two, and it is the same trip in every tool that has one — which is
 why it is written once here instead of three times badly elsewhere.
 [anoieu](https://github.com/ajreynol/anoieu) and
 [dokimasia](https://github.com/ajreynol/dokimasia) are the customers, checked on
-2026-09-18: each pins
-a commit of this repository and calls it from its own run.
-**[`bug_db/README.md`](bug_db/README.md) is the whole of it** — the worked
+2026-09-18: each records a koine dependency pin and calls the writer from its
+own run. Their database files remain in their own repositories.
+**[`bug_db_manager/README.md`](bug_db_manager/README.md) is the whole of it** — the worked
 example, the one rule that makes it a database, what happens when two runs
-arrive at once, and what it refuses to do.
+arrive at once, and the evidence needed for future cleanup tooling.
 
 **2. [`eo_cmd/`](eo_cmd), the commands that run inside somebody else's tree.**
 `eo_init` starts a tool and `eo_join` joins it; `eo_status` says who is in this
@@ -47,7 +47,7 @@ falls.
 ## What else is in this tree
 
 **One directory per purpose**, each with a README that is the whole of its
-subject: [`bug_db/`](bug_db) and [`eo_cmd/`](eo_cmd). [`scripts/`](scripts)
+subject: [`bug_db_manager/`](bug_db_manager) and [`eo_cmd/`](eo_cmd). [`scripts/`](scripts)
 holds `install_eo`, which serves `eo_cmd/` without being a purpose of its
 own, and [`tests/`](tests) drives both.
 
@@ -63,7 +63,7 @@ No paper is planned for koine, on the maintainer's instruction of 2026-09-18.
 From this checkout:
 
 ```bash
-python3 bug_db/koine_append_db run.json bugs.json
+python3 bug_db_manager/koine_append_db run.json bugs.json
 scripts/install_eo --prefix ~/bin
 eo_cmd/eo_housekeeping --show-prompt
 eo_cmd/eo_git_status
@@ -108,7 +108,8 @@ by side on one disk.
   reporting workflow that says how one is carried. Anything else goes in that
   tool's own `docs/discussion.md`.
 - **Is this where the bug database itself lives?** No. koine keeps the program
-  that appends to one; the database belongs to the tool that found the bugs.
+  that appends to one. Anoieu and dokimasia maintain their own databases,
+  including deciding what to close, reopen, correct, or retain.
 
 ## How this repository is maintained
 

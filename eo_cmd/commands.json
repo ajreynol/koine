@@ -47,7 +47,7 @@
       "name": "koine_append_db",
       "short": "add a run's new bugs to a bug database",
       "audience": "tooling",
-      "path": "bug_db/koine_append_db",
+      "path": "bug_db_manager/koine_append_db",
       "what": "add a run's new bugs to the database of every bug a tool has found. For a person at a terminal: a pinned consumer resolves it through its own lock and must not take it off PATH, which would lose the pin",
       "forms": [
         "koine_append_db <new bugs> <bug database>"

@@ -367,7 +367,7 @@ def source_of(cmd):
     """Where a command's file is. `path` is relative to the checkout root.
 
     Most live in `eo_cmd/`, but a command can be installed from anywhere in the
-    tree: `eo_append_db` is `bug_db/koine_append_db`, kept with the purpose it
+    tree: `koine_append_db` is `bug_db_manager/koine_append_db`, kept with the purpose it
     serves and installed under the name the convention requires.
     """
     if cmd.get("path"):

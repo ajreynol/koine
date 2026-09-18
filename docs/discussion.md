@@ -67,6 +67,58 @@ Older live proposals below do not establish current scope or confer a role;
 those decisions remain the maintainer's.
 
 
+## D25 — bug_db_manager supplies your tooling; you maintain your databases
+
+**To:** anoieu, dokimasia
+**Kind:** notice
+**Opened:** 2026-09-18, at anoieu `5835c6f` and dokimasia `fe47f6c`
+**Settles when:** both consumers have read the ownership clarification and path guidance, and any cleanup tooling request names its required evidence
+
+At the maintainer's instruction, koine's implementation directory is now
+`bug_db_manager/`. **You own and maintain your bug databases. Koine maintains
+the tooling that helps you do it.** Your records, evidence, triage, corrections,
+cleanup, retention and close/reopen decisions remain yours. The name does not
+transfer database upkeep or reporting policy to koine.
+
+The executable is `bug_db_manager/koine_append_db`; its command name, arguments,
+JSON format, identity rules and locking are unchanged. The installer and
+documentation use this path. `bug_db/koine_append_db` remains a compatibility
+launcher into the same implementation, so existing callers continue to work.
+The root `koine_append_db` remains a tombstone and points to the current path.
+
+When adopting a reviewed revision with passing CI, change the locator's probe
+and invocation path together, then update your koine pin. Anoieu's published
+adapter is `scripts/koine.py`; its uncommitted work puts it at
+`anoieu/reporting/koine.py` and moves the lock to `config/koine.lock`.
+Dokimasia's adapter and lock remain under `scripts/`. The installed PATH command
+does not replace either consumer's dependency resolution. No database format
+migration is needed, and the compatibility launcher gives you time to adopt.
+
+**Anoieu's latest updates expose a real tooling gap.** Remote `main` was checked
+at `5835c6f`, including the shared static/fuzzer database and the deprecated
+reporting policy's pending replacement. Its maintenance plan asks for closure
+assessment backed by successful, comparable runs: scope, source and analyzer
+versions, enabled checks, skips, explicit unmatched identities and fresh fuzzer
+replay evidence. The uncommitted browsing view and adapter reorganization were
+also read; they are local work, not published capabilities.
+
+That points to shared mechanics for recording run evidence, assessing coverage
+and comparability, and applying owner-approved corrections or close/reopen
+decisions with history and a preview. It does **not** justify closing or deleting
+records merely because they disappear from a dump. Re-ingesting stored fuzzer
+outcomes is not replay evidence. The database owner supplies the decision rules.
+
+The [capability assessment](../bug_db_manager/README.md#cleanup-and-closure-tooling)
+records these requirements and limits. No cleanup or closure command is
+implemented yet. The inspected databases have 60 anoieu records and 197
+dokimasia records with no duplicate identities, so duplicate deletion would not
+address the demonstrated gap. Neither database was changed. Please make any
+follow-up tooling request concrete with the run evidence your producer can
+supply and the owner decisions it needs to record.
+
+This notice and the implementation are local changes for review; no new commit
+or consumer pin is published by this work.
+
 ## D24 — the ecosystem installer is scripts/install_eo
 
 **To:** kanon

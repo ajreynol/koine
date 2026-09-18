@@ -15,7 +15,7 @@ Prompt commands hand work to an assistant; programs do the work themselves.
 | [`eo_respond`](eo_respond) | answer one named topic addressed to your repository |
 | [`eo_brainstorm`](eo_brainstorm) | explore possibilities and discuss them with you; write only a private note |
 | [`eo_housekeeping`](eo_housekeeping) | update documentation, answer incoming topics, fix local tooling, and check CI |
-| `koine_append_db` | append a run's bugs to a database; implementation and usage in [`../bug_db/`](../bug_db/README.md) |
+| `koine_append_db` | append a run's bugs to a database; implementation and usage in [`../bug_db_manager/`](../bug_db_manager/README.md) |
 
 [`commands.json`](commands.json) is the ground truth for this roster and the
 installer's output. Its `short` fields supply the installation summary; `what`
@@ -66,7 +66,10 @@ selects the register checkout; an invalid selection is refused rather than
 silently replaced. `--dry-run` prints the proposed clone commands.
 
 **Pinned consumers keep their locators.** As checked on 2026-09-18, anoieu and
-dokimasia resolve `koine_append_db` through their own `scripts/koine.lock`.
+dokimasia record their koine dependency in a `koine.lock` file; anoieu's local
+work places it under `config/`, and dokimasia keeps it under `scripts/`.
+The manifest installs the implementation in `bug_db_manager/`. The compatibility
+launcher in `bug_db/` supports callers using that path during migration.
 Installing it on PATH is for terminal use; PATH selects the installed version
 and does not establish a consumer's pin.
 

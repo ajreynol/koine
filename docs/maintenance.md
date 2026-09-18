@@ -10,7 +10,7 @@ covers local responsibilities and the decisions reserved for the maintainer.
 
 Begin on `main` and pull with `git pull --ff-only`; stop if switching or pulling
 fails. `eo_housekeeping --no-main` explicitly keeps the current branch.
-Read [`bug_db/README.md`](../bug_db/README.md) and
+Read [`bug_db_manager/README.md`](../bug_db_manager/README.md) and
 [`eo_cmd/README.md`](../eo_cmd/README.md) for the two implementations.
 
 Run the same five suites as [.github/workflows/koine.yml](../.github/workflows/koine.yml):
@@ -58,6 +58,10 @@ actions require the maintainer's instruction. Nothing is sent to another
 project without that instruction.
 
 ## What is not koine's at all
+
+**Anoieu and dokimasia maintain their own bug databases.** Koine maintains
+`bug_db_manager/`, the tooling they call. Data upkeep, evidence, triage,
+corrections, cleanup and close/reopen decisions stay with each database owner.
 
 | responsibility | whose |
 | --- | --- |
@@ -120,6 +124,16 @@ session commits or changes the tree during a run, report what moved and inspect
 it before relying on the earlier reading.
 
 ## The open work
+
+**Evidence-aware database cleanup is a tooling gap.** The
+[capability assessment](../bug_db_manager/README.md#cleanup-and-closure-tooling)
+reads anoieu's published `5835c6f` and its local work on 2026-09-18. Supporting
+closure needs run coverage and comparability, explicit unmatched identities,
+fuzzer replay evidence and history-preserving updates. Agree the input contract
+with the database owners before implementing it; neither absence from a dump
+nor a repeated corpus export establishes closure. D25 announces the tooling
+rename and this assessment to anoieu and dokimasia. No cleanup or closure
+command is implemented or promised by that notice.
 
 **No paper is planned for koine**, on the maintainer's instruction of
 2026-09-18. This is koine's answer to anoieu-D14; it is not a judgment about
