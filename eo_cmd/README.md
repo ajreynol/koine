@@ -15,7 +15,7 @@ person's path.
 | [`eo_topic`](eo_topic) | open one topic addressed to another tool. **Asks you what you want to say**; sends nothing |
 | [`eo_child`](eo_child) | start a child project, `tools/<name>/`. Naming it is what starts it |
 | [`eo_respond`](eo_respond) | answer one topic another tool has addressed to you. Run in your own repository |
-| [`eo_brainstorm`](eo_brainstorm) | look for what a repository could do next, against what cvc5 and the other tools do now. **Changes nothing** |
+| [`eo_brainstorm`](eo_brainstorm) | look for what a repository could do next, against what cvc5 and the other tools do now, then work through the list with you. **Changes nothing** |
 | [`eo_housekeeping`](eo_housekeeping) | bring a repository up to date: its documentation, the topics addressed to it, its own tooling, and CI |
 | `koine_append_db` | add a run's new bugs to a database of every bug found. Installed from [`../bug_db/`](../bug_db), where it lives |
 
@@ -40,6 +40,16 @@ assistant, and every form of one takes `--show-prompt`**, which prints exactly
 what it would hand one and does nothing else — read that before running it.
 `eo_status` and `koine_append_db` are **programs**: they do the work themselves,
 spend no turn, and have nothing to show.
+
+**A preview prints on a machine with nothing on it**, which is the only way that
+sentence means anything: the reader it is addressed to has not cloned this
+ecosystem, so a preview that refused until the other checkouts were beside it
+would refuse exactly them. `eo_respond --show-prompt` did refuse until
+2026-09-18, and the same gap made this repository's own suite green here and red
+in CI for eight pushes — every check that previews a command reads a checkout
+that is a sibling on the machine these are written on and nowhere on a runner.
+`test_every_form_previews_on_a_machine_with_nothing_on_it` runs every advertised
+form again with `$HOME` and `$ANOIEU_REPOS` pointed at an empty directory.
 
 ## Installing them
 
@@ -113,16 +123,20 @@ runs every command from a directory with none of this tree in it.
 
 ## What koine may change here, and what it may not
 
-koine maintains these under **`R35`** in
-[kanon's `docs/roles.md`](https://github.com/ajreynol/kanon/blob/main/docs/roles.md):
-their text, their options, and what they ask an assistant to do.
+koine maintains all of these — their text, their options, and what they ask an
+assistant to do — **under two roles, and the line is where the command runs.**
+[kanon's `docs/roles.md`](https://github.com/ajreynol/kanon/blob/main/docs/roles.md)
+files `eo_init` and `eo_join` under **`R35`**, because those two are the only
+ones that run inside a repository being started or joined, and everything else
+here under **`R16`**, the shared low-level tooling.
 
-**`R35` is written as two commands and this directory holds more, and nothing
-compares the two statements.** The role names `eo_init` and `eo_join`; the table
-above is longer. Which of them the role is meant to cover is the office's to say
-and is not settled by this page listing them — recorded here because a register
-and a copy that disagree, with nothing that runs between them, is the thing the
-policy asks somebody to notice.
+**The office's reading is the one recorded, and it was the office's to give.**
+This page used to file every command under `R35` and say that the register and
+the copy disagreed with nothing running between them. kanon's `D18` offered
+either reading and said nothing turned on it; taking ours would have been koine
+deciding which role it holds what under, which is not a thing this repository
+gets to decide about itself. [`../docs/discussion.md`](../docs/discussion.md)
+`D18` says so back.
 
 **What joining costs, and what a member is held to, is `R4` and stays with the
 office.** This repository maintains the program that states the rule and **has
@@ -153,8 +167,14 @@ is capability rather than voice.
 
 ### The two forms, and how they differ
 
-**`eo_join`** declares membership on the README, adds the pinned `anoieu /
-policy` workflow, and runs the checker.
+**`eo_join`** declares membership on the README, adds the `anoieu / policy`
+workflow the policy page gives, and runs the checker locally the way that
+workflow runs it. **The page gives two forms of the workflow** — one pinning a
+checker revision, one naming a policy contract — and step 3 branches rather than
+choosing, because a repository on the contract form has no pinned revision and
+cannot run one. Which form a member is held to is what joining costs, which is
+the office's; kanon's `D16` asked for the branch and
+[`../docs/discussion.md`](../docs/discussion.md) `D18` answers it.
 
 **`eo_join --soft`** adds one README section and stops: no membership, no
 workflow, no checker. The note says the repository **works with** the Eunoia
@@ -214,6 +234,11 @@ asking a prompt to behave, which is strictly stronger than any wording. For *wha
 has anybody addressed to us*, which names nothing, run
 [`eo_housekeeping`](eo_housekeeping): it sweeps every checkout at once and costs
 no turn per tool.
+
+**A run still refuses where their tree is not here**, because it answers a topic
+by reading one and there is nothing to read; **the preview prints anyway** and
+says which checkout it did not find, since somebody reading the prompt before
+running it is the person least likely to have cloned anything.
 
 **What this does that housekeeping cannot: the disagreement check.** There are
 two independent accounts of what somebody wants — the human's instruction and the
@@ -392,6 +417,15 @@ outward-facing. Work that would be a new tool starts as a **child project** unde
 and a README says what its tool refuses to claim, so a list of features with
 nothing ruled out in it is evidence that neither page was read. That is the half
 a brainstorm loses first.
+
+**The file is the record, not the end of the run.** Writing the list and stopping
+hands somebody a document at the moment they are best able to argue with it, so
+the prompt carries on with them from it: which two or three it would take first,
+which one it would drop, and where they want to start. **None of that costs the
+guarantee above** — the conversation writes no files, and whatever they pick is
+the next thing they ask for rather than something this run does. `--print` is a
+non-interactive run and gets the list without the conversation, which is what it
+is for.
 
 ## eo_status
 

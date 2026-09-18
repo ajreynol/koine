@@ -1,5 +1,5 @@
 {
-  "what": "The commands install_eo_cmd puts on a person's path. koine maintains these under role R35 in kanon's docs/roles.md -- their text, their options, and what they ask an assistant to do. What joining costs and what a member is held to is R4's and stays with the office: this repository maintains the program that states the rule and has no standing to change the rule.",
+  "what": "The commands install_eo_cmd puts on a person's path. koine maintains all of them -- their text, their options, and what they ask an assistant to do -- under two roles in kanon's docs/roles.md, and the line is where the command runs: eo_init and eo_join are R35, the two that run inside a repository being started or joined, and the rest are R16, the shared low-level tooling. What joining costs and what a member is held to is R4's and stays with the office: this repository maintains the program that states the rule and has no standing to change the rule.",
   "history": "Both were kanon's prompts/join_eo and prompts/init_eo until 2026-09-17, when kanon deleted them and R35 was created to hold them here. They were briefly stored as unmodifiable copies; that arrangement ended with the handover, and koine now writes them.",
   "commands": [
     {
@@ -67,7 +67,7 @@
     },
     {
       "name": "eo_brainstorm",
-      "what": "look for what a repository could do next that would be worth doing, against what cvc5 and the other tools already do rather than against what a model remembers. **It changes nothing**: the list goes to brainstorm.local.md, which the record does not keep",
+      "what": "look for what a repository could do next that would be worth doing, against what cvc5 and the other tools already do rather than against what a model remembers. **It changes nothing**: the list goes to brainstorm.local.md, which the record does not keep, and the run then carries on with you from it rather than handing over a file and stopping",
       "forms": [
         "eo_brainstorm",
         "eo_brainstorm <focus>"

@@ -23,8 +23,9 @@ commands go looking for sibling checkouts -- for the policy and the vision, for
 the register, for another tool's discussion file -- and do strictly less without
 them, so a fresh machine wants this before it wants anything else.
 
-`eo_cmd/commands.json` lists what is installable. koine maintains those commands
-under role `R35`; what joining *costs* is `R4`'s and stays with the office.
+`eo_cmd/commands.json` lists what is installable. koine maintains all of them,
+under `R35` for the two that run inside a repository being started or joined and
+`R16` for the rest; what joining *costs* is `R4`'s and stays with the office.
 
 **They were copies until 2026-09-17**, kept byte-identical to kanon's
 `prompts/join_eo` and `prompts/init_eo`, and this script policed that with a

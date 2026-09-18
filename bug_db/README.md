@@ -7,14 +7,15 @@ found. [`koine_append_db`](koine_append_db) is the trip between the two.
 [anoieu](https://github.com/ajreynol/anoieu) and
 [dokimasia](https://github.com/ajreynol/dokimasia) are the customers. Each pins
 a commit of this repository in its own `scripts/koine.lock` and calls this from
-its own run; that pin is the whole of the integration on either side.
+its own run; **that pin is the whole of the integration on either side.**
+`scripts/install_eo_cmd` also puts this program on a person's PATH and that is a
+different thing — PATH gives whatever the operator last installed, so a pinned
+consumer keeps resolving through its lock.
 
 ```
 bug_db/koine_append_db <new bugs> <bug database>
 ```
 
-A tool runs and dumps what it found this time. The database is every bug it has
-ever found. This puts the first into the second.
 ## A worked example
 
 anoieu runs and writes `run1.json`:
@@ -167,8 +168,19 @@ nothing; `--date` records a run under a date other than today;
 `--lock-timeout` and `--no-lock` are above.
 
 **This program lives here** rather than in `scripts/`, one directory per
-purpose. It was at this repository's root until
-2026-09-17; a customer who put the root on their path wants `scripts/` on it
-now, and [`koine_append_db`](koine_append_db) at the root is a tombstone that
-says so and exits non-zero. It comes out once anoieu and dokimasia have moved
-their pins.
+purpose. It was at this repository's root until 2026-09-17, and
+[`../koine_append_db`](../koine_append_db) is still there as a **tombstone**: it
+holds the old name, says what moved and exits non-zero, because neither consumer
+merely read that path — each asked whether a file was at it to decide whether a
+directory was koine at all, so the move would have made a checkout of koine stop
+being koine rather than break.
+
+**Both have moved, so the condition for taking it out is met**, read on
+2026-09-18: anoieu at `b5a7d4e` and dokimasia at `2441f44` both probe
+`bug_db/koine_append_db`, both keep a `scripts/koine.lock` at `567c4a1`, and each
+reads the old root name only to tell *koine, from before the move* apart from
+*not koine*. **Removing it is a person's**, because it is a file two repositories
+outside this one still name.
+
+Also to a consumer's account: `bug_reports.writer` and any other caller that
+already serialises its own access wants `--no-lock`, not a second lock.

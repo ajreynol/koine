@@ -34,6 +34,18 @@
 #        the president -- and the prompt keeps pointing at the standard after
 #        the office moves. Duplicated from eo_housekeeping on purpose: each
 #        command is installed as one file and may import nothing from beside it.
+#
+# **`--show-prompt` PRINTS ON A MACHINE THAT HAS NOTHING ON IT.** The reader it
+#        is for has not cloned the ecosystem: `eo_cmd/README.md` tells them to
+#        read the prompt *before* running it, so a preview that refuses until
+#        their tree, our tree and a git repository are all present refuses
+#        exactly the person it exists for. It refused all three until
+#        2026-09-18, which is also why this repository's own test suite passed
+#        on a developer's disk and failed in CI for eight pushes: every one of
+#        those checks reads a checkout that is a sibling here and nowhere on a
+#        runner. **A real run still refuses**, because it reads their tree and
+#        there is nothing to read; what the preview does instead is say so, in
+#        the prompt, where the reader is.
 
 set -euo pipefail
 
@@ -100,9 +112,14 @@ done
   exit 2; }
 
 if ! US_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); then
-  echo "eo_respond: not in a git repository -- run this in the repository the" >&2
-  echo "         topic is addressed to." >&2
-  exit 2
+  # A preview still prints, from wherever you are: somebody reading this before
+  # they run it has nothing staged and may have nothing cloned.
+  if [ "$SHOW" = 0 ]; then
+    echo "eo_respond: not in a git repository -- run this in the repository the" >&2
+    echo "         topic is addressed to." >&2
+    exit 2
+  fi
+  US_ROOT=$(pwd)
 fi
 US=$(basename "$US_ROOT")
 
@@ -120,16 +137,34 @@ else
     [ -d "$r/$NAME" ] && { TARGET=$(cd "$r/$NAME" && pwd); break; }
   done
 fi
-[ -n "$TARGET" ] || {
-  echo "eo_respond: no checkout of $NAME -- give a path, or put one beside" >&2
-  echo "         $US_ROOT, or set \$ANOIEU_REPOS" >&2
-  exit 2; }
+# What a run could not read, and so what the prompt has to say instead of a
+# path. A real run refuses on either of these: it answers a topic by reading
+# one, and neither case has one to read. A preview says which it is and prints,
+# because the reader it is for is the one who has not cloned anything yet.
+MISSING=""
+if [ -z "$TARGET" ]; then
+  MISSING="**No checkout of $NAME is on this machine**, so nothing of theirs was
+read: find one before reading anything into what $TOPIC says."
+  FILE="docs/discussion.md"
+elif [ ! -f "$TARGET/docs/discussion.md" ]; then
+  MISSING="**$NAME keeps no \`docs/discussion.md\`** at \`$TARGET\`, so there is no
+wire to it and nothing there is addressed to anybody."
+  FILE="$TARGET/docs/discussion.md"
+else
+  FILE="$TARGET/docs/discussion.md"
+fi
 
-FILE="$TARGET/docs/discussion.md"
-[ -f "$FILE" ] || {
-  echo "eo_respond: $NAME keeps no docs/discussion.md, so nothing there is" >&2
-  echo "         addressed to anybody" >&2
-  exit 2; }
+if [ -n "$MISSING" ] && [ "$SHOW" = 0 ]; then
+  if [ -z "$TARGET" ]; then
+    echo "eo_respond: no checkout of $NAME -- give a path, or put one beside" >&2
+    echo "         $US_ROOT, or set \$ANOIEU_REPOS" >&2
+  else
+    echo "eo_respond: $NAME keeps no docs/discussion.md, so nothing there is" >&2
+    echo "         addressed to anybody" >&2
+  fi
+  echo "         --show-prompt still prints what a run would hand an assistant." >&2
+  exit 2
+fi
 
 PRES=""
 PRES_DIR=""
@@ -167,7 +202,7 @@ restates none of it.
 current and not only to what is on this disk; if it will not fast-forward
 cleanly, say so and stop rather than untangling somebody else's merge to get
 started. **A human named $TOPIC in $NAME's \`$FILE\`, and that naming is what
-authorises answering it — so work $TOPIC and no other.** Then check the two
+authorises answering it — so work $TOPIC and no other.** $MISSING Then check the two
 accounts of what is wanted against each other: what the human asked for by naming
 $TOPIC, and what $TOPIC says. **If they disagree, stop** — do not reconcile them, do not take
 the more plausible reading, and do not do the smaller safe part; say exactly where

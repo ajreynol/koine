@@ -54,11 +54,21 @@
 # idempotent and a second run should change nothing. But the claim is about a
 # state the agent did not create, and it cannot tell three cases apart -- a tree
 # that ran this before, a tree that arrived at the shape independently, and a
-# tree that looks compliant while its pin is stale or points at a commit our
-# build failed. Treat it as a prompt to check the pin, not as a pass. This is
+# tree that looks compliant while the check it runs is not the one it thinks it
+# is. Treat it as a prompt to check the workflow, not as a pass. This is
 # the same distinction `genuine` names in scripts/ecosystem/ecosystem.json: complying now
 # and having been built this way are different facts, and only the first is
 # visible from the tree.
+#
+# **THE CHECK HAS TWO FORMS AND THIS PROMPT MUST NOT ASSUME ONE.** The policy
+# page gives both -- a workflow pinning a checker revision the joiner chooses,
+# and a shared workflow naming a policy contract instead -- and a repository on
+# the second has no pinned revision at all, so *run the revision the workflow
+# uses* and *do not substitute a latest checkout for a pinned revision* are
+# instructions it cannot follow. Step 3 branches rather than choosing: which
+# form a member is held to is what joining costs, which is `R4` and the
+# office's. kanon's `D16` asked for this, and `docs/discussion.md` `D18`
+# answers it.
 #
 # --soft is a different act rather than a smaller one. It adds the maintenance
 # note and stops: no membership is declared, no workflow is added and no checker
@@ -106,7 +116,8 @@ staged for you to review.
 usage: eo_join [--soft] [--codex] [--print] [--show-prompt]
 
   (no flag)       join, and declare it on the front page: the declaration,
-                  the CI workflow, and the pinned checker run
+                  the CI workflow the policy page gives, and a local run of
+                  the checker the way that workflow runs it
   --soft          claim nothing: one README section saying this repository
                   works with the Eunoia ecosystem and is held to none of its
                   policy. No workflow, no checker, no footing
@@ -177,10 +188,14 @@ Read it, then do what it says, here:
 1. Declare membership at the top of the README's "How this repository is
    maintained" section, creating that section if there is not one.
 2. Add the CI workflow the page gives.
-3. Run the same checker revision and command the workflow uses, and fix what it
-   reports. The checker is maintained in anoieu; read its instructions at the
-   chosen revision. Report which revision you checked. Do not substitute the
-   latest checkout for a pinned revision or claim a local run establishes CI.
+3. Run the checker the way the workflow you just added runs it, and fix what it
+   reports. The checker is maintained in anoieu; read its instructions. **The
+   page gives two forms of the workflow and they call for different local
+   runs**: where it pins a checker revision, run that revision and report which;
+   where it names a policy contract instead, there is no revision to pin — run a
+   current checkout against that contract and report which contract. Take
+   whichever the page's form you chose asks for, and never claim a local run
+   establishes CI.
 
 Change nothing the check does not ask for, and add no file it does not ask for.
 Where the page and this prompt disagree, the page is right.

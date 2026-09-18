@@ -30,6 +30,15 @@ arrive automatically. There is no checker commit pin to update. The contract
 and workflow are maintained in
 [anoieu's checker guide](https://github.com/ajreynol/anoieu/blob/main/docs/policy-checker.md).
 
+**Run the suite, and do not read a green run here as a green build.** Every
+command in `../eo_cmd/` looks for the other checkouts of this ecosystem beside
+its own, so a suite that previews one answers differently on a machine that has
+them and on a runner that has none. That is how `tests` stayed red for eight
+pushes while passing on the machine the pushes came from, and the consumer that
+pins us stopped bumping. `test_every_form_previews_on_a_machine_with_nothing_on_it`
+now runs every form again with `$HOME` and `$ANOIEU_REPOS` pointed at an empty
+directory. **`gh run list` is the other half**, and it costs nothing.
+
 **Scripts are named `koine_<piece>`** where they go on somebody's path, because
 a name claimed inside another person's process should say whose it is.
 `../eo_cmd/` is the exception and the rule working: nothing in it is ours to
@@ -74,6 +83,8 @@ Do not design it, do not build it, do not have an opinion about it in the tree.
 | auditing how a repository's history changed | **epikrisis's** | the register describes it as *audits repository histories against evidence*; koine held a second implementation until 2026-09-17 and should not have |
 | **what joining costs, and what a member is held to** | **kanon's** | `R4`. koine maintains `eo_join`, which *states* that rule, and has no standing to change it |
 | `check_join_eo`, `global_audit`; every position on publishing | **anoieu's and kanon's** | a position is what somebody signs |
+| the office's own document checks — its register against its glossary, its links, its housed projects | **kanon's** | they are part of holding the register honestly rather than machinery that sits near it. koine was offered them and said no; kanon accepted the no in its `D18` and they stay in kanon's `tests/` |
+| a working-window program, a schedule, anything that says when a tool may run | **nobody's, and it is withdrawn** | kanon retired `PROTO-18` and deleted its program on 2026-09-17, because four pieces in three trees left no reader able to assemble it. Nothing binds anybody to a window now, and if the idea returns it is proposed from scratch |
 
 **The test that puts something here:** somebody else maintains it, **or** being
 wrong about it reaches people who did not sign up for this. Either is enough.
@@ -88,8 +99,18 @@ writes them — their text, their options, what they ask. **What it still may no
 touch is what joining costs**, the row above: this repository maintains the
 program that states the rule, and a change to the rule is argued in kanon and
 then written here. [`../eo_cmd/README.md`](../eo_cmd/README.md) carries that
-line in full, and records that `R35` names two commands while the directory
-holds five with nothing comparing the two statements.
+line in full.
+
+**The directory is two roles, not one, and the split is the register's.**
+`eo_init` and `eo_join` are `R35` because they run inside a repository being
+started or joined; the other six commands and `koine_append_db` are `R16`, the
+shared low-level tooling. This page and the manifest filed everything under
+`R35` until 2026-09-18, which disagreed with [kanon's
+`roles.md`](https://github.com/ajreynol/kanon/blob/main/docs/roles.md) with
+nothing running between the two statements. kanon's `D18` offered either
+reading; taking ours would have been koine deciding what it holds under which
+role, which is the office's and not a thing this repository decides about
+itself.
 
 ## Check who the instruction is addressed to, before the first edit
 
@@ -151,23 +172,29 @@ withdraw than it was to write.
   nothing worth writing up. **All three are answers**, the third is the
   commonest, and which one it is is a position somebody signs. Asked by anoieu on
   2026-09-02 and left unstated.
-- **[`discussion.md`](discussion.md) below `D11` is a record of an earlier
+- **[`discussion.md`](discussion.md) at `D10` and below is a record of an earlier
   purpose.** Those topics were written when koine was a reporting-loop library
   and none was ever carried. Whether they are withdrawn, rewritten or left is the
   maintainer's; **no agent works that file unbidden**, including to tidy it, and
   the standing override above does not reach them — it covers answering what
-  names koine, which is `D11` and above. Two look finished on their own terms and
-  are the first to look at: `D7` says on its face that it was withdrawn, and
-  `D9`'s settling condition was that our page is deleted or becomes the copy, and
-  the page is deleted.
+  names koine, which is everything above them. Two look finished on their own
+  terms and are the first to look at: `D7` says on its face that it was
+  withdrawn, and `D9`'s settling condition was that our page is deleted or
+  becomes the copy, and the page is deleted.
 - **Two pieces are wanted by name, and each is a maintenance obligation**, so
   neither is an agent's to take on: a **prompt-drift check** hosted once instead
-  of copied into anoieu and dokimasia (anoieu's `D8`, answered in `D13`), and a
-  **shared pinned-checkout resolver** replacing the two copies of `koine.py`
-  (dokimasia's `D6`, answered in `D14`). Both are specified in those answers so
-  that the decision is cheap to make; until somebody makes it, what stands in
-  both files is *not yet* rather than *coming*, because a consumer who deletes a
-  copy against a promise nobody signed is worse off than one who never heard it.
+  of copied into anoieu and dokimasia, and a **shared pinned-checkout resolver**
+  replacing the two copies of `koine.py` (dokimasia's `D6`, answered in `D14`).
+  Both are specified in those answers so that the decision is cheap to make;
+  until somebody makes it, what stands in both files is *not yet* rather than
+  *coming*, because a consumer who deletes a copy against a promise nobody signed
+  is worse off than one who never heard it.
+  **dokimasia's `D12` narrows the first one and the narrowing is worth having**:
+  they would fetch and call a drift check from their own CI, the way they already
+  fetch the policy checker and `koine_append_db`, and they decline a check of
+  their prompts that can only go red in our build. *Hosting the code is a service;
+  hosting the verdict is not* is their sentence and it is the right line. The
+  obligation is still a person's to take.
 
 ## What was here before
 

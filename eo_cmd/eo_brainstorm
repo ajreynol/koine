@@ -34,6 +34,16 @@
 #        features with nothing ruled out in it is evidence that neither page was
 #        read. That is the half a brainstorm loses first.
 #
+# **THE FILE IS THE RECORD AND NOT THE END OF THE RUN.** Writing the list and
+#        stopping hands somebody a document at the moment they are best able to
+#        argue with it, which is the moment the run is in front of them. So the
+#        prompt carries on from it in the same session: which two or three it
+#        would take first, which one it would drop, and where they want to
+#        start. **None of that costs the guarantee above** -- a conversation
+#        writes no files, and whatever they choose is the next thing they ask
+#        for rather than something this run does. `--print` has nobody to talk
+#        to and gets the list alone.
+#
 # THE PRESIDENT IS LOOKED UP, NEVER WRITTEN IN. The register says who holds the
 #        office and lives in the office's tree, so finding the file is finding
 #        the president -- and the prompt keeps pointing at the standard after the
@@ -64,7 +74,8 @@ usage: eo_brainstorm [--codex] [--print] [--show-prompt] [focus...]
 
   focus...        free text to start from, if you have somewhere in mind
   --codex         run codex instead of claude
-  --print         run non-interactively and print the result
+  --print         run non-interactively and print the result: the list, and
+                  none of the conversation that normally follows it
   --show-prompt   print the prompt and exit, running nothing
 
 **Cutting edge is a claim about somebody else's tree**, so the prompt sends an
@@ -260,7 +271,12 @@ would be a new tool starts as a **child project** under \`tools/\`, and opening 
 repository is a decision a person makes — propose either, create neither.
 **Write the list to \`brainstorm.local.md\` at this root and change nothing
 else**: nothing staged, nothing committed, no topic opened, no tree but this one
-written in, and nothing sent anywhere.
+written in, and nothing sent anywhere. **Then do not stop at the file — carry on
+with the person from it**, in this session: say which two or three you would take
+first and why, which one you would drop and why, and ask them where they want to
+start. They ran this to decide something, and a list handed over and abandoned is
+one nobody opens twice. **Whatever they pick, building it is the next thing they
+ask for and not this** — the file stays the whole of what this run writes.
 PROMPT_END
 
 # Every paragraph above is assembled from fragments wrapped at whatever width
@@ -285,6 +301,7 @@ command -v "$AGENT" >/dev/null 2>&1 || {
   echo "eo_brainstorm: $AGENT is not on PATH" >&2; exit 127; }
 
 echo "-- eo_brainstorm: $US ($US_ROOT), writing brainstorm.local.md only, via $AGENT" >&2
+echo "--   it writes the list, then stays and works through it with you" >&2
 if [ -n "$PRES_DIR" ]; then
   echo "--   the standard: $PRES, at $PRES_DIR/docs" >&2
 elif [ -n "$PRES" ]; then

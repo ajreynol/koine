@@ -28,9 +28,11 @@ arrive at once, and what it refuses to do.
 
 **2. [`eo_cmd/`](eo_cmd), the commands that run inside somebody else's tree.**
 `eo_init` starts a tool and `eo_join` joins it; `eo_status` says who is in this
-ecosystem and on what footing; `eo_respond` answers one topic another tool
-addressed to you; `eo_housekeeping` brings a repository up to date, and
-`eo_brainstorm` looks for what it could do next and changes nothing. Each runs
+ecosystem and on what footing; `eo_child` starts a child project and `eo_topic`
+opens one topic addressed to another tool; `eo_respond` answers one topic another
+tool addressed to you; `eo_housekeeping` brings a repository up to date, and
+`eo_brainstorm` looks for what it could do next, works through the list with
+you, and changes nothing. Each runs
 *inside the tree being started, joined, tidied, answered or looked ahead of*
 rather than from
 the repository that keeps the rule — which is why

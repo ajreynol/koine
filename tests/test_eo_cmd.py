@@ -597,6 +597,13 @@ def test_brainstorm_changes_nothing_and_says_what_new_is_measured_against():
     and asks each idea what it was read out of. And because the policy breaks
     the path from *a tool should exist* to *a repository exists* on purpose, the
     prompt proposes and creates neither.
+
+    **The file is the record and not the end of the run.** A run that writes the
+    list and stops hands somebody a document at the moment they are most able to
+    argue with it, so the prompt carries on with them from it -- which two it
+    would take, which it would drop, and where they want to start. That costs
+    nothing of the guarantee above: the conversation writes no files, and
+    anything built out of it is the next thing they ask for.
     """
     print("brainstorm: reads everything, writes one ignored file")
     for args in ([], ["proof", "reconstruction"]):
@@ -616,6 +623,15 @@ def test_brainstorm_changes_nothing_and_says_what_new_is_measured_against():
         ok(f"{label} asks what is ruled out too", "rule out" in flat)
         ok(f"{label} proposes a repository and opens none",
            "propose either, create neither" in flat)
+        # The file is the record, not the end of the run. A list written and
+        # abandoned is one nobody opens twice, and the person ran this to
+        # decide something -- so the session carries on from it, and what gets
+        # built is still the next thing they ask for.
+        ok(f"{label} carries on with the person from the list",
+           "carry on with the person from it" in flat)
+        ok(f"{label} asks them where to start", "where they want to start" in flat)
+        ok(f"{label} still builds nothing on its own",
+           "the next thing they ask for and not this" in flat)
         ok(f"{label} stays short enough to be read", len(flat.split()) < 500)
         ok(f"{label} is two paragraphs",
            len([p for p in show("eo_brainstorm", *args).stdout.split("\n\n")
@@ -662,6 +678,67 @@ def test_housekeeping_names_the_president_it_was_told_of():
     body = source[source.index("read -r -d '' PROMPT"):]
     ok("and the prompt text itself names no president",
        holders[0] not in body)
+
+
+def test_every_form_previews_on_a_machine_with_nothing_on_it():
+    """The suite has to answer the same on a runner as on a developer's disk.
+
+    Every command here looks for the other checkouts of this ecosystem beside
+    its own and under $HOME, which on the machine these are written on finds all
+    of them and on a CI runner finds none. That made the suite's answer a fact
+    about the disk it ran on rather than about the tree: `eo_respond` refused
+    `--show-prompt` without a checkout of the tool named, so ten checks passed
+    here and failed in CI for eight consecutive pushes -- red for a reason that
+    was not in the tree, which is the one thing a check must never be.
+
+    So every advertised form is previewed a second time with $HOME and
+    $ANOIEU_REPOS pointed at an empty directory, from a repository with no
+    siblings. A preview is what somebody reads *before* they run anything, and
+    that somebody has cloned nothing.
+    """
+    print("every form previews with no other checkout on the machine")
+    # The three that resolve somebody else's tree. `eo_join` and `eo_init`
+    # write into the tree they are run in and look nothing up, so there is
+    # nothing for them to report not finding.
+    SAYS_WHAT_IT_COULD_NOT_READ = ("eo_topic", "eo_respond", "eo_housekeeping")
+    tmp = tempfile.mkdtemp()
+    try:
+        home = os.path.join(tmp, "home")
+        here = os.path.join(tmp, "work", "alone")
+        os.makedirs(home)
+        os.makedirs(here)
+        subprocess.run(["git", "init", "-q", here], check=True)
+        bare = dict(os.environ, HOME=home, ANOIEU_REPOS="")
+
+        for name, command, args in forms():
+            args = concrete(args)
+            label = " ".join([command, *args]) if args else command
+            out = subprocess.run(
+                [os.path.join(STORE, command), *args, "--show-prompt"],
+                capture_output=True, text=True, cwd=here, env=bare)
+            check(f"{label} exits 0 with nothing beside it", out.returncode, 0)
+            ok(f"{label} still prints a prompt", len(out.stdout.strip()) > 200)
+            # Saying so is the whole of what a preview may do differently. A
+            # prompt that quietly leaves out the tree it could not read hands an
+            # assistant a checkout that is not there, which is worse than the
+            # refusal this replaced.
+            if command in SAYS_WHAT_IT_COULD_NOT_READ:
+                ok(f"{label} says which checkout it did not find",
+                   re.search(r"no checkout|not checked out|"
+                             r"no other tool of this ecosystem is checked out",
+                             out.stdout, re.I) is not None)
+    finally:
+        shutil.rmtree(tmp)
+
+    # And the real run still refuses, because it answers a topic by reading
+    # one. The preview is what was widened; the gate is not.
+    gone = subprocess.run([os.path.join(STORE, "eo_respond"),
+                           "definitely-not-a-checkout", "D1"],
+                          capture_output=True, text=True)
+    check("eo_respond refuses a run it cannot read a topic for", gone.returncode, 2)
+    ok("and says the preview is still available",
+       "--show-prompt still prints" in gone.stderr)
+    ok("and prints no prompt", gone.stdout.strip() == "")
 
 
 def test_help_says_why_and_where():
@@ -749,6 +826,7 @@ def main():
                  test_housekeeping_takes_in_the_child_projects,
                  test_brainstorm_changes_nothing_and_says_what_new_is_measured_against,
                  test_housekeeping_names_the_president_it_was_told_of,
+                 test_every_form_previews_on_a_machine_with_nothing_on_it,
                  test_help_says_why_and_where,
                  test_runs_as_an_installed_copy):
         test()
