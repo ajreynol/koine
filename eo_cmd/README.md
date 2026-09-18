@@ -68,8 +68,8 @@ silently replaced. `--dry-run` prints the proposed clone commands.
 **Pinned consumers keep their locators.** As checked on 2026-09-18, anoieu and
 dokimasia record their koine dependency in a `koine.lock` file; anoieu's local
 work places it under `config/`, and dokimasia keeps it under `scripts/`.
-The manifest installs the implementation in `bug_db_manager/`. The compatibility
-launcher in `bug_db/` supports callers using that path during migration.
+The manifest installs the implementation in `bug_db_manager/`. Consumers must
+probe and invoke `bug_db_manager/koine_append_db`; there is no `bug_db/` alias.
 Installing it on PATH is for terminal use; PATH selects the installed version
 and does not establish a consumer's pin.
 

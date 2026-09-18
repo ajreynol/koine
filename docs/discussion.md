@@ -82,8 +82,10 @@ transfer database upkeep or reporting policy to koine.
 
 The executable is `bug_db_manager/koine_append_db`; its command name, arguments,
 JSON format, identity rules and locking are unchanged. The installer and
-documentation use this path. `bug_db/koine_append_db` remains a compatibility
-launcher into the same implementation, so existing callers continue to work.
+documentation use this path. **Correction, 2026-09-18, at the maintainer's
+instruction:** the compatibility launcher described here has been removed along
+with `bug_db/`. Consumers must use `bug_db_manager/koine_append_db`; the old path
+is unavailable.
 The root `koine_append_db` remains a tombstone and points to the current path.
 
 When adopting a reviewed revision with passing CI, change the locator's probe
@@ -92,7 +94,9 @@ adapter is `scripts/koine.py`; its uncommitted work puts it at
 `anoieu/reporting/koine.py` and moves the lock to `config/koine.lock`.
 Dokimasia's adapter and lock remain under `scripts/`. The installed PATH command
 does not replace either consumer's dependency resolution. No database format
-migration is needed, and the compatibility launcher gives you time to adopt.
+migration is needed. Update both locator paths when adopting this revision;
+callers still naming `bug_db/koine_append_db` must stay on their earlier pin
+until they do so.
 
 **Anoieu's latest updates expose a real tooling gap.** Remote `main` was checked
 at `5835c6f`, including the shared static/fuzzer database and the deprecated

@@ -3,8 +3,7 @@
 
 This remains a tombstone for consumers probing the root path. Current callers
 should probe and invoke the implementation in bug_db_manager and choose their
-koine dependency pin themselves. The compatibility launcher for bug_db callers
-is separate, at bug_db/koine_append_db.
+koine dependency pin themselves.
 """
 
 import os

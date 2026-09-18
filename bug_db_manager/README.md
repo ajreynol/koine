@@ -214,10 +214,10 @@ nothing; `--date` records a run under a date other than today;
 
 **The executable is [`bug_db_manager/koine_append_db`](koine_append_db).** The root
 [`koine_append_db`](../koine_append_db) is a tombstone: it prints the executable's
-location and exits non-zero. [`bug_db/koine_append_db`](../bug_db/koine_append_db)
-is a compatibility launcher that delegates to this implementation. Consumers
-should probe and invoke `bug_db_manager/koine_append_db`; the installed command
-remains `koine_append_db`, with the same arguments and JSON format.
+location and exits non-zero. Consumers must probe and invoke
+`bug_db_manager/koine_append_db`; there is no `bug_db/` compatibility directory.
+The installed command remains `koine_append_db`, with the same arguments and
+JSON format.
 
 Also to a consumer's account: `bug_reports.writer` and any other caller that
 already serialises its own access wants `--no-lock`, not a second lock.

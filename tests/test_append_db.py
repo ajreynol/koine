@@ -367,43 +367,6 @@ def test_the_file_it_writes():
           os.path.getsize(t.db + ".lock") == 0)
 
 
-def test_the_compatibility_path_uses_the_same_writer():
-    print("\nexisting consumer paths delegate to bug_db_manager:")
-    t = Tree()
-    legacy = os.path.join(ROOT, "bug_db", "koine_append_db")
-    dump = t.write("run.json", RUN1)
-
-    def run(*args):
-        return subprocess.run([legacy, dump, t.db, *args],
-                              capture_output=True, text=True, timeout=10)
-
-    preview = run("--dry-run")
-    check("legacy preview succeeds without creating a database or lock",
-          preview.returncode == 0 and not os.path.exists(t.db)
-          and not os.path.exists(t.db + ".lock"), preview.stderr)
-    result = run("--date", "2026-03-04")
-    check("an existing consumer can append",
-          result.returncode == 0, result.stderr)
-    result = t.run(dump, "--date", "2026-09-18")
-    check("the canonical path reuses the same records and dates",
-          result.returncode == 0 and len(t.bugs()) == 2
-          and all(b["first_seen"] == "2026-03-04"
-                  and b["last_seen"] == "2026-09-18" for b in t.bugs()),
-          result.stderr)
-    before = open(t.db, "rb").read()
-    if adb.fcntl is not None:
-        with adb.held(t.db, 0):
-            result = run("--lock-timeout", "0")
-        check("both paths share the lock and preserve the busy exit code",
-              result.returncode == adb.BUSY, result.stderr)
-    with open(dump, "w") as handle:
-        handle.write("{broken")
-    result = run()
-    check("the launcher preserves rejection and leaves existing data intact",
-          result.returncode == 1 and open(t.db, "rb").read() == before,
-          result.stderr)
-
-
 if __name__ == "__main__":
     for fn in (test_a_first_run_creates_the_database,
                test_the_same_dump_twice_adds_nothing,
@@ -418,8 +381,7 @@ if __name__ == "__main__":
                test_two_runs_at_once_both_survive,
                test_a_run_that_cannot_take_the_lock_refuses,
                test_an_interrupted_write_leaves_a_readable_database,
-               test_the_file_it_writes,
-               test_the_compatibility_path_uses_the_same_writer):
+               test_the_file_it_writes):
         fn()
     print()
     if FAILURES:
