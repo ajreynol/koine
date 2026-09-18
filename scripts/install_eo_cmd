@@ -489,13 +489,21 @@ def do_uninstall(prefix, origin, config, dry_run):
     return 0
 
 
-def say_what_they_are(origin, prefix):
-    """One line per command saying what it is for, after the plan.
+def say_ready(origin, ready):
+    """Close the run on what the person can now type, not on bookkeeping.
 
-    **The plan says what happened to each file; this says what each file is.**
-    Those are different questions and the first one answers neither: a row
-    reading `cp eo_cmd/eo_status ~/bin/eo_status (new)` tells somebody a name they
-    now have on their path and nothing whatever about when they would type it.
+    **The plan says what happened to each file; this says what to do with
+    them.** Those are different questions and the first one answers neither: a
+    row reading `cp eo_cmd/eo_status ~/bin/eo_status (new)` tells somebody a name
+    they now have on their path and nothing whatever about when they would type
+    it. So a run that leaves somebody able to use the ecosystem ends by saying
+    so and handing them the roster, and this goes last because the last thing
+    printed is the thing that gets read.
+
+    **A run that did not leave them ready prints the same roster and claims
+    nothing** -- a dry run wrote nothing, and a prefix that is not on their PATH
+    is a set of files they cannot yet type the names of. Both say why
+    immediately above this, so the heading here just stops promising.
 
     The text is the manifest's, which is the same text the READMEs are written
     against -- so a command whose purpose moves says so here on the next
@@ -507,7 +515,13 @@ def say_what_they_are(origin, prefix):
     if not rows:
         return
     width = max(len(n) for n, _ in rows)
-    print(f"-- what each one is for, from {rel(os.path.join(STORE, 'commands.json'))}:")
+    if ready:
+        print("-- You are now ready to use the Eunoia ecosystem. For a quick "
+              "start, here is")
+        print("   a list of possible commands, to run in the root of repos:")
+    else:
+        print("-- what each one is for, to run in the root of repos, from "
+              f"{rel(os.path.join(STORE, 'commands.json'))}:")
     for name, what in rows:
         # One sentence is the purpose; anything after it is the caveat, and a
         # roster is not where a caveat earns its room.
@@ -516,6 +530,8 @@ def say_what_they_are(origin, prefix):
         print(f"   {name:<{width}}  {body[0] if body else ''}")
         for line in body[1:]:
             print(f"   {'':<{width}}  {line}")
+    print("-- every one of them takes --help, which says what it does and what "
+          "forms it takes")
 
 
 def do_install(prefix, origin, config, dry_run, force, president_dir=None):
@@ -593,8 +609,6 @@ def do_install(prefix, origin, config, dry_run, force, president_dir=None):
     for v, src, dest, why in plan:
         print(f"   {v:<{verbs}} {src:<{width}}  {dest:<{dests}}   ({why})")
 
-    say_what_they_are(origin, prefix)
-
     if copied:
         print("-- a copy, not a move: the source keeps every file, and each one "
               "is written")
@@ -603,6 +617,7 @@ def do_install(prefix, origin, config, dry_run, force, president_dir=None):
         print("   it, so an interrupted run leaves the old file in place")
     if dry_run:
         print(f"-- dry run: nothing was written, and {prefix} is unchanged")
+        say_ready(origin, ready=False)
         return 0
 
     config["prefix"] = prefix
@@ -612,6 +627,7 @@ def do_install(prefix, origin, config, dry_run, force, president_dir=None):
     if not on_path(prefix):
         print(f"-- note: {prefix} is not on your PATH, so the commands above "
               "are installed and not yet reachable")
+    say_ready(origin, ready=on_path(prefix))
     return 1 if skipped else 0
 
 

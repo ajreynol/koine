@@ -470,6 +470,51 @@ def test_an_orphan_is_noticed():
         shutil.rmtree(tmp)
 
 
+def test_a_finished_install_ends_by_saying_what_to_type():
+    """The last thing printed is addressed to the person, not to the record.
+
+    A run used to end on its own bookkeeping -- what was copied where, which
+    file was remembered in which config -- and the roster of commands sat in
+    the middle of it. The person running this wants one thing at the end of it:
+    am I set up, and what do I type. So the roster goes last, under a sentence
+    saying they are ready.
+
+    **It only says that when it is true.** A dry run wrote nothing and an
+    install into a directory off their PATH left them files they cannot type
+    the names of; both still print the roster, under a heading that promises
+    nothing.
+    """
+    print("a finished install says what to type")
+    tmp = tempfile.mkdtemp()
+    try:
+        prefix = sandbox(tmp)
+
+        out = run(tmp, "--prefix", prefix, "--dry-run")
+        ok("a dry run does not claim they are ready",
+           "now ready" not in out.stdout)
+        ok("and still says what the commands are for",
+           "what each one is for" in out.stdout and "join" in out.stdout)
+
+        out = run(tmp, "--prefix", prefix)
+        ok("an install off their PATH does not claim they are ready",
+           "now ready" not in out.stdout)
+        ok("and says why not", "not on your PATH" in out.stdout)
+
+        out = run(tmp, env={"PATH": prefix + os.pathsep + os.environ["PATH"]})
+        ok("an install onto their PATH says they are ready",
+           "You are now ready to use the Eunoia ecosystem" in out.stdout)
+        ok("and offers the commands as a quick start",
+           "quick start" in out.stdout and "root of repos" in out.stdout)
+        ok("naming every one of them",
+           "eo_join" in out.stdout and "eo_init" in out.stdout)
+        ok("and saying where the rest of each is",
+           "takes --help" in out.stdout)
+        ok("the roster is the last thing printed, after the bookkeeping",
+           out.stdout.index("now ready") > out.stdout.index("remembered"))
+    finally:
+        shutil.rmtree(tmp)
+
+
 def test_help_answers_why_and_not_only_what():
     """--help has to say why somebody would run this, not just what it accepts.
 
@@ -501,6 +546,7 @@ def test_help_answers_why_and_not_only_what():
 
 def main():
     for test in (test_install, test_the_register_is_baked_in,
+                 test_a_finished_install_ends_by_saying_what_to_type,
                  test_help_answers_why_and_not_only_what,
                  test_init_clone_is_not_a_command_it_installs,
                  test_init_clone_refuses_without_a_register,

@@ -70,23 +70,35 @@ much. Both jobs are named there; the second was invisible from the flags alone.
 **Every run lists every command twice over** — once with the verb that applies
 to it, and once with a line saying what it is for. A machine that is already up
 to date therefore still answers *what are these*, which is when somebody is most
-likely to be asking:
+likely to be asking.
+
+**The second list goes last, and a finished install introduces it.** The
+bookkeeping — what was copied where, which directory was remembered — answers
+the question the script has about the run; the person who ran it is asking
+whether they are set up and what to type, so that is what the run ends on:
 
 ```console
-$ ../scripts/install_eo_cmd --dry-run
--- would install 1, 1 already current, 1 skipped  ->  /home/you/bin
+$ ../scripts/install_eo_cmd --prefix ~/bin
+-- installed 1, 1 already current, 1 skipped  ->  /home/you/bin
    skip eo_cmd/eo_join    /home/you/bin/eo_join     (already current)
    cp   eo_cmd/eo_status  /home/you/bin/eo_status   (new)
    skip eo_cmd/eo_init    /home/you/bin/eo_init     (exists and is not ours; --force replaces it)
--- what each one is for, from eo_cmd/commands.json:
-   eo_join    join the Eunoia ecosystem, run inside the repository that is joining
-   eo_status  who is in the Eunoia ecosystem and on what footing, as the register says it
-   eo_init    start a tool: write a README saying what it is for, complying with nothing
 -- a copy, not a move: the source keeps every file, and each one is written
    to a temporary file beside the target, made executable, and renamed over
    it, so an interrupted run leaves the old file in place
--- dry run: nothing was written, and /home/you/bin is unchanged
+-- remembered /home/you/bin in install_eo_cmd.local.json
+-- You are now ready to use the Eunoia ecosystem. For a quick start, here is
+   a list of possible commands, to run in the root of repos:
+   eo_join    join the Eunoia ecosystem, run inside the repository that is joining
+   eo_status  who is in the Eunoia ecosystem and on what footing, as the register says it
+   eo_init    start a tool: write a README saying what it is for, complying with nothing
+-- every one of them takes --help, which says what it does and what forms it takes
 ```
+
+**It says *ready* only where that is true.** A dry run wrote nothing, and an
+install into a directory that is not on your PATH leaves you files whose names
+you cannot yet type; both print the same roster under a heading that promises
+nothing, immediately below the line saying which of the two happened.
 
 **That roster is the manifest's own text**, not a second description written
 here: [`commands.json`](commands.json) is the ground truth, so a command whose
