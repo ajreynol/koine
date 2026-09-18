@@ -4,12 +4,10 @@
   "commands": [
     {
       "name": "eo_join",
-      "what": "join the Eunoia ecosystem, run inside the repository that is joining",
+      "what": "join the Eunoia ecosystem, run inside the repository that is joining. Two forms: join and say so on the front page, or --soft, which says the repository works with this ecosystem and is held to none of its policy and claims no footing",
       "forms": [
         "eo_join",
-        "eo_join --associate",
-        "eo_join --soft",
-        "eo_join --soft --affiliated"
+        "eo_join --soft"
       ],
       "kind": "prompt"
     },
@@ -43,10 +41,36 @@
       "kind": "program"
     },
     {
+      "name": "eo_topic",
+      "what": "open one topic in your own discussion file, addressed to another tool. **It asks you what you want to say** rather than taking it in argv, and carries what is mechanical: the date, the commit their tree is at, and the next free id. Sends nothing -- a topic is carried by a person",
+      "forms": [
+        "eo_topic <name>"
+      ],
+      "kind": "prompt"
+    },
+    {
+      "name": "eo_child",
+      "what": "start a child project, tools/<name>/, in this repository. Naming it is what starts it: the policy reserves that to a human. The charter is asked for and never invented",
+      "forms": [
+        "eo_child <name>",
+        "eo_child --unadvertised <name>"
+      ],
+      "kind": "prompt"
+    },
+    {
       "name": "eo_respond",
       "what": "answer one topic another tool has addressed to you. Run in your own repository; naming the topic is what authorises answering it, and a run without one is refused",
       "forms": [
         "eo_respond <name> <Dn>"
+      ],
+      "kind": "prompt"
+    },
+    {
+      "name": "eo_brainstorm",
+      "what": "look for what a repository could do next that would be worth doing, against what cvc5 and the other tools already do rather than against what a model remembers. **It changes nothing**: the list goes to brainstorm.local.md, which the record does not keep",
+      "forms": [
+        "eo_brainstorm",
+        "eo_brainstorm <focus>"
       ],
       "kind": "prompt"
     },

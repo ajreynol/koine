@@ -12,7 +12,10 @@ person's path.
 | [`eo_join`](eo_join) | join the Eunoia ecosystem, from inside the repository that is joining |
 | [`eo_init`](eo_init) | start a tool: write a README saying what it is for, complying with nothing |
 | [`eo_status`](eo_status) | who is in the ecosystem and on what footing. **Run only where the register is** |
+| [`eo_topic`](eo_topic) | open one topic addressed to another tool. **Asks you what you want to say**; sends nothing |
+| [`eo_child`](eo_child) | start a child project, `tools/<name>/`. Naming it is what starts it |
 | [`eo_respond`](eo_respond) | answer one topic another tool has addressed to you. Run in your own repository |
+| [`eo_brainstorm`](eo_brainstorm) | look for what a repository could do next, against what cvc5 and the other tools do now. **Changes nothing** |
 | [`eo_housekeeping`](eo_housekeeping) | bring a repository up to date: its documentation, the topics addressed to it, its own tooling, and CI |
 | `koine_append_db` | add a run's new bugs to a database of every bug found. Installed from [`../bug_db/`](../bug_db), where it lives |
 
@@ -137,41 +140,56 @@ from kanon's original — was removed with the arrangement it enforced.
 ## eo_join
 
 ```console
-$ eo_join                       # join, and say so on the front page
-$ eo_join --associate        # the associate footing, on the maintenance page
-$ eo_join --soft                # the maintenance note only, joining nothing
-$ eo_join --soft --affiliated   # the same, naming this ecosystem, held to nothing
+$ eo_join          # join, and say so on the front page
+$ eo_join --soft   # work with this ecosystem, held to none of it
 ```
 
 **The answer to *should we join* is often no.** A tool with conventions of its
 own, or maintainers who have agreed to none of this, is worse off adopting a
-policy it did not choose — which is what `--soft` is for. Every form opens by
+policy it did not choose — which is what `--soft` is for. Both forms open by
 asking whether the repository is the runner's alone to speak for, because a
 declaration on a shared tree is not one maintainer's to make, and commit access
 is capability rather than voice.
 
-### The four forms, and how they differ
+### The two forms, and how they differ
 
 **`eo_join`** declares membership on the README, adds the pinned `anoieu /
 policy` workflow, and runs the checker.
 
-**`eo_join --associate`** takes the **`associate`** footing. The repository
-holds itself to the policy on its own `docs/maintenance.md`, adds no front-page
-declaration, and **owes this ecosystem nothing.** Both halves matter and the
-second is the one a reader gets wrong: an associate is not a quieter member. The
-obligation is self-imposed and answered to by the repository alone; the check
-runs and prints a result, and that result is **a measurement rather than a
-shortfall** — a failure is nobody's fault and counts toward nothing. The marker
-is read strictly all the same, which is not a contradiction: strictness is the
-difference between a claim somebody can check and a word.
+**`eo_join --soft`** adds one README section and stops: no membership, no
+workflow, no checker. The note says the repository **works with** the Eunoia
+ecosystem and is **not held to** its policy — it adopts none of it, it is not
+checked against it, and an assessment published by a tool here is that tool's own
+work. **Naming an ecosystem and joining it are different claims**, and the
+refusal is stated rather than implied: a note that named us and said nothing else
+would be read as a declaration by everybody who has ever seen one.
 
-**`eo_join --soft`** adds the maintenance note and stops: no membership, no
-workflow, no checker, and the note names no other project at all.
+**`--soft` is not the quiet way in, and it is not the safe thing to run on a tree
+you do not own.** It puts our name on somebody else's front page, which is a
+second thing to get agreement for rather than a gentler version of the first.
+What such a tree can carry meanwhile is the bare `## How this repository is
+maintained` heading the policy asks of everybody, naming nobody — and that needs
+no command and no agent, which is why one is no longer offered for it.
 
-**`eo_join --soft --affiliated`** is the same note naming this ecosystem as one
-the repository works with, and saying it is **not** held to the policy. On a tree
-we do not own that is a second thing to ask agreement for, not a gentler version
-of the first.
+### It had four forms until 2026-09-18
+
+`--associate` wrote a footing marker, plain `--soft` wrote a note naming no other
+project at all, and `--soft --affiliated` wrote the one `--soft` writes now. Four
+commands for what a reader experiences as one question — *what does this
+repository say about us* — and a chooser who gets it wrong writes the wrong claim
+onto a front page. **The maintainer collapsed them**; both removed flags are
+refused with a line saying what happened rather than *unknown option*, because
+pages this repository does not own still name them.
+
+**The soft note claims no footing, and that is deliberate.** Three of the
+office's documents give `associate` two incompatible readings — `policy.md`'s
+footings table has an associate *held to the policy by its own choice*, the
+register's blurb has one *held to none of this*, and anoieu's checker records
+that the word changed meaning under both. So the note says what the repository is
+held to, which is nothing, and does not reach for a word whose meaning is
+somebody else's to settle. **[`D17`](../docs/discussion.md) says all of this to
+kanon**, including that the order was backwards: koine has no standing over what
+joining costs, and changed the command first.
 
 ## eo_respond
 
@@ -269,6 +287,111 @@ under five hundred and to two paragraphs.
 
 **The finished prompt is refilled to one width before it is sent**, being
 assembled from fragments each wrapped at whatever width it was written at.
+
+## eo_topic
+
+```console
+$ eo_topic kanon           # raise something with kanon
+$ eo_topic anoieu logos    # one topic, addressed to both
+```
+
+Run it at the root of **your** repository, naming who the topic is for. It writes
+`docs/discussion.md` here and stages it; their tree is read and never written.
+
+**It does not take the topic on the command line: it asks you, and waits.** What
+you want from somebody else is the one thing in a topic that cannot be read off a
+tree, and correspondence typed at a shell prompt is one line long — which costs
+its reader more than it saves you. `--print` is refused for the same reason:
+a non-interactive run has nobody to ask.
+
+**What it carries instead is everything mechanical**, which is the half a person
+gets wrong: today's date, the commit their tree is at and whether it was dirty
+when you read it, and **the next free id** — allocated above the highest this
+repository ever issued, *including topics since removed*, which live in Git
+history and nowhere else. Only `## Dn`, the heading of a topic we opened, counts
+toward it: a `### `Dn`` inside a reply is somebody else's number being answered,
+and counting those would issue one of ours twice.
+
+**A finding is not a topic**, and the policy's test is mechanical: if what you
+want to say has a file and a line number, it goes through the reporting workflow
+instead. The prompt applies that test before it writes anything, and stops.
+
+**Nothing is sent.** Addressing is not contacting: writing a topic costs us
+nothing of theirs, carrying it spends somebody's afternoon, and that is a
+person's decision every time.
+
+## eo_child
+
+```console
+$ eo_child euthyna                  # start tools/euthyna/ here
+$ eo_child --unadvertised euthyna   # ...and link inward to it from nothing
+```
+
+Run it at the root of **your** repository. A child project is `tools/X/`, where
+`X` names a **potential tool** — an artifact that might one day be worth
+building, investigated by writing it down first.
+
+**Naming it is what starts it.** The policy's first rule for a child is that a
+human starts one and a human ends one: no agent, script or workflow creates
+`tools/X/` on its own initiative, because a child is a claim on attention and a
+name in a shared namespace, cheap to spend and expensive to withdraw. A run with
+no name is refused in argv — the person typing the name **is** the decision the
+rule reserves.
+
+**The charter is asked for, never invented.** What question the child is for and
+what it will not do is the whole of what a charter says, and an assistant that
+supplied them would be starting a child project on its own initiative with
+somebody else's name on it. So the prompt asks and waits — and `--print` is
+refused, having nobody to ask.
+
+**It is an island, and the prompt says so before anything else.** The child reads
+whatever it likes and writes only inside its own directory: nothing on the import
+path, nothing in the parent's test suite, nothing in its CI. **Deleting the
+directory is the test** — if removing it changes what the tool does or what CI
+says, the coupling is a defect rather than something to document. A prompt that
+let an assistant wire the child up would produce exactly that coupling on day one.
+
+**The register is not written here.** Which children exist is recorded in the
+president's `ecosystem.json`, that file is the office's, and a status is changed
+by a person: the prompt says what the entry would say and writes nowhere but this
+tree.
+
+## eo_brainstorm
+
+```console
+$ eo_brainstorm                       # what could this tool do next?
+$ eo_brainstorm proof reconstruction  # start from somewhere in particular
+```
+
+Run it at the root of your own repository. **It is the one command here that
+changes nothing**: every tree on the machine is read, and the only thing written
+is `brainstorm.local.md` at that root, which `*.local.md` keeps out of the
+record. Nothing is staged, nothing is committed, no topic is opened.
+
+**That is the whole of why it is worth running.** An idea is cheap and most ideas
+are wrong, so the value is that being wrong costs a file somebody deletes. A
+generator that edited the tree would be one nobody ran twice, and its output
+would arrive mixed into a diff where an idea is indistinguishable from a fix.
+
+**Cutting edge is a claim about somebody else's tree, so the prompt sends an
+assistant to read one.** What is new is new against what cvc5 produces *now* and
+against what the other tools here already do — both on this disk, neither in a
+model's memory, where the state of the art is as old as the training data. So the
+cvc5 checkout and the neighbours are named, every idea says what it was read out
+of, and anything resting on memory or the network says it is a guess. Where cvc5
+is not checked out, the prompt says so and asks for the claims about it to be
+marked.
+
+**A proposal is not an approval.** The policy breaks one composition on purpose:
+notice a gap, argue a tool should exist, take a name, write a README — every step
+defensible, the whole of it not, because opening a repository is irreversible and
+outward-facing. Work that would be a new tool starts as a **child project** under
+`tools/`, which is cheap and retirable. This proposes either and creates neither.
+
+**It asks for the rejections too.** The vision says what the arrangement is *for*
+and a README says what its tool refuses to claim, so a list of features with
+nothing ruled out in it is evidence that neither page was read. That is the half
+a brainstorm loses first.
 
 ## eo_status
 

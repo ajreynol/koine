@@ -159,6 +159,7 @@ for r in "${SEARCH[@]}"; do
     ' "$d/scripts/ecosystem/ecosystem.json")
     if [ -n "$PRES" ]; then
       PRES_DIR=$(cd "$d" && pwd)
+      REGISTER="$d/scripts/ecosystem/ecosystem.json"
       # Every name the register knows. A checkout it does not name is somebody's
       # working copy rather than a repository of this ecosystem, and offering it
       # as something to check a claim against is how a claim gets checked
@@ -178,6 +179,48 @@ if [ -n "${KNOWN:-}" ]; then
     case "$KNOWN" in *" $name "*) KEPT="$KEPT$parent $name"$'\n' ;; esac
   done <<< "$FOUND"
   FOUND="$KEPT"
+fi
+
+# Child projects live in `tools/` and are this tree's own code and pages, so
+# they are part of what a run tidies -- and the register is what says which are
+# ours: a directory under `tools/` it does not name is not a child project. It
+# also gives the branch a child's current work is on, which is why a child can be
+# ours and yet not in this checkout. Only the disk is left to read when no
+# register was found, and a repository with no children gets no sentence about
+# children: a prompt pays for every word whether or not it says anything.
+KIDS=""
+if [ -n "${REGISTER:-}" ]; then
+  KIDS=$(awk -v us="$US" '
+    function val(s) { sub(/^[^:]*:[[:space:]]*"/, "", s)
+                      sub(/",?[[:space:]]*$/, "", s); return s }
+    /^  "[^"]+": \{/ { name = $0; sub(/^  "/, "", name); sub(/": \{.*/, "", name)
+                       st = ""; par = ""; pa = ""; br = "" }
+    /^    "status": "/ { st = val($0) }
+    /^    "parent": "/ { par = val($0) }
+    /^    "path": "/   { pa = val($0) }
+    /^    "branch": "/ { br = val($0) }
+    /^  \}/ { if (name != "" && st == "child" && par == us)
+                printf "**%s** (%s%s), ", name, (pa == "" ? "tools/" name : pa),
+                       (br == "" ? "" : ", whose work is on branch " br)
+              name = "" }
+  ' "$REGISTER")
+elif [ -d "$US_ROOT/tools" ]; then
+  for d in "$US_ROOT"/tools/*/; do
+    [ -d "$d" ] || continue
+    KIDS="$KIDS**$(basename "$d")** (tools/$(basename "$d")), "
+  done
+fi
+KIDS=${KIDS%, }
+
+CHILDREN=""
+CHILDWORK=""
+if [ -n "$KIDS" ]; then
+  CHILDREN=" Its **child projects** are $KIDS — this tree's own code and pages
+rather than repositories of their own."
+  CHILDWORK=" **Those child projects are part of all three**: their pages true of
+their own code, their own tooling working — and because a child opens no topic
+and answers none, anything one of them needs from another tool is asked for here,
+as ours."
 fi
 
 if [ -n "$PRES" ] && [ -f "$PRES_DIR/docs/policy.md" ]; then
@@ -231,7 +274,7 @@ You are doing housekeeping in **$US**, at $US_ROOT — one repository of the
 proofs cvc5 produces, sharing one repository policy and written mostly by AI
 agents under light human supervision. $STANDARD Read both, and this repository's
 own \`README.md\` and \`docs/\` for the conventions that are its own; this prompt
-restates none of it. $MECHANICAL $NEARBY
+restates none of it. $MECHANICAL $NEARBY$CHILDREN
 
 **Begin with \`git pull\`.** A checkout that is behind makes true documentation
 read as stale and stale documentation read as true, and makes anything you write
@@ -240,7 +283,7 @@ stop rather than untangling somebody else's merge to get started. **Then, based
 on those pages, your goal is to bring this repository's documentation up to
 date, answer the discussion items other tools have raised with us, and fix any
 bugs in our own tooling**, opening a topic in \`docs/discussion.md\` for any
-request to another tool that arises. The maintainer instructs the discussion work
+request to another tool that arises.$CHILDWORK The maintainer instructs the discussion work
 standing, which is the human instruction those files require; answer only what
 names us, write in no tree but this one, and send nothing anywhere. $CLOSE
 PROMPT_END

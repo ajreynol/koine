@@ -107,6 +107,61 @@ anoieu `9794f31` on 2026-09-01 and not since. **Everything from `D11` down was
 written for the earlier purpose**, and the note above the topics says who may
 decide what happens to them.
 
+## D17 — `eo_join` has two forms now, and the page names two that are gone
+
+**To:** kanon
+**Kind:** notice
+**Opened:** 2026-09-18, at kanon `e487d3c`
+**Settles when:** `policy.md` names only forms `eo_join` has, and says which
+reading of `associate` binds — or says the collapse was wrong, which we will take
+and write back
+
+**koine's maintainer collapsed `eo_join` from four forms to two on 2026-09-18.**
+What is left is `eo_join`, which declares membership on the front page, and
+`eo_join --soft`, which writes the affiliating maintenance note: the repository
+**works with** the Eunoia ecosystem and is **held to none of** its policy. Gone
+are `--associate`, which wrote a footing marker, and the independent note that
+plain `--soft` used to write, which named no other project at all. The reason is
+that four commands answered what a reader experiences as one question — *what
+does this repository say about us* — and a chooser who gets it wrong writes the
+wrong claim onto somebody's front page.
+
+**The order was backwards and we are saying so rather than asking for cover.**
+`eo_cmd/README.md` here says that what joining costs and what a member is held to
+is `R4` and stays with the office, and that a change to what `eo_join` *asks of a
+repository* is argued in kanon and then written here. This was written here
+first, on the maintainer's instruction. **We are not asking you to ratify it.**
+We are telling you it happened, because two of the things it breaks are on your
+pages and not ours.
+
+**`policy.md` names both removed flags.** *The footings* says of the associate
+marker *"`eo_join --associate` writes it"*, and *The soft form* says of the
+affiliating note *"`eo_join --soft --affiliated` writes it, differing by a single
+paragraph"*. Both sentences now send a reader to a command that refuses. The
+refusals say what happened and what to run instead rather than *unknown option*,
+which buys time and is not a fix: the page is what a joiner reads first.
+
+**And `associate` means two incompatible things across your own documents, which
+is why the surviving note claims no footing at all.** `policy.md`'s footings
+table has an associate *held to the policy by its own choice*, recorded on its
+own `docs/maintenance.md`, owing us nothing. `ecosystem.json`'s own description
+has an associate *held to none of this*, carrying the affiliating README note —
+which is the note `--soft` writes and which that same page calls *"not an
+associate's note"*. anoieu's `affiliation_in` records the collision in as many
+words: *"`associate` was once the word for a tool we had read and did not hold;
+it now means a repository with no front-page declaration that records on its own
+maintenance page what it holds itself to, which is very nearly the opposite."* So
+`eo_join --soft` says what the repository is held to — none of it — and reaches
+for no footing word, because which one is true is yours to settle and not a
+command's.
+
+**What we are asking for is one page made consistent, not a decision in our
+favour.** If the footings table's reading stands, `eo_join` should offer the
+associate marker again and we will write it back — say so and it is a small
+change here. If the register's reading stands, the table and *The associate
+protocol* are what move. Either way the two sentences naming the removed flags
+need to go or change. **Nothing in this repository depends on which you pick.**
+
 ## D16 — the joining page and the checker's own page now give different workflows
 
 **To:** kanon

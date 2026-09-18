@@ -42,6 +42,20 @@ def ok(name, condition):
     check(name, bool(condition), True)
 
 
+def concrete(args):
+    """A manifest form's placeholders, as arguments a run can actually take.
+
+    `<path>` wants a tree that exists and is read even when not previewing;
+    `<name>` a repository beside this one; `<Dn>` a topic id; `<focus>` free
+    text. One place decides these because both tests below need the same
+    answer, and the mapping was written twice before there was a third
+    placeholder to get wrong.
+    """
+    return [ROOT if a == "<path>" else "kanon" if a == "<name>"
+            else "D1" if a == "<Dn>" else "proofs" if a == "<focus>" else a
+            for a in args]
+
+
 def show(command, *args):
     """What this form would hand an assistant."""
     return subprocess.run([os.path.join(STORE, command), *args, "--show-prompt"],
@@ -116,8 +130,7 @@ def test_every_advertised_form_runs():
     for name, command, args in forms():
         # `from-child` needs a directory that exists; any tree will do, and it
         # is read rather than written even when the command is not previewing.
-        args = [ROOT if a == "<path>" else "kanon" if a == "<name>"
-                else "D1" if a == "<Dn>" else a for a in args]
+        args = concrete(args)
         out = show(command, *args)
         label = " ".join([command, *args]) if args else command
         check(f"{label} exits 0", out.returncode, 0)
@@ -126,19 +139,44 @@ def test_every_advertised_form_runs():
 
 
 def test_refusals():
-    print("forms that contradict each other")
-    both = subprocess.run([os.path.join(STORE, "eo_join"), "--associate", "--soft"],
-                          capture_output=True, text=True)
-    check("--associate with --soft is refused", both.returncode, 2)
-    ok("and says why", "claims nothing" in both.stderr)
+    """Runs that are refused, and the two kinds of refusal.
 
-    bare = subprocess.run([os.path.join(STORE, "eo_join"), "--affiliated"],
-                          capture_output=True, text=True)
-    check("--affiliated without --soft is refused", bare.returncode, 2)
+    A form that never existed gets *unknown option*. **A form that did exist
+    gets an explanation**: `--associate` and `--soft --affiliated` were
+    `eo_join` until 2026-09-18, they are named in pages this repository does not
+    own, and a person who read one of those pages and typed what it says is owed
+    more than a usage block.
+    """
+    print("runs that are refused")
+    for flag, said in (("--associate", "is gone"), ("--affiliated", "is gone")):
+        out = subprocess.run([os.path.join(STORE, "eo_join"), flag],
+                             capture_output=True, text=True)
+        check(f"eo_join {flag} is refused", out.returncode, 2)
+        ok(f"and says what happened to it", said in out.stderr)
+        ok(f"and says what to run instead", "eo_join --soft" in out.stderr)
+        ok(f"and prints no prompt", out.stdout.strip() == "")
 
     mode = subprocess.run([os.path.join(STORE, "eo_init")],
                           capture_output=True, text=True)
     check("eo_init with no mode is refused", mode.returncode, 2)
+
+    for command, args, why in (
+            ("eo_topic", [], "addressed to nobody"),
+            ("eo_child", [], "A human starts a child project"),
+            ("eo_child", ["tools/x"], "one path segment")):
+        out = subprocess.run([os.path.join(STORE, command), *args],
+                             capture_output=True, text=True)
+        label = " ".join([command, *args])
+        check(f"{label} is refused", out.returncode, 2)
+        ok(f"and says why", why in out.stderr)
+
+    # Both ask a person something before they write, so both refuse the form
+    # that has nobody to ask.
+    for command in ("eo_topic", "eo_child"):
+        out = subprocess.run([os.path.join(STORE, command), "x", "--print"],
+                             capture_output=True, text=True)
+        check(f"{command} --print is refused", out.returncode, 2)
+        ok(f"{command} says it has nobody to ask", "nobody to ask" in out.stderr)
 
 
 def test_no_prompt_names_a_command_that_is_gone():
@@ -150,8 +188,7 @@ def test_no_prompt_names_a_command_that_is_gone():
     """
     print("no prompt names a command or page that moved")
     for name, command, args in forms():
-        args = [ROOT if a == "<path>" else "kanon" if a == "<name>"
-                else "D1" if a == "<Dn>" else a for a in args]
+        args = concrete(args)
         text = show(command, *args).stdout
         label = " ".join([command, *args]) if args else command
         ok(f"{label} does not say join_eo", not re.search(r"\bjoin_eo\b", text))
@@ -160,50 +197,58 @@ def test_no_prompt_names_a_command_that_is_gone():
            "kanon/blob/main/prompts/" not in text)
 
 
-def test_associate_says_what_the_footing_needs():
-    """The `associate` footing, as the policy page defines it.
+def test_the_soft_form_names_us_and_claims_nothing():
+    """The one soft form, and the two claims it has to keep apart.
 
-    The two halves are both load-bearing and the second is the one a reader
-    gets wrong: an associate holds *itself* to the policy and owes this
-    ecosystem nothing. A prompt that said only the first would produce a
-    quieter member, which is the reading the footings table exists to refuse.
+    It says the repository **works with** this ecosystem and is **held to none
+    of** its policy. A note that named us and said nothing else would be read as
+    a declaration by everybody who has ever seen one, so the refusal is stated
+    rather than implied -- and the note claims no footing at all, because
+    `associate` means two incompatible things across the office's own pages and
+    this command does not get to settle which.
+
+    It also may not be sold as the safe option for a tree somebody else owns:
+    it writes our name onto that tree's front page.
     """
-    print("the associate form")
-    text = show("eo_join", "--associate").stdout
-    ok("names the footing", "`associate`" in text)
-    ok("puts it on the maintenance page", "docs/maintenance.md" in text)
-    ok("says the repository holds itself to the policy", "holds itself to" in text)
-    ok("names the policy", "polic" in text.lower())
-    ok("says the ecosystem is owed nothing", "owes that ecosystem nothing" in text)
-    ok("says a failure is nobody's fault", "nobody's fault" in text)
-    ok("distinguishes measurement from shortfall", "measurement" in text)
-    ok("asks for the reason, which the checker requires", "reason" in text.lower())
-    ok("forbids a README declaration",
-       "add no membership declaration" in text.lower())
-    ok("sends a tree held to none of this to --soft", "eo_join --soft" in text)
+    print("the soft form")
+    text = show("eo_join", "--soft").stdout
+    low = text.lower()
+    ok("names the ecosystem", "eunoia ecosystem" in low)
+    ok("says it is held to none of the policy", "not held to" in text)
+    ok("says it is joining nothing", "joining nothing" in text)
+    ok("declares no membership", "declare membership of nothing" in text)
+    ok("adds no workflow and runs no checker",
+       "add no workflow file, run no checker" in low)
+    ok("claims no footing", "claims no footing" in text)
+    ok("and forbids writing the word in", "Do not write `associate`" in text)
+    ok("asks whether the tree is the runner's to speak for",
+       "solely\nthe runner's to speak for" in text or
+       "solely the runner's to speak for" in " ".join(text.split()))
+    ok("and does not offer itself as the way around agreement",
+       "How this repository is maintained` heading" in text)
     ok("cites the office's page as the authority",
        "kanon/blob/main/docs/policy.md" in text)
-    ok("asks for a README with a maintenance section",
-       "How this repository is maintained" in text)
-    ok("recommends the name explanation without requiring it",
-       "Strongly recommended, and not required" in text)
-    ok("and says that recommendation may be skipped", "Skip it freely" in text)
+    ok("and says where the command itself can be read",
+       "koine/blob/main/eo_cmd/eo_join" in text)
 
 
-def test_the_dictated_marker_passes_the_checker():
-    """The marker this prompt dictates, read by the program that reads it.
+def test_the_soft_note_the_prompt_asks_for_passes_the_checker():
+    """What the prompt asks for, read by the program that reads such notes.
 
-    The prompt spells out a `**Footing:**` line for an assistant to copy. That
-    line is checked by anoieu's `associate_in`, which requires an obligation
-    named, the policy named, and no refusal of it -- three conditions a
-    plausible-sounding sentence can miss. Testing the prompt's own example
-    against the real checker is the only thing that keeps the two in step.
+    anoieu's `affiliation_in` decides whether a maintenance note names this
+    ecosystem and says the repository is not held to the policy -- the two
+    halves that keep it from reading as a declaration. The prompt does not
+    dictate the paragraph, because the office's page owns that template and a
+    copy here would be the drift this ecosystem is built to notice; what is
+    checked instead is that **what the prompt asks for satisfies the reader**,
+    by building the minimal note it describes and putting it through the real
+    checker.
 
     Skipped where anoieu is not beside this checkout: a test that needs
-    somebody else's tree to pass is a test that fails for reasons that are not
+    somebody else's tree to pass is one that fails for reasons that are not
     about this repository.
     """
-    print("the marker the prompt dictates")
+    print("the note the prompt asks for, through anoieu's reader")
     checker = os.path.join(os.path.dirname(ROOT), "anoieu", "scripts",
                            "policy_check.py")
     if not os.path.exists(checker):
@@ -217,16 +262,25 @@ def test_the_dictated_marker_passes_the_checker():
     pc = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(pc)
 
-    text = show("eo_join", "--associate").stdout
-    # The indented block the prompt tells an assistant to write.
-    block = re.search(r"\n((?:       \S.*\n)+)", text)
-    ok("the prompt spells out a marker", block is not None)
-    if not block:
-        return
-    marker = "\n".join(line.strip() for line in block.group(1).splitlines())
-    marker += "\nIt is not on the front page because this is one person's tree."
-    problems = pc.associate_in(marker)
-    check("the dictated marker satisfies associate_in", problems, [])
+    text = show("eo_join", "--soft").stdout
+    ok("the prompt asks for the section the reader looks in",
+       "How this repository is maintained" in text)
+    note = ("# A tool\n\n## How this repository is maintained\n\n"
+            "It is written and maintained by people.\n\n"
+            "It works with the Eunoia ecosystem and is not held to that\n"
+            "ecosystem's repository policy: it adopts none of it, it is not\n"
+            "checked against it, and it speaks only for itself.\n")
+    check("a note of what it asks for satisfies affiliation_in",
+          pc.affiliation_in(note), [])
+    # The half a note gets wrong: naming us and stopping there. Every refusal
+    # goes, not just the words *not held to* -- `adopts none of it` is one of
+    # the phrasings the reader accepts, which is why this is built rather than
+    # edited down.
+    named_only = ("# A tool\n\n## How this repository is maintained\n\n"
+                  "It is written and maintained by people.\n\n"
+                  "It works with the Eunoia ecosystem.\n")
+    ok("and naming us without the refusal does not",
+       pc.affiliation_in(named_only) != [])
 
 
 def test_the_gate_is_in_argv():
@@ -261,6 +315,101 @@ def test_the_gate_is_in_argv():
        "discussion-response.local.md" in worked)
     ok("and nothing is sent", "send nothing anywhere" in worked)
     ok("it stays short enough to be read", len(worked.split()) < 500)
+
+
+def test_topic_asks_for_the_topic_and_computes_the_id():
+    """The two halves of `eo_topic`: it asks for one, and it counts.
+
+    What we want from somebody else cannot be read off a tree, so the prompt
+    asks the person and waits -- and carries nothing of its own, because a
+    command that arrived with a topic in it would be this repository writing
+    correspondence nobody asked for.
+
+    What it does carry is the mechanical half, which is where a person goes
+    wrong: **the next id is above the highest this repository ever issued,
+    including topics since removed**, which are in Git history and nowhere
+    else. Only `## Dn` counts -- a `### `Dn`` inside a reply is somebody else's
+    number being answered, and counting those issues one of ours twice. The
+    number is recomputed here from the same two sources, because a prompt that
+    hands over a wrong id is worse than one that hands over none.
+    """
+    print("eo_topic asks, and counts")
+    flat = " ".join(show("eo_topic", "kanon").stdout.split())
+    ok("it asks the person and waits",
+       "Ask the person running this what they want to say, and wait" in flat)
+    ok("and carries no topic of its own", "You carry no topic of your own" in flat)
+    ok("a finding is not a topic", "it is a finding, not a topic" in flat)
+    ok("Settles when is required and answerable",
+       "required\nand has to be answerable" in show("eo_topic", "kanon").stdout
+       or "required and has to be answerable" in flat)
+    ok("when in doubt it is a request", "in doubt it is a `request`" in flat)
+    ok("never about somebody else's discussion file",
+       "Never open a topic about somebody else's discussion file" in flat)
+    ok("it stages and sends nothing", "nothing is sent anywhere" in flat)
+    ok("addressing is not contacting", "addressing is\nnot contacting" in
+       show("eo_topic", "kanon").stdout or "addressing is not contacting" in flat)
+    ok("it stays short enough to be read", len(flat.split()) < 500)
+
+    # The same two sources the command reads, read again here.
+    ever = set()
+    history = subprocess.run(["git", "log", "-p", "--all", "--", "docs/discussion.md"],
+                             capture_output=True, text=True, cwd=ROOT).stdout
+    page = ""
+    if os.path.exists(os.path.join(ROOT, "docs", "discussion.md")):
+        page = open(os.path.join(ROOT, "docs", "discussion.md"), encoding="utf-8").read()
+    for line in (history + "\n" + page).splitlines():
+        m = re.match(r"\+?## D(\d+)", line)
+        if m:
+            ever.add(int(m.group(1)))
+    check("the id offered is the next one above every id ever issued",
+          f"`D{max(ever) + 1}`" in flat, True)
+    cited = {int(n) for n in re.findall(r"^### `D(\d+)`", page, re.M)}
+    ok("and the ids quoted in replies are not counted as ours",
+       bool(cited - ever))
+
+
+def test_child_is_started_by_a_human_and_stays_an_island():
+    """A child project is somebody's decision and nobody's dependency.
+
+    The policy's first rule is that a human starts one and a human ends one:
+    naming it in argv is that decision, and the charter -- the question it is
+    for, and what it will not do -- is asked of the person rather than written
+    by the assistant, which would be the same rule broken with a person's name
+    on it.
+
+    The second rule is the island. A child writes inside its own directory and
+    nothing else imports it, in the tree or in CI, and **deleting it is the
+    test**. A prompt that let an assistant wire the child up would produce
+    exactly the coupling the rule forbids, on day one.
+    """
+    print("eo_child: a person starts it, and it is an island")
+    flat = " ".join(show("eo_child", "euthyna").stdout.split())
+    ok("the name is the person's and not the assistant's",
+       "that name is theirs and not yours to improve" in flat)
+    ok("a strained name stops the run", "say so and stop" in flat)
+    ok("the charter is asked for", "ask them what question this child is for"
+       in flat)
+    ok("and never invented",
+       "a charter you wrote yourself is you starting a child project" in flat)
+    ok("it names what a charter must carry",
+       "out of scope" in flat and "wishue" in flat)
+    ok("it writes in the child's directory and nowhere else",
+       "and nowhere else in this tree" in flat)
+    ok("nothing imports it, and CI does not see it",
+       "nothing in the test suite, nothing in CI" in flat)
+    ok("deleting it must change nothing",
+       "deleting the directory must change nothing" in flat)
+    ok("the register entry is a person's", "a person writes that entry" in flat)
+    ok("and it opens nothing anywhere", "open nothing anywhere" in flat)
+    ok("it stays short enough to be read", len(flat.split()) < 500)
+
+    advertised = " ".join(show("eo_child", "euthyna").stdout.split())
+    ok("advertised is the default and declares nothing",
+       "Advertised is the default and declares nothing" in advertised)
+    unadv = " ".join(show("eo_child", "--unadvertised", "euthyna").stdout.split())
+    ok("--unadvertised records the footing the readers read",
+       "`unadvertised-child`" in unadv)
+    ok("and asks for the reason with it", "with the reason" in unadv)
 
 
 def test_housekeeping_points_at_the_standard_rather_than_restating_it():
@@ -394,6 +543,90 @@ def test_the_working_prompts_pull_before_they_work():
        "**Change nothing** beyond that pull" in report)
 
 
+def test_housekeeping_takes_in_the_child_projects():
+    """A child project is this tree's code, so it is this run's work.
+
+    `tools/<name>/` holds child projects, which are not repositories: they open
+    no topic and answer none, so a run that tidied only the top level would
+    leave pages nobody else is going to make true and requests nobody else is
+    going to make. The register is what says which children are ours -- a
+    directory under `tools/` it does not name is not a child project -- and it
+    also gives the branch a child's work is on, which is how a child can be ours
+    and not in this checkout.
+
+    Checked against a tree that has children, because this repository has none:
+    the fragment is empty here by design, since a sentence about the children of
+    a repository with none is words a prompt pays for and gets nothing back.
+    """
+    print("child projects are part of the job")
+    flat = " ".join(show("eo_housekeeping").stdout.split())
+    ok("a repository with no children gets no sentence about children",
+       "child project" not in flat)
+
+    parent = os.path.join(os.path.dirname(ROOT), "eudaimonia")
+    if not os.path.isdir(parent):
+        print("  --   no checkout with child projects beside this one; skipped")
+        return
+    out = subprocess.run([os.path.join(STORE, "eo_housekeeping"), "--show-prompt"],
+                         capture_output=True, text=True, cwd=parent)
+    flat = " ".join(out.stdout.split())
+    ok("the children are named where there are any",
+       "**child projects** are" in flat)
+    ok("as this tree's own code rather than repositories",
+       "rather than repositories of their own" in flat)
+    ok("and they are part of the work", "part of all three" in flat)
+    ok("and a child opens no topic, so we open it",
+       "a child opens no topic and answers none" in flat)
+    ok("it is still two paragraphs",
+       len([p for p in out.stdout.split("\n\n") if p.strip()]) == 2)
+    ok("and still short enough to be read", len(flat.split()) < 500)
+
+
+def test_brainstorm_changes_nothing_and_says_what_new_is_measured_against():
+    """The command that looks forward, and the two ways it goes wrong.
+
+    An idea is cheap and most are wrong, so the whole value of this one is that
+    being wrong in it costs a file somebody deletes: the deliverable is
+    `brainstorm.local.md`, which `*.local.md` keeps out of the record, and
+    nothing else is touched. A generator that edited the tree would be one
+    nobody ran twice.
+
+    The other failure is subtler. *Cutting edge* is a claim about somebody
+    else's tree, and a model asked for one from memory answers as of its
+    training data -- so the prompt names the cvc5 checkout and the neighbours,
+    and asks each idea what it was read out of. And because the policy breaks
+    the path from *a tool should exist* to *a repository exists* on purpose, the
+    prompt proposes and creates neither.
+    """
+    print("brainstorm: reads everything, writes one ignored file")
+    for args in ([], ["proof", "reconstruction"]):
+        label = " ".join(["eo_brainstorm", *args]) or "eo_brainstorm"
+        flat = " ".join(show("eo_brainstorm", *args).stdout.split())
+        ok(f"{label} writes the list where the record does not keep it",
+           "`brainstorm.local.md`" in flat)
+        ok(f"{label} changes nothing else",
+           "change nothing else**: nothing staged, nothing committed, "
+           "no topic opened" in flat)
+        ok(f"{label} sends nothing anywhere", "send nothing anywhere" in flat
+           or "nothing sent anywhere" in flat)
+        ok(f"{label} sends it to the vision", "vision.md" in flat)
+        ok(f"{label} measures new against cvc5 as it is now", "cvc5" in flat)
+        ok(f"{label} asks what each idea was read out of",
+           "read it out of" in flat)
+        ok(f"{label} asks what is ruled out too", "rule out" in flat)
+        ok(f"{label} proposes a repository and opens none",
+           "propose either, create neither" in flat)
+        ok(f"{label} stays short enough to be read", len(flat.split()) < 500)
+        ok(f"{label} is two paragraphs",
+           len([p for p in show("eo_brainstorm", *args).stdout.split("\n\n")
+                if p.strip()]) == 2)
+
+    focused = " ".join(show("eo_brainstorm", "proof", "reconstruction").stdout.split())
+    ok("a focus is quoted back whole", '"proof reconstruction"' in focused)
+    ok("and may honestly come back empty",
+       "nothing there worth building" in focused)
+
+
 def test_housekeeping_names_the_president_it_was_told_of():
     """Who holds the office is read, never written in.
 
@@ -504,13 +737,17 @@ def main():
                  test_only_prompts_take_show_prompt,
                  test_every_advertised_form_runs, test_refusals,
                  test_no_prompt_names_a_command_that_is_gone,
-                 test_associate_says_what_the_footing_needs,
-                 test_the_dictated_marker_passes_the_checker,
+                 test_the_soft_form_names_us_and_claims_nothing,
+                 test_the_soft_note_the_prompt_asks_for_passes_the_checker,
                  test_the_gate_is_in_argv,
+                 test_topic_asks_for_the_topic_and_computes_the_id,
+                 test_child_is_started_by_a_human_and_stays_an_island,
                  test_housekeeping_points_at_the_standard_rather_than_restating_it,
                  test_housekeeping_states_the_goal_and_ends_on_ci,
                  test_housekeeping_says_the_discussion_gate_is_overridden,
                  test_the_working_prompts_pull_before_they_work,
+                 test_housekeeping_takes_in_the_child_projects,
+                 test_brainstorm_changes_nothing_and_says_what_new_is_measured_against,
                  test_housekeeping_names_the_president_it_was_told_of,
                  test_help_says_why_and_where,
                  test_runs_as_an_installed_copy):

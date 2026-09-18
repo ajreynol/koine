@@ -1,0 +1,254 @@
+#!/usr/bin/env bash
+# eo_child -- start a child project, `tools/<name>/`, in this repository.
+#
+# WHERE: run it at the root of YOUR repository. The child is written here, in
+#        its own directory and nowhere else in the tree.
+#
+# **THE NAME IS REQUIRED, AND IT IS THE GATE.** The policy's first rule for a
+#        child project is that **a human starts one and a human ends one** -- no
+#        agent, script or workflow creates `tools/X/` on its own initiative,
+#        because a child is a claim on attention and a name in a shared
+#        namespace, cheap to spend and expensive to withdraw. A run with no name
+#        is refused in argv rather than asking a prompt to behave: the person
+#        typing the name **is** the decision the rule reserves, and nothing else
+#        in this file substitutes for it.
+#
+# **AND THE CHARTER IS ASKED FOR, NEVER INVENTED.** What question the child is
+#        for, and what it will not do, is the whole of what a charter says, and
+#        an assistant that supplied them would be starting a child project on
+#        its own initiative with a person's name on it. So the prompt asks and
+#        waits. That is also why `--print` is refused: a non-interactive run has
+#        nobody to ask.
+#
+# **IT IS AN ISLAND, AND THE COMMAND SAYS SO BEFORE IT SAYS ANYTHING ELSE.** A
+#        child reads whatever it likes and writes only inside its own directory:
+#        nothing on the import path, nothing in the parent's test suite, nothing
+#        in its CI, no link inward from anything a user reads. The policy's test
+#        is deletion -- if removing `tools/X/` changes what the tool does or what
+#        CI says, the coupling is a defect. A prompt that let an assistant "wire
+#        it up" would produce exactly that coupling on day one.
+#
+# WHAT IT DOES NOT DO: the register. Which children exist is recorded in the
+#        president's `ecosystem.json`, that file is the office's, and **a status
+#        is changed by a person**. The prompt says what the entry would say and
+#        writes nowhere but this tree.
+#
+# THE PRESIDENT IS LOOKED UP, NEVER WRITTEN IN. The register says who holds the
+#        office and lives in the office's tree, so finding the file is finding
+#        the president. Duplicated from the other commands on purpose: each is
+#        installed as one file and may import nothing from beside it.
+
+set -euo pipefail
+
+AGENT=claude
+PRINT=0
+SHOW=0
+UNADV=0
+NAME=""
+
+usage() {
+  # --help is a request: stdout, exit 0. A mistake is stderr, 2.
+  local out=1 code=0
+  if [ "${1:-}" = "error" ]; then out=2 code=2; fi
+  cat >&$out <<'USAGE'
+eo_child -- start a child project of the Eunoia ecosystem, tools/<name>/, in
+this repository.
+
+Run it at the root of your own repository. A child project is a potential tool
+investigated by writing it down first: it reads the ecosystem, writes only
+inside its own directory, and is not part of what this repository ships.
+
+usage: eo_child [--unadvertised] [--codex] [--show-prompt] NAME
+
+  NAME            what the child is called. **Required**
+  --unadvertised  record the unadvertised-child footing, with your reason, so
+                  nothing here links inward to it. The default is advertised
+  --codex         run codex instead of claude
+  --show-prompt   print the prompt and exit, running nothing
+
+**Naming it is what starts it.** The policy's first rule for a child is that a
+human starts one and a human ends one, so a run with no name is refused rather
+than turned into a guess -- a name in a shared namespace is cheap to spend and
+expensive to withdraw.
+
+**The charter is asked for, not invented.** What question the child is for and
+what it will not do come from the person running this; an assistant that wrote
+them would be starting a child project on its own initiative with somebody
+else's name on it. --print is refused for the same reason: it has nobody to ask.
+
+**It is an island.** It writes inside tools/NAME/ and nowhere else: nothing on
+the import path, nothing in the test suite, nothing in CI. Deleting the
+directory is the test.
+USAGE
+  exit $code
+}
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --unadvertised) UNADV=1; shift ;;
+    --codex) AGENT=codex; shift ;;
+    --claude) AGENT=claude; shift ;;
+    --show-prompt) SHOW=1; shift ;;
+    --print)
+      echo "eo_child: --print is refused. The charter -- the question this child" >&2
+      echo "         is for, and what it will not do -- is asked of the person" >&2
+      echo "         running this; a non-interactive run has nobody to ask." >&2
+      exit 2 ;;
+    -h|--help) usage ;;
+    -*) echo "eo_child: unknown option $1" >&2; usage error ;;
+    *) if [ -z "$NAME" ]; then NAME="$1"
+       else echo "eo_child: one child at a time -- $NAME was already named" >&2
+            usage error
+       fi; shift ;;
+  esac
+done
+
+[ -n "$NAME" ] || {
+  echo "eo_child: name the child. A human starts a child project and a human" >&2
+  echo "         ends one -- the policy reserves that, and typing the name is" >&2
+  echo "         the decision it reserves. Nothing here guesses one." >&2
+  exit 2; }
+
+case "$NAME" in
+  */*|.*)
+    echo "eo_child: $NAME is not a name -- children live at tools/<name>/ and the" >&2
+    echo "         name is one path segment" >&2
+    exit 2 ;;
+esac
+
+if ! US_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); then
+  if [ "$SHOW" = 0 ]; then
+    echo "eo_child: not in a git repository -- run this at the root of the" >&2
+    echo "         repository the child belongs to. The work is left staged," >&2
+    echo "         which needs somewhere to stage it." >&2
+    exit 2
+  fi
+  US_ROOT=$(pwd)
+fi
+US=$(basename "$US_ROOT")
+
+[ ! -e "$US_ROOT/tools/$NAME" ] || {
+  echo "eo_child: tools/$NAME already exists. A child is started once; what" >&2
+  echo "         happens to one after that -- graduate, fold, retire -- is a" >&2
+  echo "         person's to pick, and none of it is this command." >&2
+  exit 2; }
+
+IFS=: read -ra ROOTS <<< "${ANOIEU_REPOS:-}"
+SEARCH=()
+for r in "${ROOTS[@]}" "$(dirname "$US_ROOT")" "$HOME"; do
+  [ -n "$r" ] && [ -d "$r" ] && SEARCH+=("$r")
+done
+
+PRES=""
+PRES_DIR=""
+for r in "${SEARCH[@]}"; do
+  for d in "$r"/*/; do
+    [ -f "$d/scripts/ecosystem/ecosystem.json" ] || continue
+    PRES=$(awk '
+      /^  "[^"]+": \{/ { n = $0; sub(/^  "/, "", n); sub(/": \{.*/, "", n) }
+      /"status"[[:space:]]*:[[:space:]]*"president"/ { print n; exit }
+    ' "$d/scripts/ecosystem/ecosystem.json")
+    [ -n "$PRES" ] && PRES_DIR=$(cd "$d" && pwd)
+    break 2
+  done
+done
+
+if [ -n "$PRES" ] && [ -f "$PRES_DIR/docs/policy.md" ]; then
+  STANDARD="Its **president** is **$PRES**, at \`$PRES_DIR\`, and holds the standard:
+\`docs/policy.md\`, whose **Child projects** section is what binds this — what a
+child is for, the island rule, what the name has to do, and what a charter must
+name."
+else
+  STANDARD="Its **president** holds the standard — \`docs/policy.md\`, whose **Child
+projects** section is what binds this — and there is no checkout of it here; take
+it from the link this repository's own README carries."
+fi
+
+# The glossary registers the names already in use. A name is a claim in a shared
+# namespace, so the one mechanical thing that can be checked before it is spent
+# is whether somebody has already spent it.
+GLOSSARY=""
+[ -n "$PRES_DIR" ] && [ -f "$PRES_DIR/docs/glossary.md" ] &&
+  GLOSSARY=" **$PRES's \`docs/glossary.md\` registers the names in use**, and
+\`$PRES_DIR/scripts/ecosystem/ecosystem.json\` records which children exist: read
+both before spending **$NAME**."
+
+# The children already here are the local precedent for what a charter reads
+# like, which is worth more than any description of one.
+SIBLINGS=""
+if [ -d "$US_ROOT/tools" ]; then
+  for d in "$US_ROOT"/tools/*/; do
+    [ -d "$d" ] || continue
+    SIBLINGS="$SIBLINGS\`tools/$(basename "$d")\`, "
+  done
+fi
+SIBLINGS=${SIBLINGS%, }
+if [ -n "$SIBLINGS" ]; then
+  SIBLINGS=" This repository already carries $SIBLINGS — read one before writing
+this one: what a charter here reads like is better evidence than any description
+of one."
+fi
+
+if [ "$UNADV" = 1 ]; then
+  ADVERTISE="**The runner asked for this child to be unadvertised**, so record
+**Footing:** \`unadvertised-child\` in its own README with the reason, and add no
+entry, row, link or mention anywhere a reader of **$US** would find it: the
+directory listing of \`tools/\` is how it is discovered."
+else
+  ADVERTISE="**Advertised is the default and declares nothing**, so write no
+footing line and no sentence saying it is advertised — and equally do not link
+inward to it from the front page or the docs index on your own initiative; what
+**$US** advertises is the maintainer's call, made later and separately."
+fi
+
+read -r -d '' PROMPT <<PROMPT_END || true
+You are starting a child project called **$NAME** in **$US**, at $US_ROOT — one
+repository of the **Eunoia ecosystem**, a group of tools built around the Eunoia
+language and the proofs cvc5 produces, sharing one repository policy and written
+mostly by AI agents under light human supervision. $STANDARD Read it, and this
+repository's own \`README.md\` and \`docs/\` for what this tool knows and what it
+has already learned; this prompt restates none of it.$GLOSSARY$SIBLINGS
+
+**A human starts a child project, and the person running this named $NAME — so
+that name is theirs and not yours to improve.** If it is already in use, or you
+cannot write its etymology in a sentence somebody could disagree with, **say so
+and stop**: a strained name means the scope is not decided yet, and that is worth
+finding out now. **Then ask them what question this child is for and what it must
+not do, and wait for the answer** — a charter you wrote yourself is you starting
+a child project with somebody else's name on it, which is the one thing the
+policy's first rule refuses. With that: write \`tools/$NAME/README.md\`, charter
+first — the question, the goals in order, the wishue if there is one, and the
+explicit list of what is **out of scope** — with the etymology, what evidence in
+**$US** this builds on, and who remains the authority on any subject it also
+describes. $ADVERTISE **Write inside \`tools/$NAME/\` and nowhere else in this
+tree**: nothing on the import path, nothing in the test suite, nothing in CI —
+deleting the directory must change nothing — and leave it staged. The register of
+which children exist is the president's and **a person writes that entry**: say
+what it would say, and open nothing anywhere.
+PROMPT_END
+
+wrapped() {
+  if command -v fmt >/dev/null 2>&1; then
+    printf '%s\n' "$PROMPT" | awk -v RS='' '
+      NR > 1 { printf "\n" }
+      { cmd = "fmt -w 78"; print | cmd; close(cmd) }' \
+      | sed 's/\([.!?:;]\)  */\1 /g'
+  else
+    printf '%s\n' "$PROMPT"
+  fi
+}
+
+if [ "$SHOW" = 1 ]; then wrapped; exit 0; fi
+PROMPT=$(wrapped)
+
+command -v "$AGENT" >/dev/null 2>&1 || {
+  echo "eo_child: $AGENT is not on PATH" >&2; exit 127; }
+
+WHAT="advertised"
+[ "$UNADV" = 1 ] && WHAT="unadvertised"
+echo "-- eo_child: tools/$NAME in $US ($US_ROOT), $WHAT, via $AGENT" >&2
+[ -n "$PRES_DIR" ] && echo "--   the standard: $PRES, at $PRES_DIR/docs" >&2
+echo "--   it will ask you what the child is for before it writes anything" >&2
+
+cd "$US_ROOT"
+if [ "$AGENT" = codex ]; then exec codex "$PROMPT"; else exec claude "$PROMPT"; fi

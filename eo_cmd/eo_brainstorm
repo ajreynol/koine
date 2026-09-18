@@ -1,0 +1,302 @@
+#!/usr/bin/env bash
+# eo_brainstorm -- read the standard, then look for what this tool could do next.
+#
+# WHERE: run it at the root of YOUR repository. It is the one command here that
+#        changes nothing: every tree on the machine is read, including this one,
+#        and the only thing written is `brainstorm.local.md` at this root, which
+#        `*.local.md` keeps out of the record.
+#
+# **WHY IT WRITES NOTHING ELSE, which is the whole of why it is worth running.**
+#        An idea is cheap and most ideas are wrong, so the value of this command
+#        is that being wrong in it costs a file somebody deletes. A generator
+#        that edited the tree would be one nobody ran twice, and its output
+#        would arrive mixed into a diff where an idea is indistinguishable from
+#        a fix. Nothing is staged, nothing is committed, no topic is opened.
+#
+# **CUTTING EDGE IS A CLAIM ABOUT SOMEBODY ELSE'S TREE, so the prompt sends an
+#        assistant to read one.** What is new is new against what cvc5 produces
+#        *now* and against what the other tools here already do -- both of which
+#        are on this disk and neither of which is in a model's memory, where the
+#        state of the art is however old the training data is. So the checkouts
+#        are named, and each idea is asked what it was read out of; anything
+#        resting on memory or the network is a guess and has to say so.
+#
+# **A PROPOSAL IS NOT AN APPROVAL.** The policy breaks one composition on
+#        purpose: notice a gap, argue a tool should exist, take a name, write a
+#        README -- every step defensible, the whole of it not, because opening a
+#        repository is irreversible and outward-facing. **A person does that
+#        step.** Work that would be a new tool starts as a child project under
+#        `tools/`, which is cheap and retirable; this proposes and creates
+#        neither.
+#
+# **IT ASKS FOR THE REJECTIONS TOO.** The vision says what the arrangement is
+#        *for* and a README says what its tool refuses to claim, so a list of
+#        features with nothing ruled out in it is evidence that neither page was
+#        read. That is the half a brainstorm loses first.
+#
+# THE PRESIDENT IS LOOKED UP, NEVER WRITTEN IN. The register says who holds the
+#        office and lives in the office's tree, so finding the file is finding
+#        the president -- and the prompt keeps pointing at the standard after the
+#        office moves. Duplicated from the other commands on purpose: each is
+#        installed as one file and may import nothing from beside it.
+
+set -euo pipefail
+
+AGENT=claude
+PRINT=0
+SHOW=0
+FOCUS=""
+
+usage() {
+  # --help is a request: stdout, exit 0. A bad flag is a mistake: stderr, 2.
+  local out=1 code=0
+  if [ "${1:-}" = "error" ]; then out=2 code=2; fi
+  cat >&$out <<'USAGE'
+eo_brainstorm -- read the standard the president keeps, then look for what this
+tool could do next that would be worth doing.
+
+Run it at the root of your own repository. **It changes nothing**: every tree is
+read, and the one thing written is brainstorm.local.md at this root, which the
+Eunoia ecosystem's *.local.md convention keeps out of the record. Nothing is
+staged, nothing is committed, and no topic is opened.
+
+usage: eo_brainstorm [--codex] [--print] [--show-prompt] [focus...]
+
+  focus...        free text to start from, if you have somewhere in mind
+  --codex         run codex instead of claude
+  --print         run non-interactively and print the result
+  --show-prompt   print the prompt and exit, running nothing
+
+**Cutting edge is a claim about somebody else's tree**, so the prompt sends an
+assistant to read one: what cvc5 produces now and what the other tools here
+already do are both on this disk, and neither is in a model's memory, where the
+state of the art is as old as the training data. Every idea says what it was
+read out of, and a guess says that it is one.
+
+**A proposal is not an approval.** Work that would be a new tool starts as a
+child project under tools/, and opening a repository is a human decision the
+policy breaks on purpose -- so this proposes, and creates neither.
+
+**It asks what the vision rules out, too.** A list of features with no
+rejections in it is evidence that nothing was read.
+USAGE
+  exit $code
+}
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --codex) AGENT=codex; shift ;;
+    --claude) AGENT=claude; shift ;;
+    --print) PRINT=1; shift ;;
+    --show-prompt) SHOW=1; shift ;;
+    -h|--help) usage ;;
+    -*) echo "eo_brainstorm: unknown option $1" >&2; usage error ;;
+    *) FOCUS="${FOCUS:+$FOCUS }$1"; shift ;;
+  esac
+done
+
+if ! US_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); then
+  # --show-prompt still prints what it would send, from wherever you are.
+  if [ "$SHOW" = 0 ]; then
+    echo "eo_brainstorm: not in a git repository -- run this at the root of the" >&2
+    echo "         repository whose next move you are looking for. The list is" >&2
+    echo "         written there, and it needs somewhere to write it." >&2
+    exit 2
+  fi
+  US_ROOT=$(pwd)
+fi
+US=$(basename "$US_ROOT")
+
+# Where other checkouts might be. The same three places the other commands look,
+# and for the same reason: no document here may name one machine, so nothing
+# records them and each run finds them again.
+IFS=: read -ra ROOTS <<< "${ANOIEU_REPOS:-}"
+SEARCH=()
+for r in "${ROOTS[@]}" "$(dirname "$US_ROOT")" "$HOME"; do
+  [ -n "$r" ] && [ -d "$r" ] && SEARCH+=("$r")
+done
+
+FOUND=""
+SEEN=" $US "
+for r in "${SEARCH[@]}"; do
+  for d in "$r"/*/; do
+    [ -d "$d" ] || continue
+    top=$(git -C "$d" rev-parse --show-toplevel 2>/dev/null) || continue
+    name=$(basename "$top")
+    case "$SEEN" in *" $name "*) continue ;; esac
+    SEEN="$SEEN$name "
+    FOUND="$FOUND$(dirname "$top") $name"$'\n'
+  done
+done
+
+PRES=""
+PRES_DIR=""
+for r in "${SEARCH[@]}"; do
+  for d in "$r"/*/; do
+    [ -f "$d/scripts/ecosystem/ecosystem.json" ] || continue
+    PRES=$(awk '
+      /^  "[^"]+": \{/ { n = $0; sub(/^  "/, "", n); sub(/": \{.*/, "", n) }
+      /"status"[[:space:]]*:[[:space:]]*"president"/ { print n; exit }
+    ' "$d/scripts/ecosystem/ecosystem.json")
+    if [ -n "$PRES" ]; then
+      PRES_DIR=$(cd "$d" && pwd)
+      REGISTER="$d/scripts/ecosystem/ecosystem.json"
+      # Every name the register knows. A checkout it does not name is somebody's
+      # working copy, and reading an idea out of one is how work nobody does
+      # gets reported as somebody's job.
+      KNOWN=" $(awk '
+        /^  "[^"]+": \{/ { n = $0; sub(/^  "/, "", n); sub(/": \{.*/, "", n); printf "%s ", n }
+      ' "$d/scripts/ecosystem/ecosystem.json") "
+    fi
+    break 2
+  done
+done
+
+if [ -n "${KNOWN:-}" ]; then
+  KEPT=""
+  while read -r parent name; do
+    [ -n "$name" ] || continue
+    case "$KNOWN" in *" $name "*) KEPT="$KEPT$parent $name"$'\n' ;; esac
+  done <<< "$FOUND"
+  FOUND="$KEPT"
+fi
+
+# Our own child projects. New work starts as one, so what is already a child of
+# this repository is both the state of the art here and the place the next idea
+# would go. The register says which are ours; only the disk is left when there
+# is no register, and a repository with no children gets no sentence about them.
+KIDS=""
+if [ -n "${REGISTER:-}" ]; then
+  KIDS=$(awk -v us="$US" '
+    function val(s) { sub(/^[^:]*:[[:space:]]*"/, "", s)
+                      sub(/",?[[:space:]]*$/, "", s); return s }
+    /^  "[^"]+": \{/ { name = $0; sub(/^  "/, "", name); sub(/": \{.*/, "", name)
+                       st = ""; par = ""; pa = "" }
+    /^    "status": "/ { st = val($0) }
+    /^    "parent": "/ { par = val($0) }
+    /^    "path": "/   { pa = val($0) }
+    /^  \}/ { if (name != "" && st == "child" && par == us)
+                printf "**%s** (%s), ", name, (pa == "" ? "tools/" name : pa)
+              name = "" }
+  ' "$REGISTER")
+elif [ -d "$US_ROOT/tools" ]; then
+  for d in "$US_ROOT"/tools/*/; do
+    [ -d "$d" ] || continue
+    KIDS="$KIDS**$(basename "$d")** (tools/$(basename "$d")), "
+  done
+fi
+KIDS=${KIDS%, }
+
+if [ -n "$PRES" ] && [ -f "$PRES_DIR/docs/vision.md" ]; then
+  STANDARD="Its **president** is **$PRES**, at \`$PRES_DIR\`, and holds the standard:
+\`docs/vision.md\`, what the arrangement is *for*, and \`docs/policy.md\`, which binds
+every repository here."
+elif [ -n "$PRES" ]; then
+  STANDARD="Its **president** is **$PRES**, which holds the standard — \`docs/vision.md\`,
+what the arrangement is *for*, and \`docs/policy.md\` — and is not checked out here;
+take them from the link this repository's own README carries."
+else
+  STANDARD="Its **president** holds the standard — \`docs/vision.md\`, what the
+arrangement is *for*, and \`docs/policy.md\` — and **nothing here says who that
+currently is**: take them from the link this repository's own README carries, and
+say so in the list."
+fi
+
+if [ -n "$FOUND" ]; then
+  NEIGHBOURS=$(printf '%s' "$FOUND" | sort | awk '
+    { if ($1 != d) { if (d) printf " (in %s); ", d; d = $1; printf "%s", $2 }
+      else printf ", %s", $2 }
+    END { if (d) printf " (in %s)", d }')
+  NEARBY="The other tools are checked out here — $NEIGHBOURS — and **what one of
+them already does is theirs**: read them before inventing anything, and an idea
+that is somebody else's job is reported as theirs rather than as ours."
+else
+  NEARBY="**No other tool of this ecosystem is checked out here**, so what the rest
+of them already do cannot be read from this machine; say so, and treat every
+overlap as unchecked."
+fi
+
+# cvc5 is what all of this is downstream of, and the only thing that decides
+# whether an idea is ahead of anything. Named as a path when it is here, because
+# a feature new against a remembered cvc5 is new against a cvc5 that has moved.
+UPSTREAM=""
+for r in "${SEARCH[@]}"; do
+  if [ -d "$r/cvc5" ]; then
+    UPSTREAM="**cvc5 is checked out at \`$r/cvc5\`** — the solver this ecosystem
+exists to serve, and the thing an idea has to be new against: read what it
+produces *now* rather than what you remember it producing."
+    break
+  fi
+done
+[ -n "$UPSTREAM" ] || UPSTREAM="**cvc5 is not checked out here**, so what it
+produces now cannot be read from this machine — say so, and mark every claim
+about it a guess."
+
+CHILDREN=""
+[ -n "$KIDS" ] && CHILDREN=" This repository's own **child projects** are $KIDS,
+which is where work that is not yet a tool already lives here."
+
+STARTAT=""
+[ -n "$FOCUS" ] && STARTAT="**The person running this asked you to start from
+\"$FOCUS\"**, so start there — and say plainly if the honest answer is that there
+is nothing there worth building."
+
+read -r -d '' PROMPT <<PROMPT_END || true
+You are looking for what **$US** could do next, at $US_ROOT — one repository of
+the **Eunoia ecosystem**, a group of tools built around the Eunoia language and
+the proofs cvc5 produces, sharing one repository policy and written mostly by AI
+agents under light human supervision. $STANDARD Read both, and this repository's
+own \`README.md\` and \`docs/\` for what it is for and what it **refuses to
+claim**; this prompt restates none of it. $UPSTREAM $NEARBY$CHILDREN
+
+${STARTAT:+$STARTAT }**Your goal is a list of things this repository could build
+next that would be worth building** — cutting edge against what cvc5 and these
+tools do *now*, not against what you remember — each saying what it would take,
+what it would give somebody that nothing here gives them today, and **what in
+these trees you read it out of**; anything resting on memory or on the network is
+a guess and says so. **Say what the vision and this README rule out, too**: a
+list with no rejections in it is evidence that neither page was read. Work that
+would be a new tool starts as a **child project** under \`tools/\`, and opening a
+repository is a decision a person makes — propose either, create neither.
+**Write the list to \`brainstorm.local.md\` at this root and change nothing
+else**: nothing staged, nothing committed, no topic opened, no tree but this one
+written in, and nothing sent anywhere.
+PROMPT_END
+
+# Every paragraph above is assembled from fragments wrapped at whatever width
+# they were written at, so the finished text is refilled rather than trusted.
+# `fmt` is coreutils and is normally there; a prompt is still a prompt without
+# it, so its absence loses the wrapping and nothing else.
+wrapped() {
+  if command -v fmt >/dev/null 2>&1; then
+    printf '%s\n' "$PROMPT" | awk -v RS='' '
+      NR > 1 { printf "\n" }
+      { cmd = "fmt -w 78"; print | cmd; close(cmd) }' \
+      | sed 's/\([.!?:;]\)  */\1 /g'
+  else
+    printf '%s\n' "$PROMPT"
+  fi
+}
+
+if [ "$SHOW" = 1 ]; then wrapped; exit 0; fi
+PROMPT=$(wrapped)
+
+command -v "$AGENT" >/dev/null 2>&1 || {
+  echo "eo_brainstorm: $AGENT is not on PATH" >&2; exit 127; }
+
+echo "-- eo_brainstorm: $US ($US_ROOT), writing brainstorm.local.md only, via $AGENT" >&2
+if [ -n "$PRES_DIR" ]; then
+  echo "--   the standard: $PRES, at $PRES_DIR/docs" >&2
+elif [ -n "$PRES" ]; then
+  echo "--   the standard: $PRES, which is not checked out here" >&2
+else
+  echo "--   no register on this machine: the president is not named" >&2
+fi
+[ -n "$FOCUS" ] && echo "--   starting from: $FOCUS" >&2
+
+cd "$US_ROOT"
+if [ "$AGENT" = codex ]; then
+  if [ "$PRINT" = 1 ]; then exec codex exec "$PROMPT"; else exec codex "$PROMPT"; fi
+else
+  if [ "$PRINT" = 1 ]; then exec claude -p "$PROMPT"; else exec claude "$PROMPT"; fi
+fi

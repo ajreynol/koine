@@ -175,6 +175,14 @@ withdraw than it was to write.
 request. Koine adopted anoieu's shared workflow and removed its checker lock.
 Earlier discussion entries describe the pinned setup that existed then.
 
+`eo_join` had four forms until 2026-09-18, when the maintainer collapsed them to
+two: join, or `--soft`, which writes the affiliating note and claims no footing.
+`--associate` and the independent note plain `--soft` used to write are gone, and
+both removed flags are refused with a line saying what happened, because pages
+this repository does not own still name them. [`discussion.md`](discussion.md)
+`D17` says so to kanon, including that the order was backwards — what joining
+costs is the office's, and the command changed first.
+
 koine has been pointed at a new job twice: it was a reporting-loop library until
 2026-09-16, and held a history review tool until 2026-09-17. The history tool's
 ledger — one day's readings of anoieu's record — went with it on 2026-09-17, and

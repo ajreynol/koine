@@ -1,0 +1,251 @@
+#!/usr/bin/env bash
+# eo_topic -- open one topic in YOUR discussion file, addressed to another tool.
+#
+# WHERE: run it at the root of YOUR repository. The topic is written here, in
+#        `docs/discussion.md`, and staged. Their tree is read and never written.
+#
+# **IT CARRIES NO TOPIC, AND ASKS FOR ONE.** What we want from somebody else is
+#        the one thing in a topic that cannot be derived from a tree, so the
+#        prompt's first act is to ask the person running it and wait. Taking the
+#        text in argv was the other design and it is worse: correspondence
+#        typed at a shell prompt is one line long, and a topic that says less
+#        than a paragraph costs its reader more than it saves us. `--print` is
+#        refused for the same reason -- a non-interactive run has nobody to ask.
+#
+# **WHAT IT DOES CARRY IS EVERYTHING MECHANICAL**, which is the half a person
+#        gets wrong: today's date, the commit their tree is at and whether it
+#        was dirty when we read it, and **the next free id** -- allocated above
+#        the highest ever used *including topics removed from this file*, which
+#        lives in Git history and nowhere else, and counting only ids this
+#        repository issued. The ids quoted inside a reply belong to whoever
+#        opened them, and a run that counted those would issue a number twice.
+#
+# **ADDRESSING IS NOT CONTACTING.** Writing a topic costs us nothing of theirs;
+#        carrying it spends somebody's afternoon, and that is a person's
+#        decision every time. Nothing here sends anything, and the prompt says
+#        so in as many words.
+#
+# **A FINDING IS NOT A TOPIC, and the policy's test is mechanical**: if what you
+#        want to say has a file and a line number, it is a finding and goes
+#        through the reporting workflow instead. The prompt applies that test
+#        before it writes, because a finding filed as a topic reaches a
+#        maintainer with no reproducer and no state.
+#
+# THE PRESIDENT IS LOOKED UP, NEVER WRITTEN IN. The register says who holds the
+#        office and lives in the office's tree, so finding the file is finding
+#        the president -- and the prompt keeps pointing at the standard after
+#        the office moves. Duplicated from the other commands on purpose: each
+#        is installed as one file and may import nothing from beside it.
+
+set -euo pipefail
+
+AGENT=claude
+SHOW=0
+NAMES=()
+
+usage() {
+  # --help is a request: stdout, exit 0. A mistake is stderr, 2.
+  local out=1 code=0
+  if [ "${1:-}" = "error" ]; then out=2 code=2; fi
+  cat >&$out <<'USAGE'
+eo_topic -- open one topic in your own discussion file, addressed to another
+tool of the Eunoia ecosystem.
+
+Run it at the root of your own repository, naming who the topic is for. It
+writes docs/discussion.md here and leaves it staged; their tree is read and
+never written, and nothing is sent anywhere -- a topic is carried by a person.
+
+usage: eo_topic [--codex] [--show-prompt] NAME [NAME...]
+
+  NAME            who the topic is addressed to. **Required**, by the name
+                  that tool uses for itself
+  --codex         run codex instead of claude
+  --show-prompt   print the prompt and exit, running nothing
+
+**It does not take the topic on the command line: it asks you.** What you want
+from somebody else is the one thing that cannot be read off a tree, and a topic
+typed at a shell prompt is one line long -- which costs its reader more than it
+saves you. --print is refused for the same reason: nobody to ask.
+
+**What it does carry is everything mechanical**: today's date, the commit their
+tree is at and whether it was dirty, and the next free id -- allocated above the
+highest this repository ever issued, including topics since removed, which is in
+Git history and nowhere else.
+
+**A finding is not a topic.** If what you want to say has a file and a line
+number, it goes through the reporting workflow instead, and the prompt stops and
+tells you so rather than writing it here.
+USAGE
+  exit $code
+}
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --codex) AGENT=codex; shift ;;
+    --claude) AGENT=claude; shift ;;
+    --show-prompt) SHOW=1; shift ;;
+    --print)
+      echo "eo_topic: --print is refused. This asks you what you want to say" >&2
+      echo "         and waits for the answer; a non-interactive run has" >&2
+      echo "         nobody to ask." >&2
+      exit 2 ;;
+    -h|--help) usage ;;
+    -*) echo "eo_topic: unknown option $1" >&2; usage error ;;
+    *) NAMES+=("$1"); shift ;;
+  esac
+done
+
+[ ${#NAMES[@]} -gt 0 ] || {
+  echo "eo_topic: name who the topic is for. A topic addressed to nobody in" >&2
+  echo "         particular is addressed to nobody, and the policy refuses" >&2
+  echo "         *the ecosystem* and *everyone* by name." >&2
+  exit 2; }
+
+if ! US_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); then
+  if [ "$SHOW" = 0 ]; then
+    echo "eo_topic: not in a git repository -- run this at the root of the" >&2
+    echo "         repository the topic comes from. It is written and staged" >&2
+    echo "         there, which needs somewhere to stage it." >&2
+    exit 2
+  fi
+  US_ROOT=$(pwd)
+fi
+US=$(basename "$US_ROOT")
+
+IFS=: read -ra ROOTS <<< "${ANOIEU_REPOS:-}"
+SEARCH=()
+for r in "${ROOTS[@]}" "$(dirname "$US_ROOT")" "$HOME"; do
+  [ -n "$r" ] && [ -d "$r" ] && SEARCH+=("$r")
+done
+
+# Their tree, if it is on this machine: the claim goes in front of somebody, so
+# it is checked against what they actually have before it is written, and the
+# `Opened:` field records the commit it was checked at. A checkout that was
+# dirty when we read it is said so -- the file we read is not a file anybody
+# else can fetch.
+TARGETS=""
+for n in "${NAMES[@]}"; do
+  found=""
+  for r in "${SEARCH[@]}"; do
+    [ -d "$r/$n/.git" ] || [ -f "$r/$n/.git" ] || continue
+    found=$(cd "$r/$n" && pwd); break
+  done
+  if [ -n "$found" ]; then
+    sha=$(git -C "$found" rev-parse --short HEAD 2>/dev/null || echo "?")
+    state=""
+    [ -n "$(git -C "$found" status --porcelain 2>/dev/null)" ] &&
+      state=", with uncommitted changes when you read it"
+    wire=""
+    [ -f "$found/docs/discussion.md" ] ||
+      wire=", and it keeps no docs/discussion.md, so there is no wire to it and
+a person carries anything said to it"
+    TARGETS="$TARGETS**$n** is checked out at \`$found\`, at \`$sha\`$state$wire. "
+  else
+    TARGETS="$TARGETS**$n** is not checked out here, so nothing it says can be
+checked from this machine: say so in the topic rather than writing a claim about
+a tree you could not read. "
+  fi
+done
+
+PRES=""
+PRES_DIR=""
+for r in "${SEARCH[@]}"; do
+  for d in "$r"/*/; do
+    [ -f "$d/scripts/ecosystem/ecosystem.json" ] || continue
+    PRES=$(awk '
+      /^  "[^"]+": \{/ { n = $0; sub(/^  "/, "", n); sub(/": \{.*/, "", n) }
+      /"status"[[:space:]]*:[[:space:]]*"president"/ { print n; exit }
+    ' "$d/scripts/ecosystem/ecosystem.json")
+    [ -n "$PRES" ] && PRES_DIR=$(cd "$d" && pwd)
+    break 2
+  done
+done
+
+if [ -n "$PRES" ] && [ -f "$PRES_DIR/docs/policy.md" ]; then
+  STANDARD="Its **president** is **$PRES**, at \`$PRES_DIR\`, and holds the standard:
+\`docs/policy.md\`, whose **The discussion file** section is what binds this — what
+a topic is, the five kinds and what each claims, the fields one carries, and who
+may address whom."
+else
+  STANDARD="Its **president** holds the standard — \`docs/policy.md\`, whose **The
+discussion file** section is what binds this — and there is no checkout of it
+here; take it from the link this repository's own README carries."
+fi
+
+# The next id, above the highest this repository ever issued. Removed topics are
+# in the history and nowhere else, so the history is read; and only `## Dn`, the
+# heading of a topic we opened, counts -- `### \`Dn\`` inside a reply is somebody
+# else's number being answered, and counting those would issue one of ours twice.
+FILE="$US_ROOT/docs/discussion.md"
+MAX=0
+for n in $( { git -C "$US_ROOT" log -p --all -- docs/discussion.md 2>/dev/null
+              cat "$FILE" 2>/dev/null; } |
+            grep -oE '^\+?## D[0-9]+' | grep -oE '[0-9]+' ); do
+  [ "$n" -gt "$MAX" ] && MAX=$n
+done
+NEXT="D$((MAX + 1))"
+TODAY=$(date +%F)
+
+if [ -f "$FILE" ]; then
+  WHERE="This repository keeps \`docs/discussion.md\`: read it for the format its
+topics are in and for whether one of them already says this. **The next free id
+is \`$NEXT\`** — above the highest **$US** ever issued, counting topics since
+removed, which are in Git history and nowhere else."
+else
+  WHERE="**This repository keeps no \`docs/discussion.md\`**, so opening one is
+part of this: it carries the policy's gate banner at the top, in words close
+enough to be recognised, before any topic — and it is worth opening only if this
+repository intends to read it, because a file with a gate and nobody behind it
+advertises a way to reach somebody who is not listening. The first id is
+\`$NEXT\`."
+fi
+
+read -r -d '' PROMPT <<PROMPT_END || true
+You are opening one topic in **$US**, at $US_ROOT, addressed to ${NAMES[*]} — one
+repository of the **Eunoia ecosystem**, a group of tools built around the Eunoia
+language and the proofs cvc5 produces, sharing one repository policy and written
+mostly by AI agents under light human supervision. $STANDARD Read it, and this
+repository's own \`README.md\` and \`docs/\`; this prompt restates none of it.
+$TARGETS$WHERE Today is $TODAY.
+
+**Ask the person running this what they want to say, and wait for the answer.**
+You carry no topic of your own: if they describe nothing, write nothing. **If
+what they describe has a file and a line number it is a finding, not a topic** —
+say so and stop, because a finding filed here reaches a maintainer with no
+reproducer and no state. Then check what they said against the tree it is about
+as it stands on this disk, and **say where you and they disagree rather than
+writing the version you prefer** — a topic that is already wrong spends somebody
+else's afternoon. Write it at the top, newest first, in the format the policy
+gives and this file already uses: the id above, **To:** by the name that tool
+uses for itself, **Kind:** — and when it is in doubt it is a \`request\`, because
+claiming less standing costs us nothing — **Opened:** with today's date and the
+commit you checked their tree at, and **Settles when:**, which is required and
+has to be answerable; if what they told you does not give you one, ask again
+rather than inventing one. **Never open a topic about somebody else's discussion
+file.** Then \`git add\` it and stop: **nothing is sent anywhere** — addressing is
+not contacting, and a person decides whether this is ever carried.
+PROMPT_END
+
+wrapped() {
+  if command -v fmt >/dev/null 2>&1; then
+    printf '%s\n' "$PROMPT" | awk -v RS='' '
+      NR > 1 { printf "\n" }
+      { cmd = "fmt -w 78"; print | cmd; close(cmd) }' \
+      | sed 's/\([.!?:;]\)  */\1 /g'
+  else
+    printf '%s\n' "$PROMPT"
+  fi
+}
+
+if [ "$SHOW" = 1 ]; then wrapped; exit 0; fi
+PROMPT=$(wrapped)
+
+command -v "$AGENT" >/dev/null 2>&1 || {
+  echo "eo_topic: $AGENT is not on PATH" >&2; exit 127; }
+
+echo "-- eo_topic: $US ($US_ROOT) -> ${NAMES[*]}, as $NEXT, via $AGENT" >&2
+[ -n "$PRES_DIR" ] && echo "--   the standard: $PRES, at $PRES_DIR/docs" >&2
+echo "--   it will ask you what you want to say before it writes anything" >&2
+
+cd "$US_ROOT"
+if [ "$AGENT" = codex ]; then exec codex "$PROMPT"; else exec claude "$PROMPT"; fi
