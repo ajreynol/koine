@@ -53,6 +53,7 @@ import json
 import os
 import re
 import datetime
+import shlex
 import shutil
 import stat
 import subprocess
@@ -650,12 +651,10 @@ def short_of(cmd):
     return re.split(r"(?<=[.!?])\s+", what)[0].rstrip(".") if what else ""
 
 
-#: What the roster is introduced with, by what the run actually left behind.
-#: Only the first of these says *ready*, because only the first is.
+#: The introduction to the roster after installation.
 LEADS = {
     "ready": "You are now ready to use the Eunoia ecosystem. For quick start, "
              "try these:",
-    "dry-run": "Nothing was written. A real run would put these on your PATH:",
 }
 
 
@@ -669,9 +668,7 @@ def say_ready(origin, how):
     addressed to them, and it goes last because the last thing printed is the
     thing that gets read.
 
-    **It says *ready* only where that is true.** A dry run wrote nothing and a
-    prefix off their PATH left files whose names they cannot type; both print
-    the same roster under a lead that promises neither.
+    Dry runs print only copy commands and do not reach this roster.
 
     **It is stratified, because the roster is not one audience.** Most of these
     are for the person reading it, to type in a repository they are working in.
@@ -728,8 +725,8 @@ def do_install(prefix, origin, config, dry_run, force, verbose=False,
     else -- which file went to which path, that a copy is written to a
     temporary name and renamed over the target, which config remembered the
     directory -- is true, was printed every run, and buried those three under a
-    wall nobody read. It is still printed, under `--verbose`, and a dry run
-    turns it on because inspecting exactly that is what a dry run is for.
+    wall nobody read. It is printed under `--verbose`. A dry run prints only
+    shell-quoted cp commands for the files the installation would copy.
 
     **Nothing that went wrong is left to be inferred from a table.** A file this
     script will not overwrite, a directory that is not on a PATH, a register
@@ -738,7 +735,8 @@ def do_install(prefix, origin, config, dry_run, force, verbose=False,
     """
     installed = dict(record(config, prefix))
     plan, copied, refreshed, current, left_alone = [], 0, 0, 0, []
-    detail = verbose or dry_run
+    copy_plan = []
+    detail = verbose
     where = homely(prefix)
 
     # Read once, so every command baked in this run carries the same snapshot.
@@ -748,9 +746,10 @@ def do_install(prefix, origin, config, dry_run, force, verbose=False,
         try:
             embed = snapshot(president)
         except (OSError, ValueError) as exc:
-            say(f"the register at {president} could not be read: {exc}",
-                stream=sys.stderr)
-    elif any(c.get("needs") == "register" for c in commands(origin)):
+            if not dry_run:
+                say(f"the register at {president} could not be read: {exc}",
+                    stream=sys.stderr)
+    elif not dry_run and any(c.get("needs") == "register" for c in commands(origin)):
         named = named_president(president_dir)
         readers = ", ".join(c["name"] for c in commands(origin)
                             if c.get("needs") == "register")
@@ -801,9 +800,15 @@ def do_install(prefix, origin, config, dry_run, force, verbose=False,
         if action != "up to date" and action != "left alone":
             copied += 1
             refreshed += action == "refresh"
+            copy_plan.append((src, dest))
             if not dry_run:
                 install_file(src, dest, embed if wants else None)
                 installed[name] = digest(read_text(dest))
+
+    if dry_run:
+        for src, dest in copy_plan:
+            print(shlex.join(("cp", "--", src, dest)))
+        return 0
 
     # What it did, in one sentence, with the directory named first: the
     # directory is the one thing every clause is about, and a count nobody can
@@ -820,7 +825,7 @@ def do_install(prefix, origin, config, dry_run, force, verbose=False,
     if left_alone:
         counted.append(f"{len(left_alone)} left alone")
     summary = ", ".join(counted) or "nothing to do"
-    say(f"what a real run would do: {summary}" if dry_run else summary)
+    say(summary)
 
     # Which register an installed command is carrying is not a detail: it is
     # the difference between a command that answers with today's ecosystem and
@@ -853,10 +858,6 @@ def do_install(prefix, origin, config, dry_run, force, verbose=False,
             f"{'is' if one else 'are'} already in {where} and this script did "
             f"not put {'it' if one else 'them'} there. Re-run with --force to "
             f"replace {'it' if one else 'them'}.")
-
-    if dry_run:
-        say_ready(origin, "dry-run")
-        return 0
 
     news = config.get("prefix") != prefix
     config["prefix"] = prefix
@@ -914,7 +915,7 @@ examples:
   install_eo                  later runs need no arguments
   install_eo --status         what is installed, and whether it is current
   install_eo --init-clone     put the ecosystem's repositories on this machine
-  install_eo --dry-run        say what would happen, and write nothing
+  install_eo --dry-run        print only the planned cp commands; write nothing
   install_eo --verbose        and show every file, one row each
 
 It never overwrites a file it did not install: that file is left alone, the run
@@ -946,9 +947,10 @@ def main():
                         help="replace a file of the same name this script did not install")
     parser.add_argument("--verbose", action="store_true",
                         help="also show every file, where it came from and "
-                             "what happened to it (a dry run always does)")
+                             "what happened to it (ignored for install dry runs)")
     parser.add_argument("--dry-run", action="store_true",
-                        help="say what would happen and write nothing")
+                        help="write nothing; for installation, print only the "
+                             "planned cp commands")
     args = parser.parse_args()
 
     try:
@@ -989,20 +991,16 @@ def main():
     # person who typed one command wants that answered before anything else --
     # and because the directory is read out of a config they last saw a while
     # ago and may not be the one they have in mind.
-    say(f"Installing Eunoia ecosystem scripts into {homely(prefix)}"
-        + (" (dry run: nothing will be written)" if args.dry_run else ""))
+    if not args.dry_run:
+        say(f"Installing Eunoia ecosystem scripts into {homely(prefix)}")
 
-    if not os.path.isdir(prefix):
-        if args.dry_run:
-            say(f"dry run: {homely(prefix)} does not exist and would be "
-                f"created")
-        else:
-            try:
-                os.makedirs(prefix)
-            except OSError as exc:
-                say(f"refused: {exc}", stream=sys.stderr)
-                return 1
-            say(f"created {homely(prefix)}")
+    if not args.dry_run and not os.path.isdir(prefix):
+        try:
+            os.makedirs(prefix)
+        except OSError as exc:
+            say(f"refused: {exc}", stream=sys.stderr)
+            return 1
+        say(f"created {homely(prefix)}")
 
     return do_install(prefix, origin, config, args.dry_run, args.force,
                       args.verbose, args.president)

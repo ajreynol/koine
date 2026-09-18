@@ -35,7 +35,7 @@ Run these from the koine checkout:
 $ scripts/install_eo --prefix ~/bin
 $ scripts/install_eo                   # update using the remembered directory
 $ scripts/install_eo --status
-$ scripts/install_eo --dry-run          # inspect without writing
+$ scripts/install_eo --dry-run          # print only the planned cp commands
 $ scripts/install_eo --verbose          # show each file
 $ scripts/install_eo --init-clone [DIR] # clone missing ecosystem repositories
 $ scripts/install_eo --uninstall
@@ -51,9 +51,12 @@ directory and its installed-file ownership records.
 A run reports where it installs, what changed, and what you can type next.
 Commands for people appear first; `koine_append_db`, marked `audience: tooling`
 in the manifest, appears separately. `--verbose` shows the file table;
-`--dry-run` always shows it and creates nothing. A name occupied by a file the
-installer does not own is skipped with an explanation. `--force` permits its
-replacement.
+an install `--dry-run` prints only shell-quoted `cp` commands and creates
+nothing, even with `--verbose`. It prints nothing when no files need copying.
+Files that are current or protected from replacement are omitted. A normal
+installation explains protected files; `--force` permits their replacement.
+The copy list names the source and final destination; installation also makes
+commands executable and embeds the register in commands that request it.
 
 `--init-clone` reads the president's register and clones missing repositories
 into `DIR`, or beside the president's checkout by default. It installs no

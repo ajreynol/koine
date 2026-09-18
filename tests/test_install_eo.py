@@ -19,6 +19,7 @@ import importlib.machinery
 import importlib.util
 import json
 import os
+import shlex
 import shutil
 import subprocess
 import sys
@@ -89,25 +90,22 @@ def sandbox(tmp):
 
 def test_install():
     print("installing")
-    tmp = tempfile.mkdtemp()
+    tmp = tempfile.mkdtemp(prefix="koine install ' $; ")
     try:
         prefix = sandbox(tmp)
 
         out = run(tmp, "--prefix", prefix, "--dry-run")
-        ok("a dry run counts what it would do", "2 installed" in out.stdout)
-        ok("and says up front that it will write nothing",
-           "dry run: nothing will be written" in flat(out.stdout))
-        # The directory is named once, in the sentence every count is about,
-        # and each row then says only what differs: which command, and where
-        # its file comes from. Repeating the destination on every row made the
-        # longest string on the page the one that never changed.
-        ok("a dry run names the directory once", prefix in out.stdout)
-        ok("and names each command and where its file comes from",
-           "install" in out.stdout and "eo_join" in out.stdout
-           and "from eo_cmd/eo_join" in out.stdout)
-        ok("a dry run says it is a copy and not a move",
-           "a copy, not a move" in out.stdout)
+        check("a dry run succeeds", out.returncode, 0)
+        expected = [["cp", "--", os.path.join(tmp, "eo_cmd", name),
+                     os.path.join(prefix, name)] for name in ("eo_join", "eo_init")]
+        check("only cp commands, with paths safely quoted",
+              [shlex.split(line) for line in out.stdout.splitlines()], expected)
+        check("and no extra messages on stderr", out.stderr, "")
+        verbose = run(tmp, "--prefix", prefix, "--dry-run", "--verbose")
+        check("--verbose adds nothing to a dry run", verbose.stdout, out.stdout)
         ok("a dry run creates nothing", not os.path.exists(prefix))
+        ok("and writes no installation state",
+           not os.path.exists(os.path.join(tmp, "install_eo_cmd.local.json")))
 
         out = run(tmp, "--prefix", prefix)
         check("installing returns 0", out.returncode, 0)
@@ -133,6 +131,11 @@ def test_install():
         # Somebody else's file, under a name we install.
         with open(os.path.join(prefix, "eo_join"), "w") as handle:
             handle.write("#!/bin/sh\necho theirs\n")
+        preview = run(tmp, "--dry-run")
+        check("a dry run omits protected and current files", preview.stdout, "")
+        forced = run(tmp, "--dry-run", "--force")
+        check("--force previews only the file it would replace",
+              [shlex.split(line) for line in forced.stdout.splitlines()], expected[:1])
         out = run(tmp)
         ok("a file we did not install is left alone",
            "1 left alone" in flat(out.stdout))
@@ -160,26 +163,20 @@ def test_install():
         shutil.rmtree(tmp)
 
 
-def test_a_dry_run_with_nothing_to_do_still_says_what_it_would_do():
-    """The run somebody makes to find out what the command does.
-
-    Listing only what would change meant that on an up-to-date machine a dry
-    run printed a count and nothing else -- least informative exactly when it
-    was most likely to be asked.
-    """
+def test_a_dry_run_with_nothing_to_do_prints_nothing():
+    """No copy operation means no command to print, even with --verbose."""
     print("a dry run with nothing to do")
     tmp = tempfile.mkdtemp()
     try:
         prefix = sandbox(tmp)
         run(tmp, "--prefix", prefix)
-        out = run(tmp, "--dry-run")
-        ok("it reports nothing to do",
-           "2 already up to date" in flat(out.stdout))
-        ok("and still lists every command",
-           out.stdout.count("up to date  ") == 2)
-        ok("and still says what each command is for",
-           "eo_join" in out.stdout and "join" in out.stdout)
-        ok("and names the directory it is talking about", prefix in out.stdout)
+        state = os.path.join(tmp, "install_eo_cmd.local.json")
+        before = open(state).read()
+        for args in ([], ["--verbose"]):
+            out = run(tmp, "--dry-run", *args)
+            check("it succeeds with no output", (out.returncode, out.stdout, out.stderr),
+                  (0, "", ""))
+        check("the installation state is untouched", open(state).read(), before)
     finally:
         shutil.rmtree(tmp)
 
@@ -254,6 +251,14 @@ def test_the_register_is_baked_in():
             handle.write("#!/usr/bin/env python3\nEMBEDDED = None\n"
                          'EMBEDDED_FROM = ""\nprint(EMBEDDED, EMBEDDED_FROM)\n')
 
+        preview = run(tmp, "--prefix", prefix, "--president", office, "--dry-run")
+        check("a snapshot preview prints only the copy commands",
+              [shlex.split(line) for line in preview.stdout.splitlines()],
+              [["cp", "--", os.path.join(tmp, "eo_cmd", name),
+                os.path.join(prefix, name)] for name in ("eo_join", "eo_init")])
+        check("and no snapshot commentary", preview.stderr, "")
+        ok("the snapshot preview creates nothing", not os.path.exists(prefix))
+
         out = run(tmp, "--prefix", prefix, "--president", office)
         check("installing returns 0", out.returncode, 0)
         # Which register a command carries is not a detail of the copy: it
@@ -276,6 +281,11 @@ def test_the_register_is_baked_in():
         other = open(os.path.join(prefix, "eo_init")).read()
         ok("a command that did not ask carries no register",
            "status" not in other)
+        preview = run(tmp, "--president", office, "--dry-run")
+        check("a refreshed snapshot is the only copy in the next dry run",
+              [shlex.split(line) for line in preview.stdout.splitlines()],
+              [["cp", "--", os.path.join(tmp, "eo_cmd", "eo_join"),
+                os.path.join(prefix, "eo_join")]])
     finally:
         shutil.rmtree(tmp)
 
@@ -468,7 +478,10 @@ def test_a_named_president_is_used_or_refused_never_replaced():
         data["commands"][0]["needs"] = "register"
         json.dump(data, open(manifest, "w"))
 
-        out = run(checkout, "--prefix", prefix, "--dry-run",
+        preview = run(checkout, "--prefix", prefix, "--dry-run",
+                      env={"KANON": os.path.join(tmp, "nowhere")})
+        check("a dry run adds no missing-register warning", preview.stderr, "")
+        out = run(checkout, "--prefix", prefix,
                   env={"KANON": os.path.join(tmp, "nowhere")})
         check("KANON is read the same way", out.returncode, 0)
         ok("and the fallback register is not baked in behind somebody's back",
@@ -535,17 +548,10 @@ def test_a_finished_install_ends_by_saying_what_to_type():
     try:
         prefix = sandbox(tmp)
 
-        out = run(tmp, "--prefix", prefix, "--dry-run")
+        out = run(tmp, "--prefix", prefix)
         ok("it opens by saying what it is doing and where",
            f"Installing Eunoia ecosystem scripts into {prefix}"
            in flat(out.stdout))
-        ok("a dry run does not claim they are ready",
-           "now ready" not in flat(out.stdout))
-        ok("and still says what each command is for",
-           "A real run would put these on your PATH" in flat(out.stdout)
-           and "eo_join" in out.stdout)
-
-        out = run(tmp, "--prefix", prefix)
         ok("an install says they are ready",
            "You are now ready to use the Eunoia ecosystem" in flat(out.stdout))
         ok("and offers the commands as a quick start",
@@ -681,7 +687,7 @@ def main():
                  test_the_snapshot_is_readable_python,
                  test_a_snapshot_says_when_it_came_from_a_dirty_tree,
                  test_no_president_is_a_warning_not_a_failure,
-                 test_a_dry_run_with_nothing_to_do_still_says_what_it_would_do,
+                 test_a_dry_run_with_nothing_to_do_prints_nothing,
                  test_uninstall):
         test()
     print()
