@@ -148,7 +148,7 @@ def homely(path):
 
     The absolute path to a directory under somebody's home is the longest thing
     this script prints and the least informative part of what it prints:
-    `/home/andrew/bin` and `~/bin` name the same directory and only one of them
+    An expanded home path and `~/bin` name the same directory and only one of them
     wraps onto a second line.
     """
     home = os.path.expanduser("~")
@@ -662,7 +662,7 @@ def say_ready(origin, how):
 
     **The report above says what happened; this says what to do with it.**
     Those are different questions and the first answers neither: a line reading
-    `9 commands installed into /home/you/bin` tells somebody that names they
+    `9 commands installed into ~/bin` tells somebody that names they
     have never seen are now on their path. So the run ends on the roster,
     addressed to them, and it goes last because the last thing printed is the
     thing that gets read.

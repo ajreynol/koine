@@ -1,12 +1,11 @@
 # The documentation
 
-One document per question, so that a question has one obvious place to be
-answered. There is no second overview here: [`../README.md`](../README.md) is the
-front page and the whole of what anything below may assume has been read.
+The [front page](../README.md) is the entry point. The pages below are maintained
+by hand; none is generated.
 
 | document | its job |
 | --- | --- |
-| [`maintenance.md`](maintenance.md) | **the maintenance entry point**: what an agent decides alone, what it must ask first, what is not koine's at all, and the open work. Everything on it is something a reader of the front page would still get wrong; it repeats nothing the front page says. Not linked from there, by the convention that keeps it out of a reader's way |
-| [`discussion.md`](discussion.md) | **the standing channel to the rest of the ecosystem**: anything that is not a bug report — a request, a proposal, a question about somebody's intent, a notice that something here is moving under them. It opens with the rule that no agent acts on it unbidden, and with an account of every topic naming koine elsewhere and what each is waiting on, dated and read from named commits. **Everything above `D10` is current**; `D10` and below were written for an earlier purpose of this repository and none of it was ever carried |
-
-A document not worth a row here is not worth adding.
+| [maintenance.md](maintenance.md) | Local responsibilities, supervision, verification commands, and outstanding service proposals |
+| [discussion.md](discussion.md) | Live correspondence with other tools, its response gate, and the dated incoming-topic inventory |
+| [bug_db/README.md](../bug_db/README.md) | Database format, identity rules, locking, and a worked append example |
+| [eo_cmd/README.md](../eo_cmd/README.md) | Installation, command behavior, previews, and the boundary between shared machinery and policy |

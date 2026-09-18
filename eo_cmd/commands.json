@@ -1,6 +1,5 @@
 {
   "what": "The commands install_eo_cmd puts on a person's path. koine maintains all of them -- their text, their options, and what they ask an assistant to do -- under two roles in kanon's docs/roles.md, and the line is where the command runs: eo_init and eo_join are R35, the two that run inside a repository being started or joined, and the rest are R16, the shared low-level tooling. What joining costs and what a member is held to is R4's and stays with the office: this repository maintains the program that states the rule and has no standing to change the rule.",
-  "history": "Both were kanon's prompts/join_eo and prompts/init_eo until 2026-09-17, when kanon deleted them and R35 was created to hold them here. They were briefly stored as unmodifiable copies; that arrangement ended with the handover, and koine now writes them.",
   "commands": [
     {
       "name": "eo_join",
@@ -67,9 +66,10 @@
     {
       "name": "eo_respond",
       "short": "answer one topic another tool addressed to you",
-      "what": "answer one topic another tool has addressed to you. Run in your own repository; naming the topic is what authorises answering it, and a run without one is refused",
+      "what": "answer one topic another tool has addressed to you. First ensure main and pull with --ff-only; --no-main keeps the current branch. Run in your own repository; naming the topic is what authorises answering it, and a run without one is refused",
       "forms": [
-        "eo_respond <name> <Dn>"
+        "eo_respond <name> <Dn>",
+        "eo_respond --no-main <name> <Dn>"
       ],
       "kind": "prompt"
     },
@@ -86,10 +86,12 @@
     {
       "name": "eo_housekeeping",
       "short": "bring this repository up to date",
-      "what": "bring a repository up to date: the checkout pulled first, documentation made true of the tree, the topics other tools addressed to it answered, bugs in its own tooling fixed, and CI green. Two paragraphs that name where the rules are rather than paraphrasing them",
+      "what": "bring a repository up to date: first ensure main and pull with --ff-only, then make documentation true of the tree, answer topics addressed to it, fix its tooling, and ensure CI passes. --no-main keeps the current branch; --report reports after the branch check and pull. Two paragraphs name where the rules are rather than paraphrasing them",
       "forms": [
         "eo_housekeeping",
-        "eo_housekeeping --report"
+        "eo_housekeeping --report",
+        "eo_housekeeping --no-main",
+        "eo_housekeeping --report --no-main"
       ],
       "kind": "prompt"
     }
@@ -98,6 +100,6 @@
   "kinds": "`prompt` hands context to an assistant and takes --show-prompt, which prints what it would hand one and runs nothing. `program` does the work itself.",
   "register": "A command marked `needs: register` has the president's ecosystem.json baked into it when install_eo_cmd copies it, with the commit and date it was taken. That makes it usable away from the president's tree without ever presenting a snapshot as the live register.",
   "ground_truth": "This file is the ground truth for what these commands are and what each is for. The copy is the table in eo_cmd/README.md, and test_the_readme_table_agrees_with_the_manifest in tests/test_eo_cmd.py is what compares the two -- it decides that the same names appear in both and that each has somewhere it is written up, and it cannot decide whether a description is still true of the behaviour. The one claim `kinds` makes that a program can check, that only a prompt takes --show-prompt, is checked beside it.",
-  "short": "Every command carries both: `short` is the line that fits in a column beside its name, which is what install_eo_cmd prints as the roster a person reads after installing, and `what` is the paragraph that says the same thing with its caveats, which the READMEs are written against. Cutting `what` down to its first sentence was what the roster did until 2026-09-18, and a line that stops where the prose happens to have a full stop is not a summary. The two are written here together so that one cannot move without the other being looked at.",
+  "short": "Every command carries both: `short` is the line that fits in a column beside its name, which is what install_eo_cmd prints as the roster a person reads after installing, and `what` is the paragraph that says the same thing with its caveats, which the READMEs are written against. The two are written here together so that one cannot move without the other being looked at.",
   "audience": "A command with `audience: tooling` is machinery: another tool's CI, a pinned consumer or an agent calls it, and a person at a terminal has no occasion to. install_eo_cmd installs it like any other -- it is on the PATH because something has to be able to call it -- and lists it below the rest of the roster, under a line saying a human can ignore it. Absent means the command is for a person, which is what the `eo_` ones are: they run inside a repository somebody is working in."
 }

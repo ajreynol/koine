@@ -1,543 +1,258 @@
 # eo_cmd
 
-**The commands a repository outside this ecosystem actually runs.** Each is meant
-to be run *inside somebody else's tree* — the one being started, joined, tidied
-or addressed — rather than from the repository that keeps the rule, which is why
-they live with the tool whose job is shared machinery, and why
-[`../scripts/install_eo_cmd`](../scripts/install_eo_cmd) exists to put them on a
-person's path.
+**Commands to run inside the repository you are working on.**
+[`../scripts/install_eo_cmd`](../scripts/install_eo_cmd) puts them on your PATH.
+Prompt commands hand work to an assistant; programs do the work themselves.
 
 | command | what it does |
 | --- | --- |
-| [`eo_join`](eo_join) | join the Eunoia ecosystem, from inside the repository that is joining |
-| [`eo_init`](eo_init) | start a tool: write a README saying what it is for, complying with nothing |
-| [`eo_status`](eo_status) | who is in the ecosystem and on what footing. **Run only where the register is** |
-| [`eo_topic`](eo_topic) | open one topic addressed to another tool. **Asks you what you want to say**; sends nothing |
-| [`eo_child`](eo_child) | start a child project, `tools/<name>/`. Naming it is what starts it |
-| [`eo_respond`](eo_respond) | answer one topic another tool has addressed to you. Run in your own repository |
-| [`eo_brainstorm`](eo_brainstorm) | look for what a repository could do next, against what cvc5 and the other tools do now, then work through the list with you. **Changes nothing** |
-| [`eo_housekeeping`](eo_housekeeping) | bring a repository up to date: its documentation, the topics addressed to it, its own tooling, and CI |
-| `koine_append_db` | add a run's new bugs to a database of every bug found. Installed from [`../bug_db/`](../bug_db), where it lives |
+| [`eo_join`](eo_join) | join the Eunoia ecosystem, or add only the soft maintenance note |
+| [`eo_init`](eo_init) | start a tool with a README saying what it is for |
+| [`eo_status`](eo_status) | read the live register in the president's tree, or an installed snapshot elsewhere |
+| [`eo_topic`](eo_topic) | ask what you want to say, then draft one topic addressed to another tool |
+| [`eo_child`](eo_child) | start a named child project under `tools/` |
+| [`eo_respond`](eo_respond) | answer one named topic addressed to your repository |
+| [`eo_brainstorm`](eo_brainstorm) | explore possibilities and discuss them with you; write only a private note |
+| [`eo_housekeeping`](eo_housekeeping) | update documentation, answer incoming topics, fix local tooling, and check CI |
+| `koine_append_db` | append a run's bugs to a database; implementation and usage in [`../bug_db/`](../bug_db/README.md) |
 
-**Every installed command carries a prefix saying whose it is**, because the
-name is claimed inside somebody else's process and on their PATH. `eo_` is the
-ecosystem's — commands that run inside a tree that is not this one. `koine_` is
-this repository's own work, installed under the name it already has: **one
-program with two names is worse than a longer name.** `install_eo_cmd` refuses
-anything else. A command does not have to *live* in this directory to be
-installed out of it.
+[`commands.json`](commands.json) is the ground truth for this roster and the
+installer's output. Its `short` fields supply the installation summary; `what`
+carries the fuller descriptions. `test_the_readme_table_agrees_with_the_manifest`
+in [`../tests/test_eo_cmd.py`](../tests/test_eo_cmd.py) compares the names and
+checks that each command is documented. It cannot check whether the prose still
+describes the behavior correctly.
 
-> **A pinned consumer must not take `koine_append_db` off PATH.** anoieu and
-> dokimasia resolve it through their own `koine.lock` into a pinned checkout,
-> and that pin is why an append-only database gets the same append semantics
-> every run. PATH gives whatever the operator installed. Installing it here is
-> for **a person at a terminal**, and it does not make those locators
-> deletable.
-
-[`commands.json`](commands.json) is what the installer reads, and it is where
-each command says which of two things it is. **A `prompt` hands context to an
-assistant, and every form of one takes `--show-prompt`**, which prints exactly
-what it would hand one and does nothing else — read that before running it.
-`eo_status` and `koine_append_db` are **programs**: they do the work themselves,
-spend no turn, and have nothing to show.
-
-**A preview prints on a machine with nothing on it**, which is the only way that
-sentence means anything: the reader it is addressed to has not cloned this
-ecosystem, so a preview that refused until the other checkouts were beside it
-would refuse exactly them. `eo_respond --show-prompt` did refuse until
-2026-09-18, and the same gap made this repository's own suite green here and red
-in CI for eight pushes — every check that previews a command reads a checkout
-that is a sibling on the machine these are written on and nowhere on a runner.
-`test_every_form_previews_on_a_machine_with_nothing_on_it` runs every advertised
-form again with `$HOME` and `$ANOIEU_REPOS` pointed at an empty directory.
+Every installed command has an `eo_` or `koine_` prefix. The installer refuses
+other names. Each command is installed as one file and imports nothing from
+beside it in this checkout. Tests exercise the installed copies.
 
 ## Installing them
 
-```console
-$ ../scripts/install_eo_cmd --prefix ~/bin   # install, and remember the directory
-$ ../scripts/install_eo_cmd                  # later runs need no arguments
-$ ../scripts/install_eo_cmd --status         # what is installed, and whether it is current
-$ ../scripts/install_eo_cmd --init-clone     # put the ecosystem's repositories on this machine
-$ ../scripts/install_eo_cmd --uninstall      # remove what it installed
-```
-
-**`--help` says why somebody would run it**, which is the question an option list
-cannot answer: these commands are written to run inside *somebody else's*
-repository and so are useless sitting in a checkout, and the ecosystem is a set
-of sibling checkouts that has to get onto the disk before most of them are worth
-much. Both jobs are named there; the second was invisible from the flags alone.
-
-**A run says three things, in the order somebody wants them**: what it is
-doing and where, what it did, and what they can now type. Everything else was
-printed too — which file went to which path, that a copy is written to a
-temporary name and renamed over the target, which config remembered the
-directory — and those three sat buried in the middle of it:
+Run these from the koine checkout:
 
 ```console
-$ ./scripts/install_eo_cmd
--- Installing Eunoia ecosystem scripts into ~/bin
--- created ~/bin
--- 9 installed
--- eo_status now carries a snapshot of the register, from kanon at ad18fb2
-   with the register edited and not committed, on 2026-09-18; run this script
-   again whenever the register moves
-
-You are now ready to use the Eunoia ecosystem. For quick start, try these:
-
-   eo_join          declare where this repository stands with the ecosystem
-   eo_init          start a tool, with a README saying what it is for
-   eo_status        who is in the ecosystem, and on what footing
-   eo_topic         open one topic, addressed to another tool
-   eo_child         start a child project, tools/<name>/, in this repository
-   eo_respond       answer one topic another tool addressed to you
-   eo_brainstorm    look for what this tool could do next
-   eo_housekeeping  bring this repository up to date
-
--- run them in the root of the repository you are working in; every one takes
-   --help, which says what it does and what forms it takes
-
--- one more is machinery rather than a command for you -- another tool's CI or
-   an agent calls it, and you can ignore it if you are a human:
-
-   koine_append_db  add a run's new bugs to a bug database
-
--- run this script again to update them; --status says what is installed,
-   --verbose shows every file
+$ scripts/install_eo_cmd --prefix ~/bin
+$ scripts/install_eo_cmd                   # update using the remembered directory
+$ scripts/install_eo_cmd --status
+$ scripts/install_eo_cmd --dry-run          # inspect without writing
+$ scripts/install_eo_cmd --verbose          # show each file
+$ scripts/install_eo_cmd --init-clone [DIR] # clone missing ecosystem repositories
+$ scripts/install_eo_cmd --uninstall
 ```
 
-**The roster is stratified, because it is not one audience.** The commands
-above the line are for the person who just installed them, to type in a
-repository they are working in. `koine_append_db` is machinery — a pinned
-consumer or another tool's CI calls it, and somebody who has just installed the
-ecosystem has no occasion to — so it is listed below them, under a sentence
-saying a human can ignore it. Listing it among the rest implied they would type
-it; leaving it out would hide a name that is on their PATH and that something on
-their machine may call. [`commands.json`](commands.json) says which is which,
-with `audience: tooling`, rather than the installer guessing from a prefix.
+The default directory is `~/bin`. The installer prints PATH advice if the
+current shell cannot find it; shell configurations differ, so check that advice
+before running an installed command. The chosen directory and installed-file
+records live in the ignored `install_eo_cmd.local.json` at this checkout's root.
 
-**The directory defaults to `~/bin` and is meant to work without being
-configured**, because a login shell puts `~/bin` on PATH on every system these
-commands are meant for. So a run does not stop to explain PATH: when this shell
-cannot see the directory it says `ensure that ~/bin is in your PATH:` with the
-line that does it, once, and carries on. A run from cron or a Makefile has a
-PATH that says nothing about the one the person types in, which is the other
-reason that is advice and not a verdict.
+A run reports where it installs, what changed, and what you can type next.
+Commands for people appear first; `koine_append_db`, marked `audience: tooling`
+in the manifest, appears separately. `--verbose` shows the file table;
+`--dry-run` always shows it and creates nothing. A name occupied by a file the
+installer does not own is skipped with an explanation. `--force` permits its
+replacement.
 
-**The file-by-file table is still printed, under `--verbose`**, and a `--dry-run`
-turns it on because inspecting exactly that is what a dry run is for. It says
-which command, what happened to it, and where its file came from; the directory
-is named once, in the line that opens the run, rather than repeated on every row
-as the longest and least varying string on the page.
+`--init-clone` reads the president's register and clones missing repositories
+into `DIR`, or beside the president's checkout by default. It installs no
+commands and leaves existing directories alone. `--president DIR` explicitly
+selects the register checkout; an invalid selection is refused rather than
+silently replaced. `--dry-run` prints the proposed clone commands.
 
-**Nothing that went wrong is left to be inferred from a word in a column.** A
-file this script will not overwrite, a register that could not be read, a
-directory this shell cannot see: each gets a sentence saying what happened and
-what to do about it — and one sentence however many files it is about, because
-the same sentence printed nine times is a wall a reader skips.
+**Pinned consumers keep their locators.** As checked on 2026-09-18, anoieu and
+dokimasia resolve `koine_append_db` through their own `scripts/koine.lock`.
+Installing it on PATH is for terminal use; PATH selects the installed version
+and does not establish a consumer's pin.
 
-**A dry run is the one run that does not say *ready***: it wrote nothing, so
-there is nothing to be ready with. It prints the same roster under a lead that
-says so.
+## Prompt commands
 
-**The roster's lines are the manifest's `short` field**, one line per command,
-and `what` is the paragraph beside it that says the same thing with its
-caveats. A roster built by cutting `what` down to its first sentence is what
-this printed until 2026-09-18: three-line cells that stopped wherever the prose
-happened to have a full stop.
+Every form of a prompt command takes `--show-prompt`: it prints exactly what
+would reach the assistant and launches nothing. Previews work without sibling
+checkouts and say what cannot be read. A real run may require those checkouts.
+`test_every_form_previews_on_a_machine_with_nothing_on_it` exercises every
+advertised form with an empty home directory and no neighboring repositories.
 
-**That roster is the manifest's own text**, not a second description written
-here: [`commands.json`](commands.json) is the ground truth, so a command whose
-purpose moves says so on the next install rather than drifting quietly.
-
-**The table at the top of this page is a copy of it, and something compares
-them.** `test_the_readme_table_agrees_with_the_manifest` in
-[`../tests/test_eo_cmd.py`](../tests/test_eo_cmd.py) decides that the same names
-appear in both, that every executable in this directory is in the manifest, and
-that each command is written up somewhere. **It answers the easy half only**: it
-cannot tell whether a description is still true of what the command does. The
-comparison was missing until 2026-09-17 and the copy had already drifted — this
-page claimed every form takes `--show-prompt` after two programs arrived that
-take no such thing.
-
-A real run prints the same rows under `installed` rather than `would install`,
-so the two are compared by reading them. **It never overwrites a file it did
-not install** — that row is skipped and says so, and `--force` is a person's
-decision because the file being replaced is theirs. The chosen directory is
-remembered in `install_eo_cmd.local.json`, which the repository ignores.
-
-**Cloning the ecosystem is not one of these commands.** It is
-`../scripts/install_eo_cmd --init-clone [DIR]`, which reads the register the
-president holds and clones what is missing beside it. A command for it would
-have to be installed by the installer first, so putting the ecosystem on a
-machine would depend on having already set up the thing that does it — the job
-belongs where somebody already is. `--dry-run` prints the `git clone` lines and
-runs none of them; a directory that already exists is reported and left alone.
-
-**Each command is installed as one file**, so nothing here may import anything
-from beside it in this tree. `eo_status` did for an afternoon on 2026-09-17 and
-broke the moment somebody ran the installed copy; `tests/test_eo_cmd.py` now
-runs every command from a directory with none of this tree in it.
+`--print` runs non-interactively. `eo_topic` and `eo_child` refuse it because
+they must ask you what to write. `eo_status` and `koine_append_db` are programs,
+so they do not take `--show-prompt`.
 
 ## What koine may change here, and what it may not
 
-koine maintains all of these — their text, their options, and what they ask an
-assistant to do — **under two roles, and the line is where the command runs.**
-[kanon's `docs/roles.md`](https://github.com/ajreynol/kanon/blob/main/docs/roles.md)
-files `eo_init` and `eo_join` under **`R35`**, because those two are the only
-ones that run inside a repository being started or joined, and everything else
-here under **`R16`**, the shared low-level tooling.
+As checked on 2026-09-18, [kanon's role
+register](https://github.com/ajreynol/kanon/blob/main/docs/roles.md) places
+`eo_init` and `eo_join` under **R35**, and the remaining commands under **R16**,
+shared low-level tooling. Koine maintains their text, options, and behavior.
 
-**The office's reading is the one recorded, and it was the office's to give.**
-This page used to file every command under `R35` and say that the register and
-the copy disagreed with nothing running between them. kanon's `D18` offered
-either reading and said nothing turned on it; taking ours would have been koine
-deciding which role it holds what under, which is not a thing this repository
-gets to decide about itself. [`../docs/discussion.md`](../docs/discussion.md)
-`D18` says so back.
-
-**What joining costs, and what a member is held to, is `R4` and stays with the
-office.** This repository maintains the program that states the rule and **has
-no standing to change the rule.** `eo_join` is two hundred lines of argument
-about whose front page a declaration is; that argument is a position, and the
-tool doing the drafting is not the one that holds it. A change to what `eo_join`
-*asks of a repository* is a change to be argued in kanon, and then written here.
-
-**They were kanon's until 2026-09-17**, as `prompts/join_eo` and
-`prompts/init_eo`, and were stored here as copies nobody was allowed to edit.
-kanon then deleted its pair and `R35` was created to hold them. The machinery
-that policed the copies — a `--sync` and a `--check` that re-derived each file
-from kanon's original — was removed with the arrangement it enforced.
+**What joining costs and what a member is held to belong to R4**, held by the
+president. Changes to those requirements are argued there and then implemented
+here. Maintaining the command does not authorize changing the rule it states.
 
 ## eo_join
 
 ```console
-$ eo_join          # join, and say so on the front page
-$ eo_join --soft   # work with this ecosystem, held to none of it
+$ eo_join
+$ eo_join --soft
 ```
 
-**The answer to *should we join* is often no.** A tool with conventions of its
-own, or maintainers who have agreed to none of this, is worse off adopting a
-policy it did not choose — which is what `--soft` is for. Both forms open by
-asking whether the repository is the runner's alone to speak for, because a
-declaration on a shared tree is not one maintainer's to make, and commit access
-is capability rather than voice.
+Run in the repository making the declaration. Both forms ask whether the
+repository is yours alone to speak for; commit access does not establish that.
 
-### The two forms, and how they differ
+`eo_join` points to the president's joining policy, adds the membership note
+and the policy workflow it specifies, and runs the corresponding checker
+locally. For a pinned workflow, run the pinned revision. For a workflow naming
+a policy contract, run a current checker against that contract. The prompt
+states neither workflow itself; the policy and anoieu's checker guide define
+those interfaces.
 
-**`eo_join`** declares membership on the README, adds the `anoieu / policy`
-workflow the policy page gives, and runs the checker locally the way that
-workflow runs it. **The page gives two forms of the workflow** — one pinning a
-checker revision, one naming a policy contract — and step 3 branches rather than
-choosing, because a repository on the contract form has no pinned revision and
-cannot run one. Which form a member is held to is what joining costs, which is
-the office's; kanon's `D16` asked for the branch and
-[`../docs/discussion.md`](../docs/discussion.md) `D18` answers it.
+`--soft` adds one maintenance section: the repository works with the Eunoia
+ecosystem and is held to none of its policy. It adds no membership, workflow,
+checker, or footing marker. Putting the ecosystem's name on a shared front page
+still requires agreement. A bare maintenance heading naming nobody needs no
+command.
 
-**`eo_join --soft`** adds one README section and stops: no membership, no
-workflow, no checker. The note says the repository **works with** the Eunoia
-ecosystem and is **not held to** its policy — it adopts none of it, it is not
-checked against it, and an assessment published by a tool here is that tool's own
-work. **Naming an ecosystem and joining it are different claims**, and the
-refusal is stated rather than implied: a note that named us and said nothing else
-would be read as a declaration by everybody who has ever seen one.
-
-**`--soft` is not the quiet way in, and it is not the safe thing to run on a tree
-you do not own.** It puts our name on somebody else's front page, which is a
-second thing to get agreement for rather than a gentler version of the first.
-What such a tree can carry meanwhile is the bare `## How this repository is
-maintained` heading the policy asks of everybody, naming nobody — and that needs
-no command and no agent, which is why one is no longer offered for it.
-
-### It had four forms until 2026-09-18
-
-`--associate` wrote a footing marker, plain `--soft` wrote a note naming no other
-project at all, and `--soft --affiliated` wrote the one `--soft` writes now. Four
-commands for what a reader experiences as one question — *what does this
-repository say about us* — and a chooser who gets it wrong writes the wrong claim
-onto a front page. **The maintainer collapsed them**; both removed flags are
-refused with a line saying what happened rather than *unknown option*, because
-pages this repository does not own still name them.
-
-**The soft note claims no footing, and that is deliberate.** Three of the
-office's documents give `associate` two incompatible readings — `policy.md`'s
-footings table has an associate *held to the policy by its own choice*, the
-register's blurb has one *held to none of this*, and anoieu's checker records
-that the word changed meaning under both. So the note says what the repository is
-held to, which is nothing, and does not reach for a word whose meaning is
-somebody else's to settle. **[`D17`](../docs/discussion.md) says all of this to
-kanon**, including that the order was backwards: koine has no standing over what
-joining costs, and changed the command first.
+`--associate` and `--affiliated` are withdrawn flags and refuse with an
+explanation. The associate marker and an independent maintenance note are
+written by hand, as the policy specifies.
 
 ## eo_respond
 
 ```console
-$ eo_respond kanon D14    # answer that one topic
+$ eo_respond kanon D14
+$ eo_respond --no-main kanon D14
 ```
 
-Run it at the root of **your** repository, naming the tool whose discussion file
-carries the topic. Their tree is read and never written; anything this changes is
-changed in your tree and left staged.
+Run at the root of **your** repository. The prompt first asks the assistant to
+inspect the branch, switch to `main` if needed, verify it, and run
+`git pull --ff-only`. If switching or pulling fails, stop and report it; do not
+force the switch by discarding, stashing, or resetting work. **`--no-main` keeps
+the current branch and still requires a fast-forward-only pull.** These are
+instructions to the assistant; a preview switches no branch and performs no pull.
 
-**It pulls first.** What it stages has to apply to what is current, or the patch
-is a merge for whoever reviews it — so the prompt opens on `git pull`, and on
-stopping rather than untangling somebody else's merge to get started. Their tree
-it reads as it stands: pulling there would be writing in a tree that is not
-yours.
+The topic is required before an assistant can be launched. The prompt checks
+that the human's instruction and the named topic agree; disagreement stops the
+work. The other repository is read as it stands and never pulled or written.
+Changes here are left staged, and the reply is drafted in
+`discussion-response.local.md`, unstaged. Nothing is sent.
 
-**The topic is required, and that is the gate.** The ecosystem's one
-build-failing rule is that an agent answers a topic only where a human
-instructed it and **named which topic** — and this refuses in argv rather than
-asking a prompt to behave, which is strictly stronger than any wording. For *what
-has anybody addressed to us*, which names nothing, run
-[`eo_housekeeping`](eo_housekeeping): it sweeps every checkout at once and costs
-no turn per tool.
-
-**A run still refuses where their tree is not here**, because it answers a topic
-by reading one and there is nothing to read; **the preview prints anyway** and
-says which checkout it did not find, since somebody reading the prompt before
-running it is the person least likely to have cloned anything.
-
-**What this does that housekeeping cannot: the disagreement check.** There are
-two independent accounts of what somebody wants — the human's instruction and the
-topic itself — and where they differ at least one is wrong. A housekeeping run has
-only the topic, so it can only take the topic at its word; this has both, and
-stops and says where they differ rather than reconciling them or doing the
-smaller safe part. **That is the whole of why both commands exist**, and it is
-why the gated one is what a contested or expensive topic gets.
-
-Two paragraphs, in the same shape as `eo_housekeeping`: pointers first — the
-president, whose tree holds `docs/policy.md` and so what a topic is and what a
-reply owes — then the job. The reply is drafted in `discussion-response.local.md`,
-unstaged, by the `*.local.md` convention for a document deliberately not
-committed.
+A real run refuses if the target checkout or its discussion file is absent;
+a preview prints the prompt with that limitation. For all topics addressed to
+you, use `eo_housekeeping`.
 
 ## eo_housekeeping
 
 ```console
-$ eo_housekeeping             # bring the repository up to date, and stage it
-$ eo_housekeeping --report    # say what it would do, changing nothing else
+$ eo_housekeeping
+$ eo_housekeeping --no-main
+$ eo_housekeeping --report
+$ eo_housekeeping --report --no-main
 ```
 
-Run it at the root of the repository being tidied. **Two paragraphs.** The first
-is nothing but pointers: what the ecosystem is, **who the president is** and so
-where `docs/policy.md` and `docs/vision.md` are, this repository's own README and
-`docs/`, the checker, and the other tools checked out on this machine. The second
-is the work: `git pull` first, then the goal — documentation made true of the
-tree, the topics other tools addressed to us answered, bugs in our own tooling
-fixed, a topic opened in `docs/discussion.md` for anything needing somebody
-else, and **CI green as the final step.**
+Run at the root of the repository being tidied. The first paragraph points to
+the president's policy and vision, the local README and docs, the checker, and
+neighboring tools. The president and tool names come from the register. Without
+a register, the prompt reports the missing source and points to the local
+README's policy link.
 
-**It pulls before it judges.** Every question a run asks — is this documentation
-true of the tree, has anybody answered this topic, does CI pass — is asked of a
-checkout, and a checkout that is behind answers all three wrong: work already
-done reads as outstanding, and work done here comes back to somebody as a merge.
-The pull is in the prompt rather than in front of the command because an agent
-that cannot fast-forward is told to **say so and stop**, which a `git pull &&`
-could not do. **`--report` pulls too** — a report of what is stale, computed from
-a stale checkout, is the defect this command was sent to find — and that is the
-one change it makes.
+The second paragraph asks the assistant to **ensure `main` and run
+`git pull --ff-only` first**, with the same stop-on-failure rules as
+`eo_respond`. `--no-main` keeps the current branch. Then it updates documentation,
+answers topics whose `To:` names this repository, fixes its tooling, opens local
+topics for requests to others, and ensures CI passes as the final step. Children
+are included in their parent's work; they open no correspondence of their own.
 
-**The president is looked up, never written down.** The register names who holds
-the office and lives in the office's tree, so finding the file is finding the
-president — and the prompt keeps naming the right one after the office moves. The
-same pass yields the register's list of names, which the neighbour list is
-filtered to: a checkout the register does not name is somebody's working copy, and
-offering it as a tool to answer is how a topic gets read out of the wrong tree.
+**`--report` also switches to `main` and pulls**, unless `--no-main` suppresses
+the switch. Beyond that preparation it writes only `housekeeping.local.md`,
+unstaged, describing the work and whether CI passes. Neither preview form
+changes branches or pulls.
 
-**Why it points rather than restates, which is the whole design.** A prompt that
-paraphrased the policy would be a copy of somebody else's rules, installed on a
-stranger's PATH, with nothing keeping it current — the thing the policy's *Copies*
-section is about, and the thing this command is sent to find. It would also
-silently narrow the job to whatever the paraphrase happened to name. The first cut
-of this file did exactly that, at 1,749 words; `tests/test_eo_cmd.py` now holds it
-under five hundred and to two paragraphs.
-
-> **The discussion work runs under a standing override.** Every discussion file
-> opens with the ecosystem's one build-failing rule: a topic is answered only
-> where a human instructed it and **named the topic**. A command run on a habit
-> names none, so a run of this overrides that rule rather than satisfying it, on
-> the maintainer's standing instruction — recorded in
-> [`../docs/maintenance.md`](../docs/maintenance.md), which is where the policy's
-> escape hatch says an override belongs. **The prompt says so in as many words**,
-> and that is not ceremony: an assistant that reads the banner without it stops
-> there and is right to.
->
-> What survives the override: a run answers only what names it, **writes in no
-> tree but its own**, and **sends nothing anywhere** — so what it produces is a
-> diff somebody reads before anybody else hears from us. It does not extend to
-> [`eo_respond`](eo_respond), which keeps the gate.
-
-**The finished prompt is refilled to one width before it is sent**, being
-assembled from fragments each wrapped at whatever width it was written at.
+The discussion work uses the maintainer's standing override recorded in
+[`../docs/maintenance.md`](../docs/maintenance.md#the-two-rules-that-cut-across-both).
+The prompt says so explicitly. It answers only what names this repository,
+writes in no other tree, and sends nothing. This override does not extend to
+`eo_respond`, which requires a named topic.
 
 ## eo_topic
 
 ```console
-$ eo_topic kanon           # raise something with kanon
-$ eo_topic anoieu logos    # one topic, addressed to both
+$ eo_topic kanon
+$ eo_topic anoieu logos
 ```
 
-Run it at the root of **your** repository, naming who the topic is for. It writes
-`docs/discussion.md` here and stages it; their tree is read and never written.
+Run in your repository. The assistant asks what you want to say and waits;
+`--print` is refused. It drafts and stages one topic in `docs/discussion.md`,
+addressed to the named tools, and sends nothing.
 
-**It does not take the topic on the command line: it asks you, and waits.** What
-you want from somebody else is the one thing in a topic that cannot be read off a
-tree, and correspondence typed at a shell prompt is one line long — which costs
-its reader more than it saves you. `--print` is refused for the same reason:
-a non-interactive run has nobody to ask.
+The prompt supplies the date, the target checkout's commit and dirty state,
+and the next available topic ID. IDs are allocated above every ID in this
+repository's discussion history, including removed topics. Only `## Dn`
+headings count; a reply's `### Dn` reference does not allocate a topic.
 
-**What it carries instead is everything mechanical**, which is the half a person
-gets wrong: today's date, the commit their tree is at and whether it was dirty
-when you read it, and **the next free id** — allocated above the highest this
-repository ever issued, *including topics since removed*, which live in Git
-history and nowhere else. Only `## Dn`, the heading of a topic we opened, counts
-toward it: a `### `Dn`` inside a reply is somebody else's number being answered,
-and counting those would issue one of ours twice.
-
-**A finding is not a topic**, and the policy's test is mechanical: if what you
-want to say has a file and a line number, it goes through the reporting workflow
-instead. The prompt applies that test before it writes anything, and stops.
-
-**Nothing is sent.** Addressing is not contacting: writing a topic costs us
-nothing of theirs, carrying it spends somebody's afternoon, and that is a
-person's decision every time.
+The prompt applies the policy's distinction between a finding and a topic
+before drafting. Other repositories are read and never written.
 
 ## eo_child
 
 ```console
-$ eo_child euthyna                  # start tools/euthyna/ here
-$ eo_child --unadvertised euthyna   # ...and link inward to it from nothing
+$ eo_child euthyna
+$ eo_child --unadvertised euthyna
 ```
 
-Run it at the root of **your** repository. A child project is `tools/X/`, where
-`X` names a **potential tool** — an artifact that might one day be worth
-building, investigated by writing it down first.
+Naming the child is the human instruction to start `tools/<name>/`; a run
+without a name is refused. The assistant asks for the question, goals, and
+boundaries rather than inventing a charter. `--print` is refused.
 
-**Naming it is what starts it.** The policy's first rule for a child is that a
-human starts one and a human ends one: no agent, script or workflow creates
-`tools/X/` on its own initiative, because a child is a claim on attention and a
-name in a shared namespace, cheap to spend and expensive to withdraw. A run with
-no name is refused in argv — the person typing the name **is** the decision the
-rule reserves.
-
-**The charter is asked for, never invented.** What question the child is for and
-what it will not do is the whole of what a charter says, and an assistant that
-supplied them would be starting a child project on its own initiative with
-somebody else's name on it. So the prompt asks and waits — and `--print` is
-refused, having nobody to ask.
-
-**It is an island, and the prompt says so before anything else.** The child reads
-whatever it likes and writes only inside its own directory: nothing on the import
-path, nothing in the parent's test suite, nothing in its CI. **Deleting the
-directory is the test** — if removing it changes what the tool does or what CI
-says, the coupling is a defect rather than something to document. A prompt that
-let an assistant wire the child up would produce exactly that coupling on day one.
-
-**The register is not written here.** Which children exist is recorded in the
-president's `ecosystem.json`, that file is the office's, and a status is changed
-by a person: the prompt says what the entry would say and writes nowhere but this
-tree.
+A child reads other trees but writes only within its own directory. It imports
+nothing from its parent and participates in none of the parent's tests or CI.
+`--unadvertised` records that preference and adds no inward links. The register
+is the president's to update; this command writes only in the current tree.
 
 ## eo_brainstorm
 
 ```console
-$ eo_brainstorm                       # what could this tool do next?
-$ eo_brainstorm proof reconstruction  # start from somewhere in particular
+$ eo_brainstorm
+$ eo_brainstorm proof reconstruction
 ```
 
-Run it at the root of your own repository. **It is the one command here that
-changes nothing**: every tree on the machine is read, and the only thing written
-is `brainstorm.local.md` at that root, which `*.local.md` keeps out of the
-record. Nothing is staged, nothing is committed, no topic is opened.
+Run in your repository. The assistant reads the local tools and cvc5 checkout,
+records ideas and rejected ideas in `brainstorm.local.md`, then discusses the
+list with you. `--print` produces the list without that conversation. It stages
+nothing and implements nothing.
 
-**That is the whole of why it is worth running.** An idea is cheap and most ideas
-are wrong, so the value is that being wrong costs a file somebody deletes. A
-generator that edited the tree would be one nobody ran twice, and its output
-would arrive mixed into a diff where an idea is indistinguishable from a fix.
-
-**Cutting edge is a claim about somebody else's tree, so the prompt sends an
-assistant to read one.** What is new is new against what cvc5 produces *now* and
-against what the other tools here already do — both on this disk, neither in a
-model's memory, where the state of the art is as old as the training data. So the
-cvc5 checkout and the neighbours are named, every idea says what it was read out
-of, and anything resting on memory or the network says it is a guess. Where cvc5
-is not checked out, the prompt says so and asks for the claims about it to be
-marked.
-
-**A proposal is not an approval.** The policy breaks one composition on purpose:
-notice a gap, argue a tool should exist, take a name, write a README — every step
-defensible, the whole of it not, because opening a repository is irreversible and
-outward-facing. Work that would be a new tool starts as a **child project** under
-`tools/`, which is cheap and retirable. This proposes either and creates neither.
-
-**It asks for the rejections too.** The vision says what the arrangement is *for*
-and a README says what its tool refuses to claim, so a list of features with
-nothing ruled out in it is evidence that neither page was read. That is the half
-a brainstorm loses first.
-
-**The file is the record, not the end of the run.** Writing the list and stopping
-hands somebody a document at the moment they are best able to argue with it, so
-the prompt carries on with them from it: which two or three it would take first,
-which one it would drop, and where they want to start. **None of that costs the
-guarantee above** — the conversation writes no files, and whatever they pick is
-the next thing they ask for rather than something this run does. `--print` is a
-non-interactive run and gets the list without the conversation, which is what it
-is for.
+Each idea identifies the evidence it uses. Missing checkouts and claims resting
+on memory or the network are marked as limitations. A proposed tool or child is
+not an approval to create one.
 
 ## eo_status
 
 ```console
-$ eo_status              # the table, by footing
-$ eo_status --check      # what is structurally wrong with the register
-$ eo_status --children   # include child projects, which are not repositories
+$ eo_status
+$ eo_status --check
+$ eo_status --children
 ```
 
-**It reads the register and prints what it says — that is the whole of it.**
-It runs no checker against anybody, reads no correspondence, and looks at no
-commits. Those go further than reading: they check the register *against the
-world*, and being wrong about them is being wrong about somebody else's tree.
-The president keeps `eo_status_audit` for that, and the line between the two is
-the word audit.
+In the president's tree, it reads the live register. Elsewhere an installed
+copy reads the snapshot baked into it by the installer, printing its source
+commit and date. Reinstall to refresh that snapshot. Without either source it
+refuses; it does not search for an unlabelled substitute.
 
-**In the president's tree it reads the live register.** Anywhere else it is an
-**offline** command: the register is baked into the file when
-`install_eo_cmd` copies it, and a run says which commit and date that snapshot
-came from. Re-installing refreshes it.
-
-```console
-$ eo_status --check          # from anywhere
--- offline: a snapshot taken at install time, from kanon at a7bd2b7, on 2026-09-17
---   re-install to refresh it, or run in the president's tree for the live register
-```
-
-Because every column comes out of the register, **the offline table is exactly
-as complete as the live one** — only its age differs.
-
-**Being out of date is fine; not saying so is not.** Live beats snapshot beats
-refusal, in that order and never silently — and there is no third place it will
-look. A register found somewhere unnamed is a claim about who is in this
-ecosystem with no way to say how current it is.
-
-**Why baked in rather than fetched.** Going to look — a sibling checkout, a
-clone at a pin — would find *a* register with no way to say how current it is.
-Baking it in at install time makes the provenance a property of the file: the
-snapshot and the sentence describing it are written together, so no run can
-report one without the other.
-
-**It never writes.** A footing is a decision somebody made and no program takes
-one; `--check` reports facts about the file — a footing the policy does not
-define, an entry with no url, a child with no parent, two entries claiming one
-repository — and never an opinion about who should hold what.
+`--check` validates the register's structure: footings, URLs, parents, and
+unique repository claims. `--children` includes child projects. It runs no
+checker against other repositories and makes no membership decisions. Auditing
+the register against the world belongs to the president's `eo_status_audit`.
 
 ## eo_init
 
 ```console
-$ eo_init new                    # a repository with nothing in it yet
-$ eo_init from-child <path>      # work that already exists as a child project
+$ eo_init new
+$ eo_init from-child <path>
 ```
 
-The mode is required rather than defaulted: the wrong one produces a confident
-README about the wrong thing, and nothing downstream catches it. **It complies
-with nothing, deliberately.** A new tool with a clear purpose and no policy is
-worth more than a compliant one with nothing to say, and knowing what you are
-building is what makes the rest decidable later.
+Run in a new repository supplied by a person. The mode is required. `new`
+uses the person's name and scope and checks the glossary for conflicts;
+`from-child` reads the child's charter and delivered work without changing its
+parent. Both write a README and leave it staged.
+
+The prompt records its sources in `init-brief.local.md`, unstaged. Missing
+scope or a conflicting name requires the person's answer. It adds no policy,
+maintenance note, CI, or layout: `eo_join` is a separate step when there is
+something to join with.

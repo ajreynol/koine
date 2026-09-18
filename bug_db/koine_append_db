@@ -4,8 +4,9 @@
     koine_append_db <new bugs> <bug database>
 
 A tool in this ecosystem runs over somebody else's project and dumps what it
-found: a JSON list of bugs, each one at least a `bug`, a `tool` and a
-`description`. That dump is about **one run**. What nobody wants to keep by hand
+found: a JSON list of objects identified by `id`, or by `tool` and `bug`.
+A `description` and any other fields are optional. That dump is about **one
+run**. What nobody wants to keep by hand
 is the other file -- every bug the tool has ever found, across every run, so that
 a bug reported in March is still there in September and is still the same bug.
 
@@ -23,7 +24,7 @@ What a second sighting *does* change is `last_seen`. `first_seen` never moves.
 
 ## What it will not do
 
-**It never edits a bug that is already in the database, and never removes one.**
+**Only last_seen changes for a bug already in the database; none is removed.**
 If a later run describes a known bug differently, that is printed as a conflict
 and the database keeps what it has. A record of what was found over time is
 worth having only if nothing quietly rewrites it; deciding that a new
@@ -109,7 +110,8 @@ def key_of(entry):
     """What this bug is, for the purpose of *have we seen it before*."""
     if entry.get("id"):
         return ("id", str(entry["id"]))
-    return tuple(str(entry.get(name, "")) for name in KEY)
+    # Keep the two identity forms disjoint: tool="id", bug="x" is not id="x".
+    return ("tool+bug", *(str(entry.get(name, "")) for name in KEY))
 
 
 def problems(entries, where):

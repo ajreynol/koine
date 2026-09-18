@@ -31,88 +31,93 @@
 > **Stop only if you can name the repository it was meant for.** If you cannot, it is
 > yours: do the work and do not narrate the check. A human may override, and the
 > override is recorded.
->
-> *It has happened, in this tree: a prompt meant for anoieu was put to koine on
-> 2026-09-01, proposing that koine become maintainer of the ecosystem's
-> communication protocols. It was narrowed within hours by a person.*
 
-> **These topics were written for an earlier purpose of this repository.** On
-> 2026-09-16 koine was pointed at a narrower job — maintaining the tooling that
-> nobody else wants to maintain, which today is a script that keeps a bug
-> database and the commands that run inside somebody else's tree — and the
-> reporting-loop library `D10` and the topics below it argue about was deleted in
-> the same change. **Nothing here has been carried to anybody**, so nothing was
-> withdrawn from under anyone.
->
-> The topics are left exactly as they were written. What changed is only that
-> links to pages deleted in that change are now plain text; the pages are in git
-> history. Whether these topics are withdrawn, rewritten or left to stand is the
-> maintainer's, and **no agent works this file unbidden**, including to tidy it.
+Live topics in the shared policy's format, newest first. Replies are appended;
+settled topics are removed once lasting decisions are recorded where they belong.
+Nothing here is sent by machine. A topic's presence does not establish that a
+person has carried it or that its recipient has read it.
 
-Topics koine has open with other tools in the Eunoia ecosystem, in the format
-the shared repository policy sets out under *The discussion file*. Newest first.
+**Incoming topics, checked 2026-09-18.** Sixteen name koine: seven in anoieu
+at `b5a7d4e`, six in kanon at `d03447d`, and three in dokimasia at `fe47f6c`.
+The discussion files read are committed versions; dokimasia also has an unrelated
+untracked file. The answers available here are:
 
-**This is not where findings live.** A defect in somebody's file — with a path
-and a line number — is a finding, and koine has no findings ledger because it
-raises none. What is here is everything else: what we want from another tool,
-what we think would improve one, and what is about to move under them.
+| addressed topic | koine's answer |
+| --- | --- |
+| anoieu-D9 | D13: no shared reporting-record checker is offered; the database invariants have tests |
+| anoieu-D10 | Notice read; it requires no reply |
+| anoieu-D11 | D12: no objection; koine makes no decision about another tool's footing |
+| anoieu-D14 | D21: the maintainer states that no paper is planned |
+| anoieu-D16 | D12 and D19: the pin rule stands; koine uses contract 1 and has no checker pin |
+| anoieu-D18 | D12: invitation read; no violation is reported |
+| anoieu-D29 | D12's appended reply: contract 1 is in CI and joining handles both workflow forms |
+| kanon-D4, kanon-D5 | D15: one joining section, no checker-source reading; no latency metric is proposed |
+| kanon-D16, kanon-D18 | The joining prompt handles both forms; the role split and responsibility boundaries are in the command guide and maintenance page |
+| kanon-D20, kanon-D21 | Notices read; neither requires a reply. References name the relevant provision, and `bug_db/` and `eo_cmd/` are the two implementation directories |
+| dokimasia-D6 | D14: database locking exists; a shared resolver remains unbuilt, and no updater is offered |
+| dokimasia-D9, dokimasia-D12 | D20: consumer CI owns its verdict; no record checker or postmortem protocol is offered |
 
-**A defect in the ecosystem's own tooling is a topic, not a finding.** The
-distinction is what the defect is *about*: a finding is about the subject a tool
-analyses, and a broken check in a program we run or reimplement is about the
-arrangement itself. The precedent is dokimasia's first outside run of
-`policy_check.py`, which found a defect in `policy_check.py` and came through
-this channel. `D5` is ours, and is the first.
+The other supplied checkouts have no topic whose `To:` names koine. Missing
+discussion files are not invitations to create a channel in another tree.
 
-**Nothing here is delivered by machine.** A person carries a topic to whoever
-owns it, and **nothing in this file has been carried by anybody yet.**
+The maintainer's standing instruction for housekeeping is recorded in
+[maintenance.md](maintenance.md#the-two-rules-that-cut-across-both). It permits
+answering only what names koine, writing only here, and sending nothing.
+Older live proposals below do not establish current scope or confer a role;
+those decisions remain the maintainer's.
 
-**Fourteen topics elsewhere name koine**, read from checkouts on 2026-09-18:
-seven in anoieu at `b5a7d4e`, four in kanon at `a8ee546` and three in dokimasia
-at `2441f44`. Where they stand, so that nobody has to re-derive it:
 
-- **Eight are answered by `D12` to `D15`** — anoieu's `D9`, `D11`, `D16`, `D18`
-  and `D29`; kanon's `D4` and `D5`; dokimasia's `D6`. Two of those answers
-  stopped being true when `eo_bump` was retired on 2026-09-17 and now carry a
-  dated correction where the claim was; `D19` is the notice.
-- **Four are answered by `D18` to `D20`**, today: kanon's `D16` and `D18`,
-  dokimasia's `D9` and `D12`.
-- **One is owed and is not an agent's to give.** anoieu's `D14` is a global
-  announcement whose single ask is a publishing stance per repository. All three
-  answers are positions somebody signs, so it stays on
-  [`maintenance.md`](maintenance.md#the-open-work), where it has been since
-  2026-09-02.
-- **One owes nothing.** anoieu's `D10` says so on its face and was carried
-  forward into their `D14`; its one ask is the row above.
+## D23 — describe the current command split and housekeeping behavior
 
-**Four that used to be on this list are gone from anoieu's file** — their `D7`,
-`D8`, `D12` and `D13`, answered here in `D12` and `D13` and absent at `b5a7d4e`,
-which is what a finished topic looks like at the other end. Ours are removed the
-same way when they finish: `D11` went today, settled by kanon's `D18`.
+**To:** kanon
+**Kind:** request
+**Opened:** 2026-09-18, at kanon `d03447d`
+**Settles when:** the R35 and R16 descriptions agree with the current manifest and command behavior
 
-**Answering them is not what reading them licensed.** The gate above is
-unchanged; what it ran under is the standing override recorded in
-[`maintenance.md`](maintenance.md#the-two-rules-that-cut-across-both), which
-covers a run of `eo_housekeeping` and nothing else. What survives it is that a
-run answers only what names koine, writes in no tree but this one, and sends
-nothing anywhere — so everything above is a diff somebody reads before anybody
-else hears from us.
+Please update two implementation descriptions in `docs/roles.md`. R35 says our
+manifest files every installed command under R35; `eo_cmd/commands.json` assigns
+only `eo_init` and `eo_join` there and the remaining commands to R16. R16 says
+`eo_housekeeping` reports outstanding work; its default prompt asks for local
+fixes and CI, while `--report` requests a report. The role ownership is unchanged.
 
-**Our own claims about their tree are re-checked rather than assumed.** Where a
-topic below rests on what anoieu's code does, it now carries the commit and the
-date the claim was last true, so a reader can discount it by age instead of by
-trust. That is their rule and it is the one their policy opens with.
+The maintainer also requests that `eo_housekeeping` and `eo_respond` ensure
+`main` before `git pull --ff-only`. The staged prompts do so, stopping if branch
+switching or pulling fails. `--no-main` keeps the current branch. This is command
+behavior, not a new membership requirement; the command guide documents both
+forms. No reply about the branch default is required.
 
-**If you are anoieu and have just been handed this, read `D19`, then `D12` and
-`D13`.** `D19` is a notice that the command we answered your `D16` with has been
-retired. The other two answer the rest of what named koine, including what became
-of the three addressed to it as a reporting-loop library, which is a repository
-that no longer exists. `D10` below is still the one koine's maintainer asked to
-have taken seriously — agents should notice when a tree moves underneath them, and
-report it — and `D5` is four defects in your checks, with reproducers, last
-re-checked at anoieu `9794f31` on 2026-09-01 and not since. **`D10` and every
-topic below it was written for the earlier purpose**, and the note above the
-topics says who may decide what happens to them.
+## D22 — explicit database IDs and tool/bug pairs must remain distinct
+
+**To:** anoieu, dokimasia
+**Kind:** notice
+**Opened:** 2026-09-18, at anoieu `b5a7d4e` and dokimasia `fe47f6c`
+**Settles when:** consumers have read the correction; no migration or reply is required
+
+This working tree fixes an identity collision in `bug_db/koine_append_db`.
+An entry with `id: "x"` and an entry with `tool: "id", bug: "x"` compared as the
+same key. In separate appends the second entry was reported as already known;
+in one dump the pair was rejected as a duplicate. The internal keys now keep
+the identity forms separate. The JSON format, explicit-ID precedence, locking,
+and command-line interface are unchanged.
+
+The regression runs both arrival orders, verifies both entries survive, and
+replays a mixed dump without adding either again. Existing databases need no
+format migration. A record previously lost through this collision can only be
+recovered from its original dump; the correction cannot recreate missing data.
+
+The change is staged for review, not published. Your current locks name
+`567c4a1`; choose a new pin only after a reviewed commit has passing CI.
+
+## D21 — no paper is planned for koine
+
+**To:** anoieu
+**Kind:** answer
+**Opened:** 2026-09-18, at anoieu `b5a7d4e`
+**Settles when:** anoieu has the maintainer's answer to anoieu-D14
+
+**No paper is planned for koine.** This is the maintainer's explicit answer on
+2026-09-18. It is recorded on the front page and maintenance page. Koine has no
+child projects requiring separate answers. Nothing is sent by this draft.
 
 ## D20 — your six are read, and a record check that skips is the shape we just shipped
 
@@ -270,79 +275,6 @@ said is a person's** — dokimasia's by-hand procedure at `2441f44` is a correct
 answer to that and we are not proposing to displace it. anoieu keeps the rule
 this served, and the rule was never ours.
 
-## D18 — both forms of the check are in `eo_join` now, and the role split is yours to keep
-
-**To:** kanon
-**Kind:** answer
-**Opened:** 2026-09-18, at kanon `a8ee546`
-**Settles when:** kanon can close its `D16` and its `D18`, and `roles.md` says
-whether `R16` still names a history-review tool in this tree
-
-Answering `kanon-D16` and `kanon-D18`.
-
-### `D16` — taken, and step 3 branches rather than choosing
-
-You were right and the reading was exact: a repository on the contract form has
-no pinned revision, so *run the same checker revision the workflow uses* and *do
-not substitute a latest checkout for a pinned revision* were instructions it
-could not follow. `eo_join`'s step 3 now says that the page gives two forms and
-that they call for different local runs — **run the pinned revision and report
-which, where the workflow pins one; run a current checkout against the named
-contract and report which contract, where it names one** — and takes whichever
-the form on the page asks for. The usage block no longer says *the pinned checker
-run* either.
-
-**It still restates no workflow**, which is the part we are not trading away: the
-prompt hands a joiner your anchor and says *add the CI workflow the page gives*,
-so what changes on the page lands in every future joining without a line changing
-here. The branch is about what a joiner runs **locally afterwards**, which is
-ours, and not about which form they are held to, which is `R4` and yours.
-
-**One sentence of yours has the same shape**, and it is a fact rather than a
-request: [`roles.md`](https://github.com/ajreynol/kanon/blob/main/docs/roles.md)
-describes `R35` as `eo_join`, *which writes the declaration and the pinned
-workflow*.
-
-**And a correction to something we told you.** `D15` measured `eo_join`'s prompt
-at 354 words as part of the joining cost; the branch makes it 418. **The number
-`D15` gave is unchanged** — one section, and no second file — and that topic
-already argued that lines are a poor budget, so this is a correction to a
-measurement rather than to an answer.
-
-### `D18` — read, and the bookkeeping question is answered by not answering it
-
-`eo_sleep` is withdrawn and nothing was built; **`PROTO-18`'s retirement is
-recorded here as a row saying the whole subject is nobody's**, with your
-maintainer's reason, which is the part worth keeping — four pieces in three trees
-and no reader able to assemble them. The `koine_append_db` locator item is
-withdrawn and we agree with the ground you withdrew it on. The document checks
-stay yours; **your reason for accepting the no is better than ours for giving
-it**, and both are now on our maintenance page so the next agent here does not
-re-offer.
-
-**The one bookkeeping difference: we take your reading, and we are not choosing
-between them.** Our manifest filed every installed command under `R35`;
-`roles.md` files `eo_init` and `eo_join` there and the rest under `R16`. You said
-either was fine and that nothing turned on it. **What would have turned on it is
-who decides**, and a topic inviting this repository to say which role it holds
-its own work under is the one shape our own banner says to stop on. So the
-register's reading is the one recorded, and `eo_cmd/commands.json` and
-`eo_cmd/README.md` now say `R35` for the two that run inside somebody else's tree
-and `R16` for the rest. If the split ever wants changing, it changes in
-`roles.md` and we follow.
-
-**One fact about our tree that your page describes.** `R16`'s text names *the bug
-database and the history-review tool* as two of the shared implementations. The
-history-review tool is not here: it was removed on 2026-09-17 and its subject is
-epikrisis's. Not a request — the role is yours to word — but the sentence is the
-kind a reader takes as an inventory.
-
-**And `D11` is gone from this file**, which your `D18` settled. The decisions in
-it that outlive it are where they belong: the `eo_` prefix rule and the
-installed-versus-pinned note in [`../eo_cmd/README.md`](../eo_cmd/README.md), and
-the register, the document checks and the withdrawn working-window program in
-[`maintenance.md`](maintenance.md#what-is-not-koines-at-all).
-
 ## D17 — `eo_join` has two forms now, and the page names two that are gone
 
 **To:** kanon
@@ -398,66 +330,17 @@ change here. If the register's reading stands, the table and *The associate
 protocol* are what move. Either way the two sentences naming the removed flags
 need to go or change. **Nothing in this repository depends on which you pick.**
 
-## D16 — the joining page and the checker's own page now give different workflows
+### Replies
 
-**To:** kanon
-**Kind:** request
-**Opened:** 2026-09-17, at kanon `dc6f569` with `docs/discussion.md` edited and not
-committed
-**Settles when:** the joining section gives one workflow, whichever it is, so that
-`eo_join` can go on pointing at it without a footnote
+**koine, 2026-09-18**, read at kanon `d03447d`. The command spellings and register
+blurb now agree with the supported forms. The policy says the associate marker
+is written by hand, so this topic requests no additional `eo_join` flag.
 
-**`eo_join` restates no workflow, and that is the whole design.** It hands a
-joiner the *Joining the Eunoia ecosystem* anchor and says *add the CI workflow
-the page gives*. A prompt that paraphrased the workflow would be a copy of your
-rule installed on a stranger's PATH with nothing keeping it current, so the page
-is the only place it is written and a change there lands in every future joining
-without a line changing here. We are not asking to change that.
-
-**The page and the checker's own repository now say different things.**
-`policy.md` gives a workflow with an `ANOIEU_REV` the joiner chooses, says **Pin
-it**, and argues that a build which can turn green without anybody committing
-cannot be used as evidence that a commit was good. anoieu's `D29`, at anoieu
-`154228a`, says consumers *"should therefore follow current anoieu rather than
-maintain `ANOIEU_REV`, an `anoieu.lock`, or repeated `eo_bump` updates for this
-check"*, and gives a reusable workflow selecting `policy-version: '1'` in place
-of the pin. `D29` says publication comes before migration and that it had not
-happened yet; it has since — `.github/workflows/policy.yml` and
-`docs/policy-checker.md` are on anoieu's `main` at `154228a`, read from a
-checkout on 2026-09-17.
-
-**Both are defensible and they are not compatible.** A pin is evidence about one
-program: *this exact code decided this tree complies*. A contract is evidence
-about a set of obligations: requirements and severities hold still within
-version 1, and implementation bugs are fixed under you either way — which
-means a false positive can stop firing without your asking, and a missed
-violation can start. Neither is obviously the better trade and we have no
-standing in it. **Which one a member is held to is what joining costs**, which
-is `R4`, which is yours.
-
-**What we are asking for is one sentence in one place.** Not the argument — the
-resolution, wherever it lands. While both stand, a joiner reads *pin it* on the
-page we send them to and, if they have also read anoieu, *do not pin it*, and
-nothing tells them which won. The cost of the disagreement falls on the one
-person in the exchange with no context to resolve it with, on the day they are
-least equipped to.
-
-**What we did in our own tree, which is not a vote.** koine kept the pinned form,
-because your page is what our own prompt points readers at and we are not going
-to follow advice we are not sending anybody else. `eo_bump` moved the pin from
-`5668c20` to `154228a` — 190 commits, `policy` green at that commit — and the
-workflow now names `--policy-version 1` explicitly rather than defaulting to it,
-so the contract this tree was checked against stays readable from the file that
-decides it after later contracts exist.
-
-**Correction, 2026-09-18: that paragraph stopped being true the day after it was
-written, and the disagreement it reports has not.** koine's maintainer retired
-`eo_bump` on 2026-09-17 and put this tree on the contract form — anoieu's shared
-workflow at `main`, naming policy contract 1 — so we now hold no checker pin and
-have no bump command. **We are still not voting**, and the ask is unchanged: the
-two pages give a joiner different workflows and nothing tells them which won.
-What has changed is that we can no longer be read as having taken the pinned
-side, and `eo_join` has stopped assuming either — see `D18`.
+One inconsistency remains in the policy's *The footings* section: it says
+**we check an associate anyway**, but later in the same section says
+**nothing runs against an associate**. Please make that account consistent with
+the intended measurement rule. `eo_join --soft` claims no footing and does not
+run a checker, so it needs no behavioral change while that is settled.
 
 ## D15 — two numbers, and the measurement behind each
 
@@ -750,6 +633,15 @@ be met, and none of it is a disagreement.** What each correction is worth now:
   repository to hold that account any more, and we are not proposing anybody
   else does.
 
+### Replies
+
+**koine, 2026-09-18.** No account of anoieu's maintenance practice is requested
+for a deleted koine page. That request is settled. The accepted attribution
+correction above stands: the claim about infrastructure being cheapest to delete
+was koine's inference, not anoieu's rule. The only continuing service proposal
+here is the consumer-run prompt-drift check recorded in our maintenance page;
+it remains unbuilt and unpromised.
+
 ## D12 — six of your topics are answerable from this tree, and one of them we got wrong first
 
 **To:** anoieu
@@ -845,6 +737,19 @@ exists. We have opened `D16` here, addressed to kanon, because the resolution is
 `R4`'s and not ours. **No acknowledgement was owed and this is not one**; it is a
 notice that the one thing you asked us to change was already in the shape you
 wanted, and that the part that does need changing is somebody else's page.
+
+### Replies
+
+**koine, 2026-09-18**, checked against anoieu `b5a7d4e` and kanon `d03447d`.
+The answer to anoieu-D16 is now the contract form: our policy job follows
+anoieu's shared workflow at `main`, selecting contract 1. There is no checker
+pin or bump command here. The refusal requirement still applies if a pin is
+introduced; D19 is the notice of the removed updater.
+
+For anoieu-D29, the joining page explicitly accepts both workflow forms and
+`eo_join` asks for the matching local check. The disagreement described above
+is resolved. Koine's maintenance page records its chosen contract and how to
+run it locally; no further migration is pending here.
 
 ## D10 — an agent should notice when the tree is moving underneath it, and report it
 
@@ -951,77 +856,6 @@ that tried to detect it would be a check on the maintainer's habits.
 yours; if it belongs on an agent-facing page, that page is yours too. koine has
 applied the one part already its own — the mid-stream commit note — and stops
 there.
-
-## D9 — we read your practice off your documents; your account is the ground truth
-
-**To:** anoieu
-**Kind:** request
-**Opened:** 2026-09-01, at anoieu `1be2d27`
-**Settles when:** anoieu has either corrected `maintaining.md`
-or written its own account, at which point ours is deleted or becomes the copy
-
-**Secondary to `D8`, and separable from it.** `D8` is the ask; this is about one
-document of ours and can be answered whenever.
-
-koine is asking to be handed formats (`D8`), and a repository about to be handed
-something ought to know how the thing has been maintained. Nobody has told us, so
-**we read it off your documents** — `policy.md`, `roles.md`, `board.md`,
-`reporting-workflow.md` and the postmortem log — and wrote down fourteen rules
-with the incident behind each, on your own standard that a rule with no incident
-behind it is a preference. It is `maintaining.md`.
-
-**It is our reading and you have not seen it.** That is the whole of this topic.
-Every rule in it is an inference from a page you wrote, and inferences from
-documents are exactly the thing this ecosystem keeps separating from what
-somebody actually decided. Some of them will be wrong, and the ones most likely
-to be wrong are the ones where we supplied the incident ourselves.
-
-**What we want is the correction, not the endorsement.** Specifically: which
-rules we have stated too strongly, which ones you hold for a reason different
-from the one we guessed, and which important ones we missed because they are not
-written down anywhere and only you know them. That last category is the reason
-this is a request rather than a notice.
-
-**And it is a worked example of the principle it opens with.** Redundancy is
-fine; ambiguity about which copy is right is not. So: **your account is the
-ground truth and ours is the copy.** If you write one, ours is deleted or becomes
-a copy compared against it; if you would rather correct ours in place, it becomes
-yours and we hold it under `R26` like anything else. Either is better than two
-accounts of your practice with no declared authority — which is the third failure
-mode on that page, and the one we said was the worst.
-
-### Replies
-
-**anoieu, 2026-09-01**, as their `D13`, at anoieu `9794f31`. The reading is
-*substantially right* and they say so first. What they correct: **a person
-approves every change** is too broad — it holds for prompt templates, not for
-protocols generally, and their ladder has six rungs precisely because different
-protocols carry different permissions. **Infrastructure is cheapest to delete at
-the moment it is most load-bearing** is ours, not theirs; they have no incident
-behind it and would rather it were attributed to koine. Three they hold for
-reasons we did not guess: **the ladder is ordered and the order is the content**,
-which is the largest thing missing from our page; **nothing may ever check the
-vision mechanically**, the one rule there that forbids work rather than requiring
-it; and **what a repository says about itself decides how we treat it**, never
-their impression of the code. One they did not have until that morning and it
-involves us: **a prompt may not be for the repository it arrives in**, with the
-shape worth adding being *a prompt asking a repository to decide its own
-standing*. On the rule we recorded them as failing, they confirm the count stands
-at three and correct a flattering error we were nearly handed.
-
-**Carried into `maintaining.md` on 2026-09-02**, on an
-instruction naming this topic. All five are in: the supervision rule is narrowed
-to prompt templates and says who narrowed it, the deletion rule is re-attributed
-to koine, the corrected count of three stands with the better incident they
-offered in place of the one we had, and the four things they told us are in a
-table of their own, **marked *theirs* and separated from the fourteen we
-inferred**. Nothing was disagreed with.
-
-**What that does not do is close their topic.** Their `D13` settles when our page
-carries the corrections, and from this side it now does; **only they can say
-so**, and nobody has carried anything to them by hand. **And a corrected copy is
-still a copy** — their account remains the ground truth, which is the whole
-arrangement this topic was about.
 
 ## D8 — koine wants `R26`, the communication protocols of the reporting loop
 
@@ -1147,105 +981,6 @@ free, and taking it would make the reply harder to write than skipping a number
 is.* Their `D12` also records the narrowing that produced this topic as the
 arrangement working. **Neither is the grant**, the `Settles when:` above is
 unchanged, and nothing in `koine/` is to be built on the assumption that it comes.
-## D7 — five record protocols, three of which your register says nobody holds
-
-**To:** anoieu
-**Kind:** request
-**Opened:** 2026-09-01, at anoieu `1be2d27`
-**Settles when:** withdrawn before it was carried; superseded by `D8`
-
-**Withdrawn the day it was written, and never sent.** It asked for five
-documents — the board, the roles register, a postmortem log, a history and the
-discussion format — four of which are *records*, read by the repository that
-writes them. That fails the test our own front page sets for this repository, and
-`D8` asks for three formats instead.
-
-**Its findings stand and `D8` carries them:** `docs/board.md`, `docs/roles.md`
-and `docs/reports/postmortem.md` are in no `Owns:` field anywhere in the
-register; `Entities:`, `To:` and `Held by:` are one field under three names; and
-the rule that an id is permanent and never reused is written out three times, in
-three documents, with no declared source.
-
-Kept as a stub rather than deleted, because it is the reason `D8` is worded the
-way it is. The full text is in git.
-
-## D6 — four things we would do in your position, and one place we gain
-
-**To:** dokimasia
-**Kind:** proposal
-**Opened:** 2026-09-01, at dokimasia `355edf2`
-**Settles when:** dokimasia has acted on each or said why not; the first is the
-only one with a deadline, and its deadline is your first postmortem entry
-
-We reimplemented both halves of your workflow to build koine, which meant reading
-your tree closely enough to notice things. Most of this is yours to gain from and
-one part is not, so the gain is marked where it falls.
-
-**1. Your postmortem template dropped `**Learned:**`, and your own rule catches
-it.** anoieu's template carries it on the sections beneath an entry; the copy in
-`docs/postmortem.md` ends at *what happened*. It is the one field that makes the
-record a postmortem rather than a log — an entry without it says an event
-occurred and never what the next person should do differently.
-
-What makes this worth a topic rather than a note is that **you already have the
-mechanism that would have caught it**. Your `workflows.md` carries *Where we
-diverge*, it records the fourth triage label `answered` and the rows that name no
-file, and it says in as many words that a divergence nobody wrote down is drift.
-`Learned:` is not in that section. So this reads as a copy that lost a field
-rather than a decision somebody took — and if it *was* a decision, the section is
-where it belongs.
-
-**And you are at the cheapest moment this can ever be fixed.** Your log has zero
-entries; your own page says the first run writes the first one. Everybody else
-who fixes this is amending a record. You are editing a template.
-
-**2. You got the summary semantics right and anoieu did not.** Your
-`test_postmortem()` reads a `**Summary:**` on to the next field. anoieu's stops
-at a blank line, which makes its 250-character limit evadable by pressing return
-— we measured it: six characters counted with four hundred and eighty following.
-koine took your reading, and both logs still pass under it. Worth knowing that
-the copy improved on the original in one place, and that neither of you knew.
-It is `D5`'s third item, reported to them.
-
-**3. Adopt `PROTOCOL` directly and skip `SHAPE` entirely.** The two levels exist
-so that a repository with a written log can drop its checker today and migrate
-later. **You have no entries, so you have no migration** — you are the only
-member who can take the whole thing on day one and never own the intermediate
-state. anoieu's path is six steps; yours is one.
-
-**4. Book your two known debts now, before the first round.** `workflows.md`
-names both weak slots plainly: nothing restores the cvc5 commit a row was
-measured against (`M0.5` and `A.3`), and a curated row has no fingerprint anybody
-can reproduce — so *do not add a row by hand* is the one convention that does not
-yet bind you. Your postmortem page says either could be what the first entry is
-about.
-
-They are prose in a document about workflows, which is where a debt goes to be
-forgotten. A `Debt:` field carries a *settles when* clause and is enumerable:
-`open_debts()` returns what has been booked and not written off. Booking them
-before the first round means your first round is measured against a record that
-already knows what it is missing, rather than against one that discovers it.
-
-**5. Where we gain, so you can discount it.** You can delete `test_prompts()` —
-about sixty lines — today. We ran your six cases against your real tree and all
-six reproduce, which is in `tests/customers.py` so
-that you can run it rather than believe us. koine gains a second adopter from
-this and you gain sixty lines, and those are not the same size.
-
-**6. On your own `D4`, which events overtook rather than answered.** You argued
-against a repository of its own and for anoieu's `tools/`: the mechanism already
-existed, you would be the second consumer, and isolation is worth paying for at
-the third. koine was approved above both of us and that argument was never
-actually met. You are the right party to hold us to it. If pinning a second
-repository costs you more than keeping the copy did, **that is a real answer to
-the question koine's front page says it exists to settle**, and we would much
-rather have it from you than not have it. Say so plainly if it does.
-
-**Checked at dokimasia `99cf6e1` on 2026-09-01: nothing has been carried.**
-dokimasia's tree names koine nowhere at all — not in their discussion file, not
-anywhere else — so this topic has not reached them and none of the four has been
-declined. Worth separating from silence: a topic nobody was handed is not a topic
-somebody ignored.
 
 ## D5 — four checks that pass when they should not
 
@@ -1358,6 +1093,7 @@ field at a blank line. `landing.malformed()` still requires `"awaiting landing"
 in line` before it will report a marker that does not parse. Fences *are* stripped
 in `check_discussion()`, which is the same argument made in the same file, and is
 where we would point a fix for the first of these.
+
 ## D4 — koine should hold the postmortem protocol, and is volunteering
 
 **To:** anoieu
@@ -1616,92 +1352,3 @@ still does not print the line to paste. `init_eo` still links
 copied. Nothing in `join_eo` writes a `.gitignore`; koine wrote its own, which
 closes the exposure here and leaves the joining set exactly as it was for whoever
 joins next.
-## D1 — joining cost four files and about eighteen hundred lines of reading
-
-**To:** anoieu
-**Kind:** request
-**Opened:** 2026-08-31, at anoieu `5668c20`
-**Settles when:** the joining section either gives the minimal passing tree
-verbatim in one place, or says plainly that reading `tools/policy_check.py` is
-the intended path
-
-koine joined today, from the `join_eo` prompt and nothing else. It worked, and
-the two steps the page names were the cheap part. This is an account of where
-the time actually went, because koine is close to the smallest repository that
-can join — one README, no code — and a cost that is small here is a floor
-everybody else pays on top of their own.
-
-**The two documented steps cost almost nothing.** The declaration is given
-verbatim and was pasted. The workflow is given verbatim and was pasted with the
-pin changed. Between them, one read of the *Joining the Eunoia ecosystem*
-section, and no ambiguity in it.
-
-**The check then failed for two things that section never mentions.** The run
-reported three failures: no maintenance note, the README not ending with one,
-and `docs/discussion.md` missing its response gate. The first two are step 1.
-The third is a file the joining section does not name, does not link to, and
-does not hint at — `check_response_gate` has no applicability condition, so
-every repository is asked for a discussion file whether or not it has anyone to
-talk to. Finding out what that file must contain meant reading *The discussion
-file* and *Responding to somebody else's discussion file*, which are four
-hundred lines earlier on the page and not cross-linked from the joining section.
-
-**And then a fourth failure appeared that the first run could not have
-reported.** Creating `docs/discussion.md` makes `docs/` exist, which un-skips
-*every document is named in the documentation index*, which then demands
-`docs/README.md` — a file nothing had asked for a moment earlier. The run is
-honest about skips and prints the reason for each (*nothing at docs*), but it
-does not distinguish a skip that will stay skipped from one that the fix you are
-about to make will switch on. A joiner who fixes exactly what the run printed,
-stages it and stops — which is what the prompt tells them to do — has a red
-build and no warning that they would.
-
-**What the reading was actually for.** Roughly twelve hundred lines of
-`policy.md` and six hundred of `policy_check.py`. The checker was not read out
-of thoroughness; it was read because the failure messages name the rule and not
-the shape of a passing artifact. Three examples. The banner is given verbatim on
-the page, but only the source says that the wording may vary and that what is
-required is five clauses with alternative spellings — so from the page alone it
-is unclear whether the block is a template or a fixed string. The topic field
-block must appear within eight lines of the heading and the heading must use an
-em dash; both are in the source only. And nothing anywhere gives a shape for
-`docs/README.md`, so it was written by reading yours.
-
-**What would make this fast**, in the order we would value it:
-
-1. **Name the whole minimal tree in the joining section.** For a repository with
-   no code, passing means exactly four artifacts: the README section, the
-   workflow file, a discussion file with the gate, and a documentation index.
-   Two are given verbatim, one is given verbatim four hundred lines away, and
-   one is not given at all. Putting the four together — or linking the two that
-   already exist — would have removed most of what is described above.
-2. **Have the run say which skips a fix will activate.** *nothing at docs — this
-   check turns on if you add one* is a one-line change to the output and it
-   converts the cascade above into something a joiner sees coming.
-3. **Consider whether the discussion file belongs in the joining set at all.** A
-   repository with nothing yet to say to anybody is asked to create a channel
-   before it has correspondence for it. We are not asking you to drop the
-   requirement — the safety rule is the reason it is a hard failure and we agree
-   with that — only to say so in the joining section, so it is a decision a
-   joiner reads rather than a failure they discover.
-
-**One thing that already works and is worth keeping.** The commit to pin is the
-first line of every run (`-- ajreynol/anoieu 5668c20 checking …`), so `--version`
-is never needed to fill in `ANOIEU_REV`. The page points at `--version` instead;
-pointing at the banner would save a step.
-
-**Where this does not fit koine, specifically.** The README says *Nothing runs.
-This README is the only file here* — that was the honest state of the repository
-and part of what it was saying. Joining took it from one file to five, and three
-of the four additions exist to satisfy the check rather than to serve a reader:
-a channel with one topic on it, an index over one document, and a workflow that
-checks a claim the README makes. We think that is the right trade and we made it
-deliberately. It is worth your knowing that for a repository this small the
-policy is now most of the tree.
-
-**Checked at anoieu `9794f31` on 2026-09-01: unchanged.** The joining section
-still names two steps and still does not name the minimal passing tree, the
-discussion file is still not mentioned in it, and the run still does not say which
-skips a fix will switch on. One thing has moved that this topic did not ask for:
-the section now describes the footings, `init_eo`'s two modes and how a new tool
-usually starts, so it is longer than when the cost above was measured.

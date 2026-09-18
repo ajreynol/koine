@@ -153,6 +153,26 @@ def test_an_id_wins_over_the_name():
           and "conflict" in r.stderr, r.stderr)
 
 
+def test_an_id_cannot_collide_with_a_tool_and_bug():
+    print("\nan explicit id and a tool named id with the same bug name:")
+    explicit = {"id": "same", "tool": "anoieu", "bug": "first"}
+    named = {"tool": "id", "bug": "same"}
+    for entries in ([explicit, named], [named, explicit]):
+        t = Tree()
+        first = t.run(t.write("first.json", [entries[0]]), "--date", "2026-01-01")
+        second = t.run(t.write("second.json", [entries[1]]), "--date", "2026-01-02")
+        check("separate runs accept both identities",
+              first.returncode == second.returncode == 0, second.stderr)
+        check("the second identity is added rather than silently merged",
+              len(t.bugs()) == 2 and "1 new bug(s), 0 already known" in second.stdout)
+        check("the first identity is not marked seen by the second run",
+              t.bugs()[0]["last_seen"] == "2026-01-01")
+        replay = t.run(t.write("both.json", entries), "--date", "2026-01-03")
+        check("a mixed dump replays both without a duplicate error",
+              replay.returncode == 0 and "0 new bug(s), 2 already known" in replay.stdout,
+              replay.stderr)
+
+
 def test_nothing_already_in_is_rewritten():
     print("\na later run that describes a known bug differently:")
     t = Tree()
@@ -353,6 +373,7 @@ if __name__ == "__main__":
                test_a_later_run_adds_only_what_is_new,
                test_the_same_name_from_two_tools_is_two_bugs,
                test_an_id_wins_over_the_name,
+               test_an_id_cannot_collide_with_a_tool_and_bug,
                test_nothing_already_in_is_rewritten,
                test_a_bad_dump_writes_nothing,
                test_dry_run_writes_nothing,

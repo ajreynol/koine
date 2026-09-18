@@ -20,7 +20,8 @@ ever found. [`bug_db/koine_append_db`](bug_db/koine_append_db) is the trip
 between the two, and it is the same trip in every tool that has one — which is
 why it is written once here instead of three times badly elsewhere.
 [anoieu](https://github.com/ajreynol/anoieu) and
-[dokimasia](https://github.com/ajreynol/dokimasia) are the customers: each pins
+[dokimasia](https://github.com/ajreynol/dokimasia) are the customers, checked on
+2026-09-18: each pins
 a commit of this repository and calls it from its own run.
 **[`bug_db/README.md`](bug_db/README.md) is the whole of it** — the worked
 example, the one rule that makes it a database, what happens when two runs
@@ -55,6 +56,24 @@ own, and [`tests/`](tests) drives both.
 [`discussion.md`](docs/discussion.md), the channel to the rest of the
 ecosystem. **No agent acts on the discussion file unbidden**
 — the rule is at the top of it.
+
+No paper is planned for koine, on the maintainer's instruction of 2026-09-18.
+
+## Running it
+
+From this checkout:
+
+```bash
+python3 bug_db/koine_append_db run.json bugs.json
+scripts/install_eo_cmd --prefix ~/bin
+eo_cmd/eo_housekeeping --show-prompt
+```
+
+The first command appends a JSON dump to a bug database. The installer puts the
+shared commands on your PATH; the preview shows the work an assistant would be
+asked to do. `eo_housekeeping` and `eo_respond` ensure `main` before pulling;
+`--no-main` keeps the current branch. Their [command guide](eo_cmd/README.md)
+describes the options and failure behavior.
 
 ## The name
 
@@ -95,8 +114,7 @@ This repository is part of the **Eunoia ecosystem** and follows its shared
 repository policy, kept by [kanon](https://github.com/ajreynol/kanon) in
 [`docs/policy.md`](https://github.com/ajreynol/kanon/blob/main/docs/policy.md).
 The program that decides it stays in
-[anoieu](https://github.com/ajreynol/anoieu). CI uses its shared workflow at
-`main`, selecting policy contract 1.
+[anoieu](https://github.com/ajreynol/anoieu). CI follows policy contract 1.
 
 **Written by AI agents, under light human supervision.** A human directs the
 work, decides what this repository is for, and reads what is published here;

@@ -26,7 +26,8 @@
 #        CI pass -- is asked of a checkout, and a checkout that is behind answers
 #        all three wrong: work already done reads as outstanding, and work done
 #        here comes back to somebody as a merge. So the goal paragraph opens on
-#        `git pull` and on stopping if it will not fast-forward. `--report` pulls
+#        switching to main, then `git pull --ff-only`, stopping on failure.
+#        `--no-main` keeps the current branch. `--report` switches and pulls
 #        too: a report of what is stale, computed from a stale checkout, is the
 #        defect this command was sent to find.
 #
@@ -53,6 +54,7 @@ AGENT=claude
 PRINT=0
 SHOW=0
 REPORT=0
+MAIN=1
 
 usage() {
   # --help is a request: stdout, exit 0. A bad flag is a mistake: stderr, 2.
@@ -63,15 +65,15 @@ eo_housekeeping -- read the standard the president keeps, then bring this
 repository up to date.
 
 Run it at the root of the repository being tidied. It brings the checkout up to
-date first, because every question it asks is asked of a tree. Its goal is then
-documentation that is true of the tree, the topics other tools of the
+date on main first, because every question it asks is asked of a tree. Its goal
+is then documentation that is true of the tree, the topics other tools of the
 Eunoia ecosystem have addressed to you answered, bugs in your own tooling fixed,
 and CI green.
 
-usage: eo_housekeeping [--report] [--codex] [--print] [--show-prompt]
+usage: eo_housekeeping [--report] [--no-main] [--codex] [--print] [--show-prompt]
 
-  --report        say what you would do; change nothing beyond the pull. The
-                  cautious first pass
+  --report        report only after switching to main and pulling
+  --no-main       keep the current branch; still pull with --ff-only
   --codex         run codex instead of claude
   --print         run non-interactively and print the result
   --show-prompt   print the prompt and exit, running nothing
@@ -96,6 +98,7 @@ USAGE
 while [ $# -gt 0 ]; do
   case "$1" in
     --report) REPORT=1; shift ;;
+    --no-main) MAIN=0; shift ;;
     --codex) AGENT=codex; shift ;;
     --claude) AGENT=claude; shift ;;
     --print) PRINT=1; shift ;;
@@ -261,8 +264,19 @@ else
   MECHANICAL="anoieu publishes a policy checker for the rules that are decidable, and there is no checkout of it here."
 fi
 
+if [ "$MAIN" = 1 ]; then
+  PULL="**Begin by ensuring this repository is on \`main\`**: inspect the current
+branch, run \`git switch main\` if needed, and verify the branch is \`main\`.
+If switching fails, say so and stop; do not discard, stash, or reset changes to
+force it. **Then run \`git pull --ff-only\`.**"
+  ALLOWED="switching to \`main\` and that pull"
+else
+  PULL="**Begin with \`git pull --ff-only\` on the current branch; do not switch branches.**"
+  ALLOWED="that pull"
+fi
+
 if [ "$REPORT" = 1 ]; then
-  CLOSE="**Change nothing** beyond that pull: write what you would have done to \`housekeeping.local.md\`
+  CLOSE="**Change nothing** beyond $ALLOWED: write what you would have done to \`housekeeping.local.md\`
 at the root instead, unstaged, and say whether CI passes here."
 else
   CLOSE="**Ensure CI passes here as a final step.**"
@@ -276,7 +290,7 @@ agents under light human supervision. $STANDARD Read both, and this repository's
 own \`README.md\` and \`docs/\` for the conventions that are its own; this prompt
 restates none of it. $MECHANICAL $NEARBY$CHILDREN
 
-**Begin with \`git pull\`.** A checkout that is behind makes true documentation
+$PULL A checkout that is behind makes true documentation
 read as stale and stale documentation read as true, and makes anything you write
 here a merge for somebody else; if it will not fast-forward cleanly, say so and
 stop rather than untangling somebody else's merge to get started. **Then, based
@@ -310,7 +324,7 @@ command -v "$AGENT" >/dev/null 2>&1 || {
   echo "eo_housekeeping: $AGENT is not on PATH" >&2; exit 127; }
 
 WHAT="fixing what it can evidence"
-[ "$REPORT" = 1 ] && WHAT="reporting only, changing nothing"
+[ "$REPORT" = 1 ] && WHAT="reporting after branch preparation and pull"
 echo "-- eo_housekeeping: $US ($US_ROOT), $WHAT, via $AGENT" >&2
 if [ -n "$PRES_DIR" ]; then
   echo "--   the standard: $PRES, at $PRES_DIR/docs" >&2

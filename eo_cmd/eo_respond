@@ -25,7 +25,8 @@
 #
 # **IT PULLS FIRST.** What a run changes it stages here, and a patch staged on a
 #        checkout that is behind is a merge for whoever reviews it -- so the
-#        prompt opens on `git pull`, and on stopping rather than untangling
+#        prompt ensures main, then runs `git pull --ff-only`, stopping on failure.
+#        `--no-main` keeps the current branch. It stops rather than untangling
 #        somebody else's merge to get started. Their tree it reads as it stands:
 #        pulling there would be writing in a tree that is not ours.
 #
@@ -52,6 +53,7 @@ set -euo pipefail
 AGENT=claude
 PRINT=0
 SHOW=0
+MAIN=1
 NAME=""
 TOPIC=""
 
@@ -64,22 +66,23 @@ eo_respond -- answer one topic another tool of the Eunoia ecosystem has
 addressed to you.
 
 Run it at the root of your own repository, naming the tool whose discussion file
-carries the topic. It brings this checkout up to date first, because what it
-stages has to apply to what is current. Their tree is read, never written;
+carries the topic. It brings this checkout up to date on main first, because
+what it stages has to apply to what is current. Their tree is read, never written;
 anything this changes is changed here and left staged for you to review.
 
-usage: eo_respond [--codex] [--print] [--show-prompt] NAME Dn
+usage: eo_respond [--no-main] [--codex] [--print] [--show-prompt] NAME Dn
 
   NAME            a directory, or a repository name looked for beside this one
                   and under $ANOIEU_REPOS
   Dn              the topic to answer. **Required**
+  --no-main       keep the current branch; still pull with --ff-only
   --codex         run codex instead of claude
   --print         run non-interactively and print the result
   --show-prompt   print the prompt and exit, running nothing
 
 **Naming the topic is what authorises answering it**, so a run without one is
 refused rather than quietly narrowed. For *what has anybody addressed to us*,
-which names nothing and changes nothing, run eo_housekeeping instead.
+which names no topic, run eo_housekeeping instead.
 
 **It stops where your instruction and the topic disagree**, which is the one
 thing a habitual sweep cannot do: it says where they differ and waits, rather
@@ -90,6 +93,7 @@ USAGE
 
 while [ $# -gt 0 ]; do
   case "$1" in
+    --no-main) MAIN=0; shift ;;
     --codex) AGENT=codex; shift ;;
     --claude) AGENT=claude; shift ;;
     --print) PRINT=1; shift ;;
@@ -190,6 +194,15 @@ repository here and says what a topic is and what a reply owes — and there is 
 checkout of it here; take it from the link this repository's own README carries."
 fi
 
+if [ "$MAIN" = 1 ]; then
+  PULL="**Begin by ensuring this repository is on \`main\`**: inspect the current
+branch, run \`git switch main\` if needed, and verify the branch is \`main\`.
+If switching fails, say so and stop; do not discard, stash, or reset changes to
+force it. **Then run \`git pull --ff-only\`.**"
+else
+  PULL="**Begin with \`git pull --ff-only\` on the current branch; do not switch branches.**"
+fi
+
 read -r -d '' PROMPT <<PROMPT_END || true
 You are answering correspondence in **$US**, at $US_ROOT — one repository of the
 **Eunoia ecosystem**, a group of tools built around the Eunoia language and the
@@ -198,7 +211,7 @@ agents under light human supervision. $STANDARD Read it, and this repository's
 own \`README.md\` and \`docs/\` for the conventions that are its own; this prompt
 restates none of it.
 
-**Begin with \`git pull\`**, since what you stage here has to apply to what is
+$PULL What you stage here has to apply to what is
 current and not only to what is on this disk; if it will not fast-forward
 cleanly, say so and stop rather than untangling somebody else's merge to get
 started. **A human named $TOPIC in $NAME's \`$FILE\`, and that naming is what

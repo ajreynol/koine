@@ -3,10 +3,9 @@
 
     python3 tests/test_eo_cmd.py
 
-koine took these over from kanon on 2026-09-17 under role `R35`, which makes
-their text and their options this repository's to maintain — so they are tested
-here rather than assumed. Nothing below launches an assistant: every form takes
-`--show-prompt`, which prints what it would hand one and does nothing else.
+Koine maintains these commands under R35 for eo_init and eo_join, and R16
+for the remaining commands. Nothing below launches a real assistant: prompt
+forms use `--show-prompt` or a stub that prints its arguments.
 
 What is checked is what a mistake here would cost. A prompt is read by somebody
 outside this ecosystem, in their own repository, so a form that prints nothing,
@@ -533,14 +532,80 @@ def test_the_working_prompts_pull_before_they_work():
                           ("eo_housekeeping", ["--report"]),
                           ("eo_respond", ["kanon", "D14"])):
         label = " ".join([command, *args])
-        flat = " ".join(show(command, *args).stdout.split())
-        ok(f"{label} opens the work on a pull", "Begin with `git pull`" in flat)
-        ok(f"{label} stops rather than resolving somebody else's merge",
-           "fast-forward cleanly, say so and stop" in flat)
+        for branch_args in ([], ["--no-main"]):
+            variant = " ".join([label, *branch_args])
+            out = show(command, *args, *branch_args)
+            check(f"{variant} previews successfully", out.returncode, 0)
+            flat = " ".join(out.stdout.split())
+            ok(f"{variant} requires a fast-forward-only pull",
+               "`git pull --ff-only`" in flat)
+            ok(f"{variant} stops rather than resolving somebody else's merge",
+               "fast-forward cleanly, say so and stop" in flat)
+            if branch_args:
+                ok(f"{variant} keeps the current branch",
+                   "on the current branch; do not switch branches" in flat)
+                ok(f"{variant} has no instruction to switch to main",
+                   "`main`" not in flat and "git switch" not in flat)
+            else:
+                ok(f"{variant} checks main before pulling",
+                   "verify the branch is `main`" in flat
+                   and flat.index("git switch main") < flat.index("git pull"))
+                ok(f"{variant} stops if switching fails",
+                   "If switching fails, say so and stop" in flat)
+                ok(f"{variant} preserves existing work",
+                   "do not discard, stash, or reset changes" in flat)
 
     report = " ".join(show("eo_housekeeping", "--report").stdout.split())
-    ok("--report says the pull is the only change it makes",
+    ok("--report allows the branch switch and pull before reporting",
+       "**Change nothing** beyond switching to `main` and that pull" in report)
+    report = " ".join(show("eo_housekeeping", "--report", "--no-main").stdout.split())
+    ok("--report --no-main allows only the pull before reporting",
        "**Change nothing** beyond that pull" in report)
+
+
+def test_branch_options_reach_the_assistant_without_changing_the_checkout():
+    """Branch preparation is an instruction, including for installed copies."""
+    print("branch options reach the assistant without changing the checkout")
+    with tempfile.TemporaryDirectory() as tmp:
+        here = os.path.join(tmp, "work", "alone")
+        other = os.path.join(tmp, "other")
+        installed = os.path.join(tmp, "bin")
+        home = os.path.join(tmp, "home")
+        for directory in (here, os.path.join(other, "docs"), installed, home):
+            os.makedirs(directory)
+        subprocess.run(["git", "init", "-q", "-b", "feature", here], check=True)
+        with open(os.path.join(other, "docs", "discussion.md"), "w") as f:
+            f.write("## D1 — request\n\n**To:** alone\n")
+        for agent in ("claude", "codex"):
+            path = os.path.join(installed, agent)
+            with open(path, "w") as f:
+                f.write('#!/bin/sh\nfor arg do printf "%s\\n" "$arg"; done\n')
+            os.chmod(path, 0o755)
+        env = dict(os.environ, HOME=home, ANOIEU_REPOS="",
+                   PATH=installed + os.pathsep + os.environ["PATH"])
+        for command, args in (("eo_housekeeping", []),
+                              ("eo_housekeeping", ["--report"]),
+                              ("eo_respond", [other, "D1"])):
+            dest = os.path.join(installed, command)
+            shutil.copy2(os.path.join(STORE, command), dest)
+            for extra in ([], ["--no-main"]):
+                for mode in ([], ["--print"], ["--codex", "--print"]):
+                    out = subprocess.run([dest, *args, *extra, *mode], cwd=here,
+                                         env=env, capture_output=True, text=True)
+                    check(f"{command} launches the stub assistant", out.returncode, 0)
+                    flat = " ".join(out.stdout.split())
+                    ok("the assistant receives the selected branch instruction",
+                       ("do not switch branches" if extra else "git switch main") in flat)
+            preview = subprocess.run([dest, *args, "--show-prompt"], cwd=here,
+                                     env=env, capture_output=True, text=True)
+            check("an installed preview works without main or a remote",
+                  preview.returncode, 0)
+        branch = subprocess.run(["git", "branch", "--show-current"], cwd=here,
+                                capture_output=True, text=True, check=True)
+        check("the launchers leave branch preparation to the assistant",
+              branch.stdout.strip(), "feature")
+        ok("no pull runs before the assistant", not os.path.exists(
+            os.path.join(here, ".git", "FETCH_HEAD")))
 
 
 def test_housekeeping_takes_in_the_child_projects():
@@ -823,6 +888,7 @@ def main():
                  test_housekeeping_states_the_goal_and_ends_on_ci,
                  test_housekeeping_says_the_discussion_gate_is_overridden,
                  test_the_working_prompts_pull_before_they_work,
+                 test_branch_options_reach_the_assistant_without_changing_the_checkout,
                  test_housekeeping_takes_in_the_child_projects,
                  test_brainstorm_changes_nothing_and_says_what_new_is_measured_against,
                  test_housekeeping_names_the_president_it_was_told_of,

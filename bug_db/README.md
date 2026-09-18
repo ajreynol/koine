@@ -5,7 +5,8 @@ and dumps what it found *this time*; its database is everything it has ever
 found. [`koine_append_db`](koine_append_db) is the trip between the two.
 
 [anoieu](https://github.com/ajreynol/anoieu) and
-[dokimasia](https://github.com/ajreynol/dokimasia) are the customers. Each pins
+[dokimasia](https://github.com/ajreynol/dokimasia) are the customers, checked on
+2026-09-18. Each pins
 a commit of this repository in its own `scripts/koine.lock` and calls this from
 its own run; **that pin is the whole of the integration on either side.**
 `scripts/install_eo_cmd` also puts this program on a person's PATH and that is a
@@ -48,7 +49,8 @@ $ bug_db/koine_append_db run2.json bugs.json
 -- wrote bugs.json
 ```
 
-`bugs.json` now holds all four, with the March bug still carrying March:
+`bugs.json` now holds all four. This excerpt shows the two original entries,
+with their original `first_seen` dates:
 
 ```json
 {
@@ -80,8 +82,10 @@ apart.
 ## The one rule that makes it a database
 
 **A bug is added once.** It is identified by its `tool` and its `bug` together,
-or by an `id` where the tool mints one. Run the same dump twice and the second
-run adds nothing.
+or by an `id` where the tool mints one. These identity forms are separate: an
+explicit `id` never equals a `(tool, bug)` pair, even when the tool is named
+`id`. Run the same dump twice and the second run adds nothing. Only `last_seen`
+changes for an existing entry; its other fields stay as recorded.
 
 That is the property that lets this be wired into a job instead of remembered.
 Re-running is free, so a run that half-failed can simply be run again.
@@ -95,12 +99,9 @@ the same database, both merge their own dump into what they read, and whichever
 replaces last throws the others' bugs away. **Nothing reports that**, because
 from inside every one of them everything worked.
 
-**And it is intermittent, which is the worse property.** Measured against this
-script with the lock bypassed: two overlapping appends lost one in 2 trials out
-of 12, and eight lost one in 5 out of 6. A record that loses an entry once in
-six runs, reporting success every time, is one nobody can tell is wrong by
-reading it — so `tests/test_append_db.py` runs eight writers rather than two,
-because two would have passed most days with the bug still in.
+[`tests/test_append_db.py`](../tests/test_append_db.py) checks that eight
+concurrent writers preserve every accepted append, and that a later run
+preserves the database after an interrupted write.
 
 ```console
 $ koine_append_db run.json bugs.json --lock-timeout 60   # wait longer
@@ -130,7 +131,7 @@ half-written one.
 
 ## What it will not do
 
-- **It never edits a bug already in the database, and never removes one.** If a
+- **It never changes an existing entry except for `last_seen`, and never removes one.** If a
   later run describes a known bug differently, that is printed as a conflict and
   the database keeps what it has. A record of what was found over time is worth
   having only if nothing quietly rewrites it, and deciding that the new wording
@@ -152,10 +153,13 @@ They are the same shape, so a database can be fed back in as a dump:
 ```
 
 A bare JSON list is accepted as well, since that is what a tool's first dump
-usually looks like. `bug`, `tool` and `description` are what a bug is; **a tool
-may carry any other fields it likes** — a path, a line, a rank, a URL — and they
-are kept exactly as they arrive. koine adds `first_seen` and `last_seen` and
-nothing else. There is no schema to agree on beyond the key.
+usually looks like. Every entry must be an object with either a nonempty `id`
+or both `tool` and `bug`. `description` is useful but not required. **A tool may
+carry any other fields it likes** — a path, a line, a rank, a URL. For a new
+entry those fields are preserved, an existing `first_seen` is retained, and
+`last_seen` is set to the run date. Missing `first_seen` uses the run date too.
+For an existing entry, additional fields are not merged; conflicting values are
+reported and kept as recorded.
 
 ## Running it
 
@@ -167,20 +171,10 @@ No dependencies and no network. `--dry-run` says what would change and writes
 nothing; `--date` records a run under a date other than today;
 `--lock-timeout` and `--no-lock` are above.
 
-**This program lives here** rather than in `scripts/`, one directory per
-purpose. It was at this repository's root until 2026-09-17, and
-[`../koine_append_db`](../koine_append_db) is still there as a **tombstone**: it
-holds the old name, says what moved and exits non-zero, because neither consumer
-merely read that path — each asked whether a file was at it to decide whether a
-directory was koine at all, so the move would have made a checkout of koine stop
-being koine rather than break.
-
-**Both have moved, so the condition for taking it out is met**, read on
-2026-09-18: anoieu at `b5a7d4e` and dokimasia at `2441f44` both probe
-`bug_db/koine_append_db`, both keep a `scripts/koine.lock` at `567c4a1`, and each
-reads the old root name only to tell *koine, from before the move* apart from
-*not koine*. **Removing it is a person's**, because it is a file two repositories
-outside this one still name.
+**The executable is [`bug_db/koine_append_db`](koine_append_db).** The root
+[`koine_append_db`](../koine_append_db) is a tombstone: it prints the executable's
+location and exits non-zero. Consumers should probe and invoke the executable
+inside `bug_db/`.
 
 Also to a consumer's account: `bug_reports.writer` and any other caller that
 already serialises its own access wants `--no-lock`, not a second lock.
