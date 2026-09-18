@@ -38,7 +38,7 @@ you, and changes nothing. Each runs
 rather than from
 the repository that keeps the rule — which is why
 they live with the tool whose job is shared machinery, and why
-[`scripts/install_eo_cmd`](scripts/install_eo_cmd) puts them on a person's path.
+[`scripts/install_eo`](scripts/install_eo) puts them on a person's path.
 **koine maintains what they ask and has no standing to change what joining
 costs** — that stays with the office.
 **[`eo_cmd/README.md`](eo_cmd/README.md) is the whole of it** — one section per
@@ -49,7 +49,7 @@ falls.
 
 **One directory per purpose**, each with a README that is the whole of its
 subject: [`bug_db/`](bug_db) and [`eo_cmd/`](eo_cmd). [`scripts/`](scripts)
-holds `install_eo_cmd`, which serves `eo_cmd/` without being a purpose of its
+holds `install_eo`, which serves `eo_cmd/` without being a purpose of its
 own, and [`tests/`](tests) drives both.
 
 [`docs/`](docs/README.md) holds the maintenance entry point and
@@ -65,7 +65,7 @@ From this checkout:
 
 ```bash
 python3 bug_db/koine_append_db run.json bugs.json
-scripts/install_eo_cmd --prefix ~/bin
+scripts/install_eo --prefix ~/bin
 eo_cmd/eo_housekeeping --show-prompt
 ```
 
@@ -100,7 +100,7 @@ by side on one disk.
   writes to it — a footing is a decision somebody made, not one a program takes.
 - **How do I start a tool, or join?** [`eo_cmd/`](eo_cmd/README.md) —
   `eo_init` and `eo_join`, run inside the tree being started or joined, and put
-  on your path by [`scripts/install_eo_cmd`](scripts/install_eo_cmd).
+  on your path by [`scripts/install_eo`](scripts/install_eo).
 - **Where do I report a bug you found in one of these tools?** Not here. A
   defect with a file and a line number is a finding, and anoieu keeps the
   reporting workflow that says how one is carried. Anything else goes in that

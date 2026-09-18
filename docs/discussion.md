@@ -67,6 +67,22 @@ Older live proposals below do not establish current scope or confer a role;
 those decisions remain the maintainer's.
 
 
+## D24 — the ecosystem installer is scripts/install_eo
+
+**To:** kanon
+**Kind:** notice
+**Opened:** 2026-09-18
+**Settles when:** the role register names `scripts/install_eo` as koine's installer
+
+The maintainer requests the rename from `scripts/install_eo_cmd` to
+`scripts/install_eo`. The implementation, help, documentation, and CI test path
+in this working tree use the new name. Please update the installer's path in
+R35 and its name in R16; ownership and behavior are unchanged.
+
+The installation state stays at `install_eo_cmd.local.json`, preserving the
+remembered directory and installed-file ownership. The old executable path is
+not an alias. This notice is local and nothing is sent.
+
 ## D23 — describe the current command split and housekeeping behavior
 
 **To:** kanon

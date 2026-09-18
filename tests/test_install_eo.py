@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """The installer, against directories made and removed in a temporary place.
 
-    python3 tests/test_install_eo_cmd.py
+    python3 tests/test_install_eo.py
 
 That it puts files where it is told, that a second run changes nothing, that it
 says in plain terms what it is about to do, and that it refuses to overwrite a
@@ -25,11 +25,11 @@ import sys
 import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SCRIPT = os.path.join(ROOT, "scripts", "install_eo_cmd")
+SCRIPT = os.path.join(ROOT, "scripts", "install_eo")
 
 _spec = importlib.util.spec_from_loader(
-    "install_eo_cmd",
-    importlib.machinery.SourceFileLoader("install_eo_cmd", SCRIPT))
+    "install_eo",
+    importlib.machinery.SourceFileLoader("install_eo", SCRIPT))
 inst = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(inst)
 
@@ -67,7 +67,7 @@ def run(tmp, *args, env=None):
     if env:
         environ.update(env)
     return subprocess.run(
-        [sys.executable, os.path.join(tmp, "scripts", "install_eo_cmd"), *args],
+        [sys.executable, os.path.join(tmp, "scripts", "install_eo"), *args],
         capture_output=True, text=True, env=environ)
 
 
@@ -75,7 +75,7 @@ def sandbox(tmp):
     """A koine checkout with two commands in its store, and nothing installed."""
     os.makedirs(os.path.join(tmp, "scripts"))
     os.makedirs(os.path.join(tmp, "eo_cmd"))
-    shutil.copyfile(SCRIPT, os.path.join(tmp, "scripts", "install_eo_cmd"))
+    shutil.copyfile(SCRIPT, os.path.join(tmp, "scripts", "install_eo"))
     for name, body in (("eo_join", "#!/bin/sh\necho one\n"),
                        ("eo_init", "#!/bin/sh\necho two\n")):
         with open(os.path.join(tmp, "eo_cmd", name), "w") as handle:
@@ -438,7 +438,7 @@ def test_a_named_president_is_used_or_refused_never_replaced():
     print("a president somebody named")
     tmp = tempfile.mkdtemp()
     try:
-        # scripts/install_eo_cmd one level down, so the sibling the unnamed
+        # scripts/install_eo one level down, so the sibling the unnamed
         # case would look at -- `<parent of the checkout>/kanon` -- is inside
         # the sandbox and can be made to exist.
         checkout = os.path.join(tmp, "checkout")

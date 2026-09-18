@@ -17,7 +17,7 @@ Run the same four suites as [.github/workflows/koine.yml](../.github/workflows/k
 
 ```bash
 python3 tests/test_append_db.py
-python3 tests/test_install_eo_cmd.py
+python3 tests/test_install_eo.py
 python3 tests/test_eo_cmd.py
 python3 tests/test_register.py
 python3 /path/to/anoieu/scripts/policy_check.py --policy-version 1 --root .

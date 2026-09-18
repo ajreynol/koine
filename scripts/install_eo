@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""install_eo_cmd -- set up the Eunoia ecosystem on this machine.
+"""install_eo -- set up the Eunoia ecosystem on this machine.
 
-    scripts/install_eo_cmd --prefix ~/bin  # install the commands, and remember where
-    scripts/install_eo_cmd                 # later runs need no arguments
-    scripts/install_eo_cmd --status        # what is installed, and whether it is current
-    scripts/install_eo_cmd --init-clone    # clone the ecosystem's repositories
-    scripts/install_eo_cmd --uninstall     # remove what this script installed
-    scripts/install_eo_cmd --verbose       # and show every file, one row each
+    scripts/install_eo --prefix ~/bin  # install the commands, and remember where
+    scripts/install_eo                 # later runs need no arguments
+    scripts/install_eo --status        # what is installed, and whether it is current
+    scripts/install_eo --init-clone    # clone the ecosystem's repositories
+    scripts/install_eo --uninstall     # remove what this script installed
+    scripts/install_eo --verbose       # and show every file, one row each
 
 **Two jobs, and between them they are what a machine needs before any of this
 is usable.**
@@ -62,6 +62,8 @@ import textwrap
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 STORE = os.path.join(ROOT, "eo_cmd")
 MANIFEST = os.path.join(STORE, "commands.json")
+# Keep installation state stable across command renames: it records both the
+# chosen directory and which installed files this script owns.
 CONFIG = os.path.join(ROOT, "install_eo_cmd.local.json")
 
 #: Where the commands go when nobody has said otherwise. A person's own bin
@@ -908,12 +910,12 @@ usually wants the second one first.
 
 HOW = """\
 examples:
-  install_eo_cmd --prefix ~/bin   install, and remember the directory
-  install_eo_cmd                  later runs need no arguments
-  install_eo_cmd --status         what is installed, and whether it is current
-  install_eo_cmd --init-clone     put the ecosystem's repositories on this machine
-  install_eo_cmd --dry-run        say what would happen, and write nothing
-  install_eo_cmd --verbose        and show every file, one row each
+  install_eo --prefix ~/bin   install, and remember the directory
+  install_eo                  later runs need no arguments
+  install_eo --status         what is installed, and whether it is current
+  install_eo --init-clone     put the ecosystem's repositories on this machine
+  install_eo --dry-run        say what would happen, and write nothing
+  install_eo --verbose        and show every file, one row each
 
 It never overwrites a file it did not install: that file is left alone, the run
 says which one and why, and --force is a person's decision because the file

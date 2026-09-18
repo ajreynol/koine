@@ -10,6 +10,6 @@ jobs:
       # No dependencies, no network, nothing to install: the suite drives the
       # scripts against files and a git repository it creates in temporary directories.
       - run: python3 tests/test_append_db.py
-      - run: python3 tests/test_install_eo_cmd.py
+      - run: python3 tests/test_install_eo.py
       - run: python3 tests/test_eo_cmd.py
       - run: python3 tests/test_register.py

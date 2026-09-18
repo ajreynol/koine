@@ -1,7 +1,7 @@
 # eo_cmd
 
 **Commands to run inside the repository you are working on.**
-[`../scripts/install_eo_cmd`](../scripts/install_eo_cmd) puts them on your PATH.
+[`../scripts/install_eo`](../scripts/install_eo) puts them on your PATH.
 Prompt commands hand work to an assistant; programs do the work themselves.
 
 | command | what it does |
@@ -32,19 +32,21 @@ beside it in this checkout. Tests exercise the installed copies.
 Run these from the koine checkout:
 
 ```console
-$ scripts/install_eo_cmd --prefix ~/bin
-$ scripts/install_eo_cmd                   # update using the remembered directory
-$ scripts/install_eo_cmd --status
-$ scripts/install_eo_cmd --dry-run          # inspect without writing
-$ scripts/install_eo_cmd --verbose          # show each file
-$ scripts/install_eo_cmd --init-clone [DIR] # clone missing ecosystem repositories
-$ scripts/install_eo_cmd --uninstall
+$ scripts/install_eo --prefix ~/bin
+$ scripts/install_eo                   # update using the remembered directory
+$ scripts/install_eo --status
+$ scripts/install_eo --dry-run          # inspect without writing
+$ scripts/install_eo --verbose          # show each file
+$ scripts/install_eo --init-clone [DIR] # clone missing ecosystem repositories
+$ scripts/install_eo --uninstall
 ```
 
 The default directory is `~/bin`. The installer prints PATH advice if the
 current shell cannot find it; shell configurations differ, so check that advice
 before running an installed command. The chosen directory and installed-file
 records live in the ignored `install_eo_cmd.local.json` at this checkout's root.
+That state filename is stable, so renaming the installer preserves the chosen
+directory and its installed-file ownership records.
 
 A run reports where it installs, what changed, and what you can type next.
 Commands for people appear first; `koine_append_db`, marked `audience: tooling`

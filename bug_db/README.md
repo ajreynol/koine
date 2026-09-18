@@ -9,7 +9,7 @@ found. [`koine_append_db`](koine_append_db) is the trip between the two.
 2026-09-18. Each pins
 a commit of this repository in its own `scripts/koine.lock` and calls this from
 its own run; **that pin is the whole of the integration on either side.**
-`scripts/install_eo_cmd` also puts this program on a person's PATH and that is a
+`scripts/install_eo` also puts this program on a person's PATH and that is a
 different thing — PATH gives whatever the operator last installed, so a pinned
 consumer keeps resolving through its lock.
 

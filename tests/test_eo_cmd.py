@@ -844,7 +844,7 @@ def test_help_says_why_and_where():
 def test_runs_as_an_installed_copy():
     """Every command has to work as a lone file on somebody's PATH.
 
-    `install_eo_cmd` copies one file per command. Anything a command needs from
+    `install_eo` copies one file per command. Anything a command needs from
     beside it in this tree is simply not there once installed, and the failure
     is invisible from inside the repository -- every test passes, and the first
     person to run the installed copy gets a traceback.
