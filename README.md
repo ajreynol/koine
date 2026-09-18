@@ -29,15 +29,14 @@ arrive at once, and what it refuses to do.
 
 **2. [`eo_cmd/`](eo_cmd), the commands that run inside somebody else's tree.**
 `eo_init` starts a tool and `eo_join` joins it; `eo_status` says who is in this
-ecosystem and on what footing; `eo_child` starts a child project and `eo_topic`
+ecosystem and on what footing; `eo_git_status` shows Git status across local
+checkouts; `eo_child` starts a child project and `eo_topic`
 opens one topic addressed to another tool; `eo_respond` answers one topic another
 tool addressed to you; `eo_housekeeping` brings a repository up to date, and
 `eo_brainstorm` looks for what it could do next, works through the list with
-you, and changes nothing. Each runs
-*inside the tree being started, joined, tidied, answered or looked ahead of*
-rather than from
-the repository that keeps the rule — which is why
-they live with the tool whose job is shared machinery, and why
+you, and changes nothing. These run where a person is working, with
+`eo_git_status` also accepting directories to search. They live with the tool
+whose job is shared machinery, and
 [`scripts/install_eo`](scripts/install_eo) puts them on a person's path.
 **koine maintains what they ask and has no standing to change what joining
 costs** — that stays with the office.
@@ -67,13 +66,16 @@ From this checkout:
 python3 bug_db/koine_append_db run.json bugs.json
 scripts/install_eo --prefix ~/bin
 eo_cmd/eo_housekeeping --show-prompt
+eo_cmd/eo_git_status
 ```
 
 The first command appends a JSON dump to a bug database. The installer puts the
 shared commands on your PATH; the preview shows the work an assistant would be
 asked to do. `eo_housekeeping` and `eo_respond` ensure `main` before pulling;
 `--no-main` keeps the current branch. Their [command guide](eo_cmd/README.md)
-describes the options and failure behavior.
+describes the options and failure behavior. `eo_git_status` reads nearby
+checkouts and linked worktrees without fetching; give it extra directories for
+checkouts elsewhere.
 
 ## The name
 

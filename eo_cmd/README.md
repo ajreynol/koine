@@ -9,6 +9,7 @@ Prompt commands hand work to an assistant; programs do the work themselves.
 | [`eo_join`](eo_join) | join the Eunoia ecosystem, or add only the soft maintenance note |
 | [`eo_init`](eo_init) | start a tool with a README saying what it is for |
 | [`eo_status`](eo_status) | read the live register in the president's tree, or an installed snapshot elsewhere |
+| [`eo_git_status`](eo_git_status) | show Git status across local checkouts and linked worktrees, without fetching |
 | [`eo_topic`](eo_topic) | ask what you want to say, then draft one topic addressed to another tool |
 | [`eo_child`](eo_child) | start a named child project under `tools/` |
 | [`eo_respond`](eo_respond) | answer one named topic addressed to your repository |
@@ -78,8 +79,8 @@ checkouts and say what cannot be read. A real run may require those checkouts.
 advertised form with an empty home directory and no neighboring repositories.
 
 `--print` runs non-interactively. `eo_topic` and `eo_child` refuse it because
-they must ask you what to write. `eo_status` and `koine_append_db` are programs,
-so they do not take `--show-prompt`.
+they must ask you what to write. `eo_status`, `eo_git_status` and
+`koine_append_db` are programs, so they do not take `--show-prompt`.
 
 ## What koine may change here, and what it may not
 
@@ -244,6 +245,45 @@ refuses; it does not search for an unlabelled substitute.
 unique repository claims. `--children` includes child projects. It runs no
 checker against other repositories and makes no membership decisions. Auditing
 the register against the world belongs to the president's `eo_status_audit`.
+
+## eo_git_status
+
+```console
+$ eo_git_status
+$ eo_git_status ~/projects ~/other-checkout
+$ eo_git_status --president /path/to/president
+$ eo_git_status --repos-file /path/to/repos.local
+```
+
+Shows one row per local checkout: path, branch, staged and unstaged changes,
+untracked paths, conflicts, and ahead/behind counts against its upstream.
+Detached and unborn branches are labelled. Counts describe Git status entries;
+an untracked directory counts once, and conflicts are counted separately from
+staged and unstaged changes. An em dash means there is no upstream; an upstream
+with a missing local ref has unavailable counts. **It does not fetch**, so
+remote tracking refs reflect the last fetch. It changes no branch, file or index.
+
+Discovery reads the current checkout, its siblings (or the current directory
+outside a checkout), `$HOME`, and the colon-separated roots in `$ANOIEU_REPOS`.
+Each root and its immediate children are searched. Positional directories add
+checkouts or search roots; there is no recursive disk scan. Linked Git worktrees
+are included even outside those roots. Multiple clones and worktrees remain
+separate rows; repeated paths and symlinks to the same checkout do not.
+
+When a discovered checkout holds `scripts/ecosystem/ecosystem.json`, the command
+reads that register and its `scripts/repos.local` map of `ID PATH` lines.
+`--president DIR` selects that checkout explicitly. `--repos-file FILE` or
+`$ANOIEU_REPOS_FILE` replaces the automatic path map; paths may contain spaces,
+and relative paths are relative to the directory running the command. A
+repository is matched by mapped ID, directory name or remote URL. Every found
+checkout is shown, including ones outside the register.
+
+The register's source path and repositories not found in the searched locations
+follow the table; child projects do not count as missing checkouts. Without a
+register the command still shows status and says that missing-repository
+coverage is unavailable. Missing repositories are informational. An unreadable
+checkout is reported without stopping the remaining checks and gives exit 1;
+invalid arguments or configuration give exit 2. No assistant is launched.
 
 ## eo_init
 

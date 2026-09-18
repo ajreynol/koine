@@ -1,0 +1,288 @@
+#!/usr/bin/env python3
+"""eo_git_status -- read Git status across local ecosystem checkouts.
+
+Discovery is bounded to the current checkout, immediate children of search
+roots, the president's local checkout map, and linked Git worktrees. Git runs
+with optional locks and filesystem-monitor hooks disabled. Nothing is fetched,
+staged, or written, and this command has no assistant or sibling imports.
+"""
+
+import argparse
+import json
+import os
+from pathlib import Path
+import re
+import subprocess
+import sys
+from urllib.parse import urlsplit
+
+REGISTER = Path("scripts/ecosystem/ecosystem.json")
+REPOS_FILE = Path("scripts/repos.local")
+
+
+def git(path, *args):
+    # A caller's Git environment must not redirect -C into a different index
+    # or checkout. Disable index refreshes and external filesystem monitors.
+    env = dict(os.environ)
+    for key in ("GIT_DIR", "GIT_WORK_TREE", "GIT_COMMON_DIR", "GIT_INDEX_FILE",
+                "GIT_OBJECT_DIRECTORY", "GIT_ALTERNATE_OBJECT_DIRECTORIES"):
+        env.pop(key, None)
+    env["GIT_NO_LAZY_FETCH"] = "1"
+    return subprocess.run(
+        ["git", "--no-optional-locks", "-c", "core.fsmonitor=false",
+         "-C", str(path), *args], env=env, capture_output=True,
+        text=True, encoding="utf-8", errors="replace")
+
+
+def expanded(path):
+    return Path(path).expanduser().resolve()
+
+
+class Checkouts:
+    def __init__(self):
+        self.paths = {}  # canonical worktree path -> explicitly mapped IDs
+        self.errors = []
+        self.probed = {}
+
+    def add(self, path, name=None):
+        path = expanded(path)
+        if path not in self.probed:
+            top = None
+            if path.is_dir():
+                result = git(path, "rev-parse", "--show-toplevel")
+                if result.returncode == 0:
+                    top = expanded(result.stdout.removesuffix("\n"))
+                elif (path / ".git").exists():
+                    self.errors.append(f"{path}: {result.stderr.strip()}")
+            self.probed[path] = top
+        top = self.probed[path]
+        if top is not None:
+            names = self.paths.setdefault(top, set())
+            if name:
+                names.add(name)
+        return top
+
+    def scan(self, root):
+        """Only a root and its immediate children; never walk a whole disk."""
+        if not root.is_dir():
+            return
+        if (root / ".git").exists():
+            self.add(root)
+        try:
+            for child in sorted(root.iterdir()):
+                if child.is_dir() and (child / ".git").exists():
+                    self.add(child)
+        except OSError as exc:
+            self.errors.append(f"{root}: {exc}")
+
+    def read_map(self, path):
+        for number, line in enumerate(path.read_text().splitlines(), 1):
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            pair = line.split(None, 1)
+            if len(pair) != 2:
+                raise ValueError(f"{path}:{number}: expected ID PATH")
+            # Match the shared map convention: paths may contain spaces;
+            # relative paths are relative to the directory running the command.
+            self.add(pair[1], pair[0])
+
+    def worktrees(self):
+        # Worktrees may live outside every search root. Their paths, rather
+        # than repository names or shared Git directories, identify rows.
+        for path in list(self.paths):
+            result = git(path, "worktree", "list", "--porcelain", "-z")
+            if result.returncode:
+                self.errors.append(f"{path}: {result.stderr.strip()}")
+                continue
+            names = set(self.paths[path])
+            for field in result.stdout.split("\0"):
+                if field.startswith("worktree "):
+                    top = self.add(field[len("worktree "):])
+                    if top is not None:
+                        self.paths[top].update(names)
+
+
+def registry(path):
+    data = json.loads(path.read_text())
+    if not isinstance(data, dict):
+        raise ValueError(f"{path}: expected a register object")
+    return {name: entry for name, entry in data.items()
+            if isinstance(entry, dict) and entry.get("status")
+            and entry["status"] != "child"}
+
+
+def discover(args):
+    found = Checkouts()
+    current = found.add(Path.cwd())
+    roots = [expanded(path) for path in args.directories]
+    roots.extend(expanded(path) for path in os.environ.get("ANOIEU_REPOS", "").split(os.pathsep)
+                 if path)
+    roots.extend([current.parent if current else Path.cwd(), Path.home()])
+    for path in args.directories:
+        found.add(path)
+    for root in dict.fromkeys(roots):
+        found.scan(root)
+
+    mapping = args.repos_file or os.environ.get("ANOIEU_REPOS_FILE")
+    if mapping:
+        found.read_map(expanded(mapping))
+
+    register = None
+    if args.president:
+        office = expanded(args.president)
+        register = office / REGISTER
+        found.add(office)
+    else:
+        for path in found.paths:
+            if (path / REGISTER).is_file():
+                register = path / REGISTER
+                break
+    known = registry(register) if register else {}
+    if register and not mapping:
+        local_map = register.parents[2] / REPOS_FILE
+        if local_map.exists():
+            found.read_map(local_map)
+    found.worktrees()
+    return found, known, register
+
+
+def url_key(value):
+    """Match HTTPS, SSH and scp-style remote spellings without contacting one."""
+    if not isinstance(value, str):
+        return None
+    if "://" in value:
+        url = urlsplit(value)
+        host, path = url.hostname, url.path
+    else:
+        match = re.fullmatch(r"(?:[^/@]+@)?([^/:]+):(.+)", value)
+        if not match:
+            return None
+        host, path = match.groups()
+    if not host:
+        return None
+    path = path.strip("/").removesuffix(".git")
+    return (host.casefold(), path.casefold())
+
+
+def identities(path, mapped, known):
+    names = set(mapped)
+    remotes = git(path, "config", "--get-regexp", r"^remote\..*\.url$")
+    urls = {url_key(line.split(None, 1)[1]) for line in remotes.stdout.splitlines()
+            if len(line.split(None, 1)) == 2}
+    urls.discard(None)
+    for name, entry in known.items():
+        directory = str(entry.get("repo") or name).rsplit("/", 1)[-1]
+        if (path.name.casefold() in (name.casefold(), directory.casefold())
+                or url_key(entry.get("url")) in urls):
+            names.add(name)
+    return names
+
+
+def parse_status(output):
+    head, oid, upstream, divergence = "?", "", "", ""
+    staged = unstaged = untracked = conflicts = 0
+    records = iter(output.split("\0"))
+    for record in records:
+        if record.startswith("# branch.head "):
+            head = record[len("# branch.head "):]
+        elif record.startswith("# branch.oid "):
+            oid = record[len("# branch.oid "):]
+        elif record.startswith("# branch.upstream "):
+            upstream = record[len("# branch.upstream "):]
+        elif record.startswith("# branch.ab "):
+            divergence = record[len("# branch.ab "):].replace(" ", "/")
+        elif record.startswith(("1 ", "2 ")):
+            xy = record.split(" ", 2)[1]
+            staged += xy[0] != "."
+            unstaged += xy[1] != "."
+            if record.startswith("2 "):
+                next(records, None)  # the original filename, not another status
+        elif record.startswith("u "):
+            conflicts += 1
+        elif record.startswith("? "):
+            untracked += 1
+    if head == "(detached)":
+        head = f"detached:{oid[:8]}"
+    elif oid == "(initial)":
+        head += " (unborn)"
+    tracking = f"{upstream} {divergence or '(counts unavailable)'}" if upstream else "—"
+    return [head, staged, unstaged, untracked, conflicts, tracking]
+
+
+def printable(value):
+    text = str(value)
+    return json.dumps(text, ensure_ascii=False) if any(ord(c) < 32 for c in text) else text
+
+
+def table(rows):
+    lines = [["REPOSITORY", "BRANCH", "STAGED", "UNSTAGED", "UNTRACKED", "CONFLICTS",
+              "UPSTREAM (+/-)", "PATH"], *rows]
+    lines = [[printable(value) for value in row] for row in lines]
+    widths = [max(len(row[i]) for row in lines) for i in range(len(lines[0]) - 1)]
+    for row in lines:
+        print("  ".join(value.ljust(widths[i]) if i < len(widths) else value
+                        for i, value in enumerate(row)))
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(
+        description="eo_git_status -- Git status of local Eunoia ecosystem checkouts.\n\n"
+        "Run it in a repository to inspect it and its neighbors, or anywhere with\n"
+        "extra search directories. Shows branch, staged/unstaged changes, untracked\n"
+        "paths, conflicts and upstream counts. Reads only local Git data: no fetch,\n"
+        "pull, branch switch, or index refresh. Remote refs reflect the last fetch.",
+        epilog="Default search: current checkout, its siblings (or the current directory),\n"
+        "$HOME and colon-separated $ANOIEU_REPOS roots, each one level deep.\n"
+        "The president's scripts/repos.local and linked Git worktrees add paths.\n"
+        "An em dash means no upstream is configured. Missing registered\n"
+        "repositories are informational; exit 1 means a checkout could not be read,\n"
+        "and exit 2 means invalid arguments or configuration.",
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("directories", metavar="DIR", nargs="*",
+                        help="additional checkouts or parent directories to search")
+    parser.add_argument("--president", metavar="DIR",
+                        help="read the register and local checkout map from this tree")
+    parser.add_argument("--repos-file", metavar="FILE",
+                        help="ID PATH map instead of the president's scripts/repos.local "
+                             "(also settable with ANOIEU_REPOS_FILE)")
+    args = parser.parse_args(argv)
+    for path in args.directories:
+        if not expanded(path).is_dir():
+            parser.error(f"not a directory: {path}")
+    try:
+        found, known, register = discover(args)
+        rows, located = [], set()
+        for path in sorted(found.paths):
+            names = identities(path, found.paths[path], known)
+            located.update(names)
+            name = ",".join(sorted(names & known.keys())) or path.name
+            result = git(path, "status", "--porcelain=v2", "-z", "--branch",
+                         "--untracked-files=normal", "--ignore-submodules=none")
+            if result.returncode:
+                found.errors.append(f"{path}: {result.stderr.strip()}")
+                row = ["ERROR", "?", "?", "?", "?", "?"]
+            else:
+                row = parse_status(result.stdout)
+            rows.append([name, *row, str(path)])
+        print("Local Git status; upstream counts use local refs (no fetch).")
+        if rows:
+            table(rows)
+        else:
+            print("No local checkouts found in the searched locations.")
+        if register:
+            missing = sorted(known.keys() - located)
+            print(f"\nRegister: {register}")
+            print("Not found in the searched locations: " + (", ".join(missing) or "none"))
+        else:
+            print("\nNo register found; missing-repository coverage is unavailable.")
+        for error in found.errors:
+            print(f"eo_git_status: {error}", file=sys.stderr)
+        return 1 if found.errors else 0
+    except (OSError, ValueError) as exc:
+        print(f"eo_git_status: {exc}", file=sys.stderr)
+        return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main())

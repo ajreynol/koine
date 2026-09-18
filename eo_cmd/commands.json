@@ -34,6 +34,16 @@
       "needs": "register"
     },
     {
+      "name": "eo_git_status",
+      "short": "Git status across local checkouts",
+      "what": "show local checkouts, branches, changes and ahead/behind counts from local refs. Search nearby trees, extra directories and the president's local path map; include linked worktrees and report registered repositories not located. No fetch or checkout changes",
+      "forms": [
+        "eo_git_status",
+        "eo_git_status <directory>"
+      ],
+      "kind": "program"
+    },
+    {
       "name": "koine_append_db",
       "short": "add a run's new bugs to a bug database",
       "audience": "tooling",
