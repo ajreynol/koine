@@ -573,6 +573,41 @@ def test_a_finished_install_ends_by_saying_what_to_type():
         shutil.rmtree(tmp)
 
 
+def test_the_roster_is_stratified_by_who_runs_it():
+    """A command for machinery is listed below the line, not among the rest.
+
+    `koine_append_db` is on somebody's PATH because another tool's CI or an
+    agent has to be able to call it, and the person who has just installed the
+    ecosystem has no occasion to type it. Listing it among the commands they
+    are being told to try implied they would; leaving it out would hide a name
+    that is on their machine. So it is listed, under a sentence saying a human
+    can ignore it, and the manifest is what says which is which.
+    """
+    print("the roster is stratified by who runs it")
+    tmp = tempfile.mkdtemp()
+    try:
+        prefix = sandbox(tmp)
+        manifest = os.path.join(tmp, "eo_cmd", "commands.json")
+        data = json.load(open(manifest))
+        data["commands"][1]["audience"] = "tooling"
+        json.dump(data, open(manifest, "w"))
+
+        out = run(tmp, "--prefix", prefix,
+                  env={"PATH": prefix + os.pathsep + os.environ["PATH"]})
+        ok("the machinery is still installed",
+           os.path.exists(os.path.join(prefix, "eo_init")))
+        ok("and still listed", "eo_init" in out.stdout)
+        ok("and a human is told they can ignore it",
+           "you can ignore it if you are a human" in flat(out.stdout))
+        ok("it comes after the commands that are for them",
+           out.stdout.index("eo_init") > out.stdout.index("eo_join"))
+        ok("and after the line closing off their list",
+           out.stdout.index("eo_init")
+           > out.stdout.index("root of the repository"))
+    finally:
+        shutil.rmtree(tmp)
+
+
 def test_one_sentence_however_many_files_it_is_about():
     """A message repeated once per file is a wall, and a reader skips walls.
 
@@ -637,6 +672,7 @@ def main():
     for test in (test_install, test_the_register_is_baked_in,
                  test_a_finished_install_ends_by_saying_what_to_type,
                  test_one_sentence_however_many_files_it_is_about,
+                 test_the_roster_is_stratified_by_who_runs_it,
                  test_help_answers_why_and_not_only_what,
                  test_init_clone_is_not_a_command_it_installs,
                  test_init_clone_refuses_without_a_register,

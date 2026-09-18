@@ -37,6 +37,7 @@
     {
       "name": "koine_append_db",
       "short": "add a run's new bugs to a bug database",
+      "audience": "tooling",
       "path": "bug_db/koine_append_db",
       "what": "add a run's new bugs to the database of every bug a tool has found. For a person at a terminal: a pinned consumer resolves it through its own lock and must not take it off PATH, which would lose the pin",
       "forms": [
@@ -97,5 +98,6 @@
   "kinds": "`prompt` hands context to an assistant and takes --show-prompt, which prints what it would hand one and runs nothing. `program` does the work itself.",
   "register": "A command marked `needs: register` has the president's ecosystem.json baked into it when install_eo_cmd copies it, with the commit and date it was taken. That makes it usable away from the president's tree without ever presenting a snapshot as the live register.",
   "ground_truth": "This file is the ground truth for what these commands are and what each is for. The copy is the table in eo_cmd/README.md, and test_the_readme_table_agrees_with_the_manifest in tests/test_eo_cmd.py is what compares the two -- it decides that the same names appear in both and that each has somewhere it is written up, and it cannot decide whether a description is still true of the behaviour. The one claim `kinds` makes that a program can check, that only a prompt takes --show-prompt, is checked beside it.",
-  "short": "Every command carries both: `short` is the line that fits in a column beside its name, which is what install_eo_cmd prints as the roster a person reads after installing, and `what` is the paragraph that says the same thing with its caveats, which the READMEs are written against. Cutting `what` down to its first sentence was what the roster did until 2026-09-18, and a line that stops where the prose happens to have a full stop is not a summary. The two are written here together so that one cannot move without the other being looked at."
+  "short": "Every command carries both: `short` is the line that fits in a column beside its name, which is what install_eo_cmd prints as the roster a person reads after installing, and `what` is the paragraph that says the same thing with its caveats, which the READMEs are written against. Cutting `what` down to its first sentence was what the roster did until 2026-09-18, and a line that stops where the prose happens to have a full stop is not a summary. The two are written here together so that one cannot move without the other being looked at.",
+  "audience": "A command with `audience: tooling` is machinery: another tool's CI, a pinned consumer or an agent calls it, and a person at a terminal has no occasion to. install_eo_cmd installs it like any other -- it is on the PATH because something has to be able to call it -- and lists it below the rest of the roster, under a line saying a human can ignore it. Absent means the command is for a person, which is what the `eo_` ones are: they run inside a repository somebody is working in."
 }

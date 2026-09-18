@@ -78,15 +78,15 @@ $ ./scripts/install_eo_cmd
 -- Installing Eunoia ecosystem scripts into ~/bin
 -- created ~/bin
 -- 9 installed
--- eo_status now carries a snapshot of the register, from kanon at ad18fb2, on
-   2026-09-18; run this script again whenever the register moves
+-- eo_status now carries a snapshot of the register, from kanon at ad18fb2
+   with the register edited and not committed, on 2026-09-18; run this script
+   again whenever the register moves
 
 You are now ready to use the Eunoia ecosystem. For quick start, try these:
 
    eo_join          declare where this repository stands with the ecosystem
    eo_init          start a tool, with a README saying what it is for
    eo_status        who is in the ecosystem, and on what footing
-   koine_append_db  add a run's new bugs to a bug database
    eo_topic         open one topic, addressed to another tool
    eo_child         start a child project, tools/<name>/, in this repository
    eo_respond       answer one topic another tool addressed to you
@@ -95,9 +95,25 @@ You are now ready to use the Eunoia ecosystem. For quick start, try these:
 
 -- run them in the root of the repository you are working in; every one takes
    --help, which says what it does and what forms it takes
+
+-- one more is machinery rather than a command for you -- another tool's CI or
+   an agent calls it, and you can ignore it if you are a human:
+
+   koine_append_db  add a run's new bugs to a bug database
+
 -- run this script again to update them; --status says what is installed,
    --verbose shows every file
 ```
+
+**The roster is stratified, because it is not one audience.** The commands
+above the line are for the person who just installed them, to type in a
+repository they are working in. `koine_append_db` is machinery — a pinned
+consumer or another tool's CI calls it, and somebody who has just installed the
+ecosystem has no occasion to — so it is listed below them, under a sentence
+saying a human can ignore it. Listing it among the rest implied they would type
+it; leaving it out would hide a name that is on their PATH and that something on
+their machine may call. [`commands.json`](commands.json) says which is which,
+with `audience: tooling`, rather than the installer guessing from a prefix.
 
 **The directory defaults to `~/bin` and is meant to work without being
 configured**, because a login shell puts `~/bin` on PATH on every system these

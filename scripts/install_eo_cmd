@@ -671,14 +671,26 @@ def say_ready(origin, how):
     prefix off their PATH left files whose names they cannot type; both print
     the same roster under a lead that promises neither.
 
+    **It is stratified, because the roster is not one audience.** Most of these
+    are for the person reading it, to type in a repository they are working in.
+    `koine_append_db` is machinery: a pinned consumer or another tool's CI
+    calls it, and somebody who has just installed the ecosystem has no occasion
+    to. Leaving it in the same list as the rest implied they would type it;
+    dropping it would hide a command that is on their PATH and that something
+    on their machine may call. So it is listed, below the line, under a
+    sentence saying a human can ignore it. The manifest says which is which --
+    `audience: tooling` -- rather than this guessing from a name.
+
     The text is the manifest's, which is the same text the READMEs are written
     against -- so a command whose purpose moves says so here on the next
     install, and this stays a copy with an original rather than a second
     description going its own way.
     """
-    rows = [(c["name"], short_of(c)) for c in commands(origin)]
-    rows = [(n, w) for n, w in rows if w]
-    if not rows:
+    rows = [(c["name"], short_of(c), c.get("audience") == "tooling")
+            for c in commands(origin)]
+    mine = [(n, w) for n, w, tooling in rows if w and not tooling]
+    theirs = [(n, w) for n, w, tooling in rows if w and tooling]
+    if not mine and not theirs:
         return
     print()
     print(textwrap.fill(LEADS[how], width=WIDTH))
@@ -686,10 +698,21 @@ def say_ready(origin, how):
     # No header over these two columns: a name and the line saying what it is
     # for need no label, and a roster of nine rows is short enough that a
     # header is one more line between the sentence and the thing it introduced.
-    table(rows)
+    table(mine)
     print()
     say("run them in the root of the repository you are working in; every one "
         "takes --help, which says what it does and what forms it takes")
+    if theirs:
+        one = len(theirs) == 1
+        print()
+        say(f"{'one more is' if one else f'{len(theirs)} more are'} machinery "
+            f"rather than {'a command' if one else 'commands'} for you -- "
+            f"another tool's CI or an agent calls "
+            f"{'it' if one else 'them'}, and you can ignore "
+            f"{'it' if one else 'them'} if you are a human:")
+        print()
+        table(theirs)
+        print()
     say("run this script again to update them; --status says what is "
         "installed, --verbose shows every file")
 
