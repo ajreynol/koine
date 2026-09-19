@@ -34,6 +34,20 @@ description is the better one is a person's call, not a script's.
 fixed, or the run may simply not have looked there. This script cannot tell those
 apart and does not guess.
 
+**A bug the owner closed and this run found anyway is reported, and nothing is
+done about it.** Closing a finding is the owner's decision and so is reopening
+one; what this can say is that the two facts in the file now disagree -- somebody
+ruled the claim false, and a later run saw it again. That contradiction is the
+only thing that surfaces a wrong closure, because a closed entry is one nothing
+re-derives, and until now it was recorded and never mentioned: the run printed
+*1 already known* and moved on. It is printed as a **reopen candidate**, in the
+same place a conflict is, and the closure fields are left exactly as they are.
+
+An entry is closed when it carries any field named `closed_*`. That is the
+convention its owners already keep -- `closed_on`, `closed_commit`, `closed_why`,
+`closed_verdict` -- and reading the prefix rather than one name is what keeps this
+out of deciding whose vocabulary is the right one.
+
 **Nothing is written unless every entry in the dump is readable.** A dump with
 one malformed entry writes nothing at all, so a half-applied run is not a state
 the database can be in.
@@ -74,6 +88,14 @@ in as a dump, and a dump can be read by anything that reads the database:
 A bare JSON list is accepted too, since that is what a tool's first dump usually
 is. What is written is always the object form, with the bugs in the order they
 were first seen.
+
+**A database keeps saying what it holds.** The key is read from the file rather
+than assumed, and written back unchanged, so a consumer whose records are not
+defects -- a rewrite database holding `{"rewrites": [...]}` -- is read and
+written by this like any other. `--records` names the key for a database this
+run creates; an existing one keeps its own. koine's tooling is called bug_db
+either way: the mechanics of *added once*, of a lock, and of an atomic replace
+do not depend on what the records are.
 """
 
 import argparse
@@ -100,6 +122,20 @@ BUSY = 3
 #: kept exactly as they arrive. Nothing here decides what a bug is.
 FIELDS = ("id", "bug", "tool", "description", "first_seen", "last_seen")
 
+#: How an entry says its owner has ruled on it. A prefix rather than a name,
+#: because the vocabulary past it is the owner's: anoieu writes a
+#: `closed_verdict` from a list of seven words, dokimasia writes a `closed_on`
+#: and a `closed_pr`, and neither is koine's to know. What is shared is that a
+#: ruled-on entry is marked, and that a later sighting contradicts the ruling.
+CLOSED = "closed_"
+
+#: What a database calls the list it holds, when it is new and nobody said.
+#: An existing one keeps whatever key it already uses -- koine's two consumers
+#: keep `bugs`, and a third whose records are not defects can hold `rewrites`
+#: and go on being read and written by this. The word is the owner's; the
+#: mechanics are the same either way.
+RECORDS = "bugs"
+
 #: What identifies a bug, when the tool does not mint an id of its own. Two
 #: tools may well use the same local name for different bugs, so the tool is
 #: half of the key.
@@ -112,6 +148,16 @@ def key_of(entry):
         return ("id", str(entry["id"]))
     # Keep the two identity forms disjoint: tool="id", bug="x" is not id="x".
     return ("tool+bug", *(str(entry.get(name, "")) for name in KEY))
+
+
+def closure(entry):
+    """What the owner recorded when they closed this, or nothing.
+
+    Read and never written. A run that sees a closed bug again reports it; what
+    to do about it -- reopen it, correct it, leave it -- is the owner's, and this
+    script has no opinion it could act on.
+    """
+    return {name: entry[name] for name in entry if name.startswith(CLOSED)}
 
 
 def problems(entries, where):
@@ -141,17 +187,27 @@ def problems(entries, where):
 
 
 def read_bugs(path, missing_ok=False):
-    """The bugs in a file, whether it is a list or a `{"bugs": [...]}` object."""
+    """The records in a file, and what that file calls them.
+
+    Returns the records and the envelope key they arrived under, so that a
+    database keeps saying what it holds. A bare list has no key and gets the
+    default.
+    """
     if missing_ok and not os.path.exists(path):
-        return []
+        return [], ""
     with open(path, encoding="utf-8") as fh:
         data = json.load(fh)
     if isinstance(data, list):
-        return data
-    if isinstance(data, dict) and isinstance(data.get("bugs"), list):
-        return data["bugs"]
-    raise ValueError(f"{path}: expected a list of bugs, or an object with a "
-                     "`bugs` list")
+        return data, ""
+    if isinstance(data, dict):
+        keys = [k for k, v in data.items() if isinstance(v, list)]
+        if len(keys) == 1:
+            return data[keys[0]], keys[0]
+        if len(keys) > 1:
+            raise ValueError(f"{path}: {len(keys)} lists in it ({', '.join(keys)}) "
+                             "and no way to tell which one is the records")
+    raise ValueError(f"{path}: expected a list of records, or an object with one "
+                     "list in it")
 
 
 def ordered(entry):
@@ -174,7 +230,7 @@ def append(db, new, date):
     keeps its own copy.
     """
     index = {key_of(entry): entry for entry in db}
-    added, again, conflicts = [], [], []
+    added, again, conflicts, reopen = [], [], [], []
 
     for entry in new:
         k = key_of(entry)
@@ -188,6 +244,13 @@ def append(db, new, date):
             added.append(k)
             continue
 
+        # Seen again, and the owner had ruled it closed. Noted before anything
+        # else is touched, and nothing about the closure is touched at all: the
+        # entry keeps its verdict and this run keeps its report.
+        ruled = closure(known)
+        if ruled:
+            reopen.append((k, ruled.get("closed_on", "")))
+
         for name, value in entry.items():
             if name in ("first_seen", "last_seen"):
                 continue
@@ -197,10 +260,10 @@ def append(db, new, date):
         index[k] = known
         again.append(k)
 
-    return db, added, again, conflicts
+    return db, added, again, conflicts, reopen
 
 
-def write_db(path, bugs):
+def write_db(path, bugs, records=RECORDS):
     """Write the database, and do not leave a half-written one behind.
 
     The temporary file is named for the process that wrote it. A fixed name was
@@ -209,7 +272,7 @@ def write_db(path, bugs):
     run happily writes over somebody's file. It sits beside the database so the
     rename stays on one filesystem and so stays atomic.
     """
-    body = json.dumps({"bugs": [ordered(b) for b in bugs]},
+    body = json.dumps({records: [ordered(b) for b in bugs]},
                       indent=2, ensure_ascii=False) + "\n"
     tmp = f"{path}.writing.{os.getpid()}"
     try:
@@ -261,11 +324,29 @@ def held(path, seconds):
 
 
 def by_tool(bugs):
+    """How many each tool contributed -- or nothing, where none names one.
+
+    A record identified by an `id` alone carries no tool and owes none. A
+    breakdown reading `? 197` is not a breakdown, so a database where nobody
+    named a tool gets none rather than one about a question mark.
+    """
     counts = {}
     for entry in bugs:
-        counts[str(entry.get("tool", "?"))] = counts.get(
-            str(entry.get("tool", "?")), 0) + 1
+        name = str(entry.get("tool", "")).strip()
+        if name:
+            counts[name] = counts.get(name, 0) + 1
     return counts
+
+
+def noun(records):
+    """What to call one of them, from what the database calls all of them.
+
+    `bugs` gives `bug(s)` and `rewrites` gives `rewrite(s)`, so a run over a
+    rewrite database does not report in bugs. Crude on purpose: the owner chose
+    a plural noun and this takes the `s` off it, rather than koine acquiring
+    opinions about English.
+    """
+    return (records[:-1] if records.endswith("s") else records) + "(s)"
 
 
 def main(argv=None):
@@ -283,6 +364,10 @@ def main(argv=None):
     ap.add_argument("--lock-timeout", type=float, default=30.0, metavar="S",
                     help="how long to wait for another run to finish with the "
                          "database before refusing (default: 30)")
+    ap.add_argument("--records", default=RECORDS, metavar="KEY",
+                    help="what a database this run creates calls its list "
+                         f"(default: {RECORDS}); an existing database keeps the "
+                         "key it already uses and this is ignored")
     ap.add_argument("--no-lock", action="store_true",
                     help="do not lock the database: for a caller that already "
                          "serialises its own access, and the way past on a "
@@ -305,8 +390,11 @@ def main(argv=None):
 def run(args):
     """The work, with the database already locked if it is going to be."""
     try:
-        new = read_bugs(args.new)
-        db = read_bugs(args.db, missing_ok=True)
+        new, _ = read_bugs(args.new)
+        db, records = read_bugs(args.db, missing_ok=True)
+        # What this database calls its list, and so what a run reports in. An
+        # existing one keeps its own word; a new one takes --records.
+        records = records or args.records
     except (OSError, ValueError) as exc:
         print(f"-- refused: {exc}", file=sys.stderr)
         return 1
@@ -321,17 +409,30 @@ def run(args):
 
     fresh = os.path.exists(args.db)
     before = len(db)
-    db, added, again, conflicts = append(db, new, args.date)
+    db, added, again, conflicts, reopen = append(db, new, args.date)
 
     for k, name, was, now in conflicts:
         print(f"-- conflict: {' '.join(k)} `{name}` is kept as {was!r}, "
               f"and this run said {now!r}", file=sys.stderr)
 
-    print(f"-- {len(added)} new bug(s), {len(again)} already known, "
-          f"{len(conflicts)} conflict(s)")
+    # Beside the conflicts, because both are the same kind of thing: the file
+    # and the run disagree, the file wins, and somebody is told.
+    for k, when in reopen:
+        print(f"-- reopen candidate: {' '.join(k)} was closed"
+              + (f" on {when}" if when else "")
+              + f", and this run saw it again on {args.date}", file=sys.stderr)
+
+    # Always counted, including when it is zero. A run that looked and found no
+    # contradiction and a run with no closed entry to contradict are different
+    # results, and a counter that appears only when it fires reports neither.
+    one = noun(records)
+    print(f"-- {len(added)} new {one}, {len(again)} already known, "
+          f"{len(conflicts)} conflict(s), {len(reopen)} reopen candidate(s)")
     counts = by_tool(db)
-    print(f"-- the database holds {len(db)} bug(s) from {len(counts)} tool(s): "
-          + ", ".join(f"{t} {n}" for t, n in sorted(counts.items())))
+    print(f"-- the database holds {len(db)} {one}"
+          + (f" from {len(counts)} tool(s): "
+             + ", ".join(f"{t} {n}" for t, n in sorted(counts.items()))
+             if counts else ""))
 
     if args.dry_run:
         print(f"-- dry run: {args.db} is unchanged, and would have gone from "
@@ -339,7 +440,7 @@ def run(args):
         return 0
 
     try:
-        write_db(args.db, db)
+        write_db(args.db, db, records)
     except OSError as exc:
         print(f"-- refused: {exc}", file=sys.stderr)
         return 1

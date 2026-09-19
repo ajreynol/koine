@@ -1,0 +1,586 @@
+#!/usr/bin/env python3
+"""koine_close_db -- ask an assistant what each watched project has since done.
+
+    koine_close_db --config <closure.json>                 # start a session
+    koine_close_db --config <closure.json> --dry-run       # the scope, and stop
+    koine_close_db --config <closure.json> --show-prompt   # the prompt, and stop
+
+A database records what a run saw and when. **It has never recorded what became
+of it.** This starts an assistant on that question, in the owner's repository,
+against a window of each watched project's own history: from the revision the
+open records were taken at, to what that project ships today.
+
+## It is commit-first, and that is the point
+
+Asking *which of these is fixed?* invites a re-analysis, and a re-analysis that
+finds nothing is not evidence of a fix. Asking *what did this commit change, and
+does it close anything we have open?* starts from something that actually
+happened, names it, and leaves a commit attached to every closure. That is also
+what makes a closure checkable later: an audit can ask the project whether the
+change landed, and only for a closure that names a commit.
+
+## What is koine's here, and what is not
+
+**koine owns the mechanics.** Resolving the window and describing it -- that is
+`koine_window`, which this calls. The discipline of a closure: commit-first, one
+commit at a time, confirm in the current source rather than in the commit
+message, absence closes nothing, leave it open if you cannot tell. Where the
+work is left, which is uncommitted, in the owner's tree, reaching nobody. And
+the check afterwards, which is `koine_check_db`.
+
+**The owner owns every decision.** Which projects are watched and on which ref.
+What the records are and what one is called. Where the baseline comes from. What
+evidence closes one -- a claim about a file is confirmed by reading that file,
+and a claim about a program's behaviour is not, and which is which is not
+koine's to say. The closure vocabulary. The shape of whatever else gets written.
+The checks to run afterwards.
+
+**So the prompt is assembled, not templated.** Three of its sections come from
+files the owner writes, spliced in whole: `about`, `evidence` and `writes`. A
+launcher that flattened those into one shared wording would be a paraphrase of
+three different projects' rules with nothing keeping it current -- and the
+paragraphs it would flatten are the ones carrying what each owner learned the
+hard way. koine points at them instead.
+
+## It knows nothing about what the records are
+
+A database of defects, a database of static observations and a database of
+rewrite candidates are the same shape to this: identities, an owner, a claim,
+and the revision it was recorded at. What they are *called* is configuration --
+`records` in the config file gives the singular, the plural and the collective
+noun -- and the prompt speaks the owner's word throughout. koine's tooling is
+called bug_db; a consumer's database is its own.
+
+## The launcher makes no network call
+
+`--show-prompt` prints the same text on a machine with no network as on one
+with, so a remote window is pointed at and never fetched. The reading is the
+assistant's, in a session a person is driving.
+"""
+
+import argparse
+import importlib.machinery
+import importlib.util
+import json
+import os
+import subprocess
+import sys
+import textwrap
+
+sys.dont_write_bytecode = True
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+WINDOW = os.path.join(HERE, "koine_window")
+CHECK = os.path.join(HERE, "koine_check_db")
+
+
+def _sibling(name):
+    """A program beside this one, loaded for the parts it already solved.
+
+    Beside, and not anywhere else: a consumer resolves this launcher through its
+    own pin, so the window and the wrapping it gets are the ones from the same
+    commit. There is no package here to import from and no install step, which
+    is the whole of why this is three scripts in a directory.
+    """
+    path = os.path.join(HERE, name)
+    spec = importlib.util.spec_from_loader(
+        name, importlib.machinery.SourceFileLoader(name, path))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+#: How a paragraph is wrapped, and how a command is not. `koine_window` writes
+#: the window's prose and this writes the rest of the same page, so they wrap the
+#: same way -- and every paragraph here carries a noun the owner chose, so
+#: hand-wrapping would mean re-flowing the source each time somebody renames
+#: what they record.
+_window = _sibling("koine_window")
+page, WIDTH = _window.page, _window.WIDTH
+
+
+def item(n, text):
+    """One numbered step, wrapped, with its continuation lines lined up.
+
+    Returned as lines rather than a paragraph, because `page` wraps a paragraph
+    and this one has already been wrapped to a hanging indent that a second pass
+    would flatten.
+    """
+    return textwrap.fill(" ".join(text.split()), width=WIDTH,
+                         initial_indent=f"{n}. ", subsequent_indent="   ",
+                         break_long_words=False,
+                         break_on_hyphens=False).splitlines()
+
+
+def indented(text, by=2):
+    """One paragraph, wrapped and set in from the margin, as lines."""
+    pad = " " * by
+    return textwrap.fill(" ".join(text.split()), width=WIDTH,
+                         initial_indent=pad, subsequent_indent=pad,
+                         break_long_words=False,
+                         break_on_hyphens=False).splitlines()
+
+#: What marks a field as a ruling. The convention the whole directory reads.
+CLOSED = "closed_"
+
+#: How many commits one project's window lists before the prose says how many it
+#: left out. `koine_window`'s own default; named here because a config may move it.
+LISTED = 30
+
+#: What a record is called when the config does not say. Deliberately the most
+#: neutral word available: koine has no opinion about what a consumer records.
+RECORDS = {"one": "record", "many": "records", "collective": "database"}
+
+
+def load(path):
+    """The config, with its defaults filled in and its paths made absolute."""
+    with open(path, encoding="utf-8") as fh:
+        cfg = json.load(fh)
+    base = os.path.dirname(os.path.abspath(path))
+    cfg["root"] = os.path.normpath(os.path.join(base, cfg.get("root", ".")))
+    for key in ("database",):
+        if not cfg.get(key):
+            raise ValueError(f"{path}: `{key}` is what this runs against, and it "
+                             "is not there")
+    cfg["database"] = os.path.normpath(os.path.join(cfg["root"], cfg["database"]))
+    cfg["records"] = {**RECORDS, **cfg.get("records", {})}
+    cfg.setdefault("tool", os.path.basename(cfg["root"]))
+    cfg.setdefault("owner", "owner")
+    cfg.setdefault("group", "")
+    cfg.setdefault("listed", LISTED)
+    cfg.setdefault("remeasure", "")
+    cfg.setdefault("also", [])
+    cfg.setdefault("checks", [])
+    cfg.setdefault("prompt", {})
+    if not cfg.get("projects"):
+        raise ValueError(f"{path}: `projects` names what is watched, and a "
+                         "closure run with nothing to read is not one")
+    for name, entry in cfg["projects"].items():
+        for field in ("url", "ref"):
+            if not entry.get(field):
+                raise ValueError(f"{path}: project {name} records no `{field}`; "
+                                 "a ref is a choice this file makes and not one "
+                                 "a run should guess")
+    return cfg
+
+
+def database(cfg):
+    """Every record, by identity, and what the file calls them."""
+    with open(cfg["database"], encoding="utf-8") as fh:
+        data = json.load(fh)
+    if isinstance(data, dict):
+        lists = [k for k, v in data.items() if isinstance(v, list)]
+        if len(lists) != 1:
+            raise ValueError(f"{cfg['database']}: {len(lists)} lists in it and no "
+                             "way to tell which one is the records")
+        return data[lists[0]]
+    if isinstance(data, list):
+        return data
+    raise ValueError(f"{cfg['database']}: expected a list of records")
+
+
+def ruled(entry, also):
+    """Whether somebody has already ruled on this one."""
+    return any(f.startswith(CLOSED) or f in also for f in entry)
+
+
+def open_rows(cfg):
+    """Every record still open. An entry carrying a ruling is nobody's question."""
+    also = frozenset(cfg["also"])
+    return [e for e in database(cfg) if not ruled(e, also)]
+
+
+def by_project(cfg, rows):
+    """One project's rows, for each -- and a compound owner is in all of them.
+
+    `a+b` is a record about a disagreement *between* two projects, which either
+    can have resolved. Filing it under one would put it in that window and leave
+    the other blind to it.
+    """
+    known = cfg["projects"]
+    out = {name: [] for name in known}
+    for row in rows:
+        owners = str(row.get(cfg["owner"], "")).split("+")
+        for name in owners:
+            if name in out:
+                out[name].append(row)
+            elif name.strip():
+                raise ValueError(
+                    f"{row.get('id', row)} is owned by {name!r}, which the "
+                    f"config's `projects` does not name: {', '.join(known)}")
+    return out
+
+
+def grouped(cfg, rows):
+    """What is on the table for one project, by whatever the owner groups by."""
+    if not cfg["group"]:
+        return ""
+    counts = {}
+    for row in rows:
+        counts[str(row.get(cfg["group"], "?"))] = counts.get(
+            str(row.get(cfg["group"], "?")), 0) + 1
+    return ", ".join(f"{k} {n}" for k, n in sorted(counts.items()))
+
+
+def baselines(cfg, since, needed):
+    """Where each project's window starts, and how that was decided.
+
+    The owner's question, so the owner answers it: `baseline.command` is run in
+    the owner's root and prints one `<project> <rev> <provenance>` line per
+    project. `--since` overrides one. koine does not read somebody's database
+    looking for a revision field, because which field that is, and what to do
+    when two rows disagree, is a decision each owner has already made
+    differently.
+    """
+    out = dict(since)
+    spec = cfg.get("baseline") or {}
+    if spec.get("command") and set(needed) - set(out):
+        p = subprocess.run(spec["command"], cwd=cfg["root"],
+                           capture_output=True, text=True)
+        if p.returncode:
+            raise ValueError(
+                f"the baseline command {' '.join(spec['command'])!r} failed in "
+                f"{cfg['root']}: {p.stderr.strip() or p.stdout.strip()}")
+        for line in p.stdout.splitlines():
+            parts = line.split(None, 2)
+            if len(parts) < 2:
+                continue
+            name, rev = parts[0], parts[1]
+            why = parts[2] if len(parts) > 2 else " ".join(spec["command"])
+            if name in cfg["projects"] and name not in out:
+                out[name] = (rev, why)
+    # Only for the projects with a window to read. A project with nothing open
+    # has none, and demanding a revision for it would make a config with four
+    # projects unusable whenever three of them are quiet.
+    missing = [n for n in needed if n not in out]
+    if missing:
+        raise ValueError(
+            f"no baseline for {', '.join(missing)}. The revision the open "
+            f"{cfg['records']['many']} were recorded at is the owner's to say: "
+            "give --since NAME=REV, or configure `baseline.command` to print "
+            "`<project> <rev> <why>`")
+    return out
+
+
+def window(cfg, name, base, local, as_json=False):
+    """One project's window, from koine_window. No network, either way."""
+    entry = cfg["projects"][name]
+    argv = [sys.executable, WINDOW, "--baseline", base, "--project", name,
+            "--url", entry["url"], "--ref", entry["ref"],
+            "--listed", str(cfg["listed"])]
+    if cfg["remeasure"]:
+        argv += ["--remeasure=" + cfg["remeasure"]]
+    if local:
+        argv += ["--local", local[0], "--via=" + local[1]]
+    if as_json:
+        argv.append("--json")
+    p = subprocess.run(argv, capture_output=True, text=True)
+    if p.returncode:
+        raise ValueError(p.stderr.strip().removeprefix("-- refused: "))
+    return json.loads(p.stdout) if as_json else p.stdout.rstrip("\n")
+
+
+def slot(cfg, which, subs):
+    """One of the owner's sections, spliced in whole.
+
+    A file, or a command that prints one -- the second is for a section that has
+    to be computed from the owner's own vocabulary. Substitution is by literal
+    replacement of a handful of named placeholders and never by `format`,
+    because these files carry JSON examples and a `{` in one is not a field.
+    """
+    spec = cfg["prompt"].get(which)
+    if not spec:
+        return ""
+    if isinstance(spec, str):
+        spec = {"file": spec}
+    if spec.get("command"):
+        p = subprocess.run(spec["command"], cwd=cfg["root"],
+                           capture_output=True, text=True)
+        if p.returncode:
+            raise ValueError(f"the `{which}` command "
+                             f"{' '.join(spec['command'])!r} failed in "
+                             f"{cfg['root']}: {p.stderr.strip()}")
+        text = p.stdout
+    else:
+        path = os.path.join(cfg["root"], spec["file"])
+        if not os.path.isfile(path):
+            raise ValueError(f"{path} is missing, and `prompt.{which}` names it")
+        with open(path, encoding="utf-8") as fh:
+            text = fh.read()
+    for key, value in subs.items():
+        text = text.replace("{" + key + "}", str(value))
+    return text.strip("\n")
+
+
+def scope(cfg, name, rows, base, why, text):
+    """One project's heading, its numbers, and the window beneath it.
+
+    Returned as a literal block. The window's prose has already been wrapped by
+    `koine_window`, and the three lines above it are a table rather than a
+    paragraph: both are things a second wrapping would ruin.
+    """
+    entry, many = cfg["projects"][name], cfg["records"]["many"]
+    head = [f"## {name} -- {len(rows)} open {many}", ""]
+    if cfg["group"]:
+        head.append(f"  open:     {grouped(cfg, rows)}")
+    head += [f"  baseline: {base} -- {why}",
+             f"  ref:      {entry['ref']}"
+             + (f"; {entry['reads']}" if entry.get("reads") else ""), ""]
+    return head + text.splitlines()
+
+
+def nothing_open(cfg, name):
+    """A project with nothing open, named out loud rather than left out.
+
+    A run that looked at one project and a run that found nothing in four have to
+    be told apart, and a project quietly missing from the prompt tells them
+    apart for nobody.
+    """
+    one = cfg["records"]["one"]
+    where = os.path.relpath(cfg["database"], cfg["root"])
+    # Blocks and not a page: a caller splices these into its own, and a page
+    # spliced in as one block would be re-wrapped, running the heading into the
+    # paragraph under it.
+    return ([f"## {name} -- nothing open", ""]
+            + indented(f"No open {one} in {where} is owned by {name}, so there "
+                       f"is nothing for a commit of its to close and no window "
+                       f"to read. That is a complete result for {name}: do not "
+                       f"go looking for work there."))
+
+
+def checks(cfg):
+    """What the assistant runs over its own work before reporting."""
+    where = os.path.relpath(cfg["database"], cfg["root"])
+    also = "".join(f" --also {f}" for f in cfg["also"])
+    return [f"  {CHECK} {where}{also}"] + [f"  {c}" for c in cfg["checks"]]
+
+
+def discipline(one, many):
+    """The five steps, which are koine's and are the same for every owner.
+
+    Not a paraphrase of anybody's rules: this is the method of a closure
+    assessment, and the reason it is here rather than in three launchers is that
+    all three were already saying it, in nearly the same words, having each
+    arrived at it the same expensive way.
+    """
+    steps = [
+        item(1, f"Read what the commit changed. Its files say which of our "
+                 f"{many} it could bear on at all; most commits in any window "
+                 f"bear on none, and saying so is a complete result for that "
+                 f"commit."),
+        item(2, f"Name the {many} it could close, by id, and only ones that "
+                 f"project owns -- a commit in one project does not close a "
+                 f"claim about another's file."),
+        item(3, "**Confirm the closure in the current source, not in the commit "
+                 f"message.** Re-read what the {one} names, as that project "
+                 "ships it today, and establish that the claim is no longer true "
+                 "of it. A commit that looks related and a claim that is now "
+                 "false are two different findings, and only the second one "
+                 "closes anything."),
+        item(4, "**Absence closes nothing.** Not finding an entity, not "
+                 "reproducing a claim, and a check that would now report less "
+                 f"are none of them evidence of a fix. If what a {one} names is "
+                 "gone -- renamed, deleted, moved -- say which of those happened "
+                 "and what it means for the claim; that is an explicit "
+                 "assessment, and it is the only way such a record closes."),
+        item(5, f"If you cannot tell, leave it open and say what would settle "
+                 f"it. An open {one} costs nothing; a wrong closure is a claim "
+                 f"that somebody fixed something they did not, and it is the "
+                 f"kind of mistake nothing re-derives and so nothing notices."),
+    ]
+    # One block, so the five read as a list rather than five paragraphs with
+    # air between them. Both prompts this generalises wrote them that way.
+    return ["**Work one project at a time, commit-first, one commit at a time.**",
+            [line for step in steps for line in step]]
+
+
+def prompt(cfg, plan, quiet, when):
+    one = cfg["records"]["one"]
+    many = cfg["records"]["many"]
+    collective = cfg["records"]["collective"]
+    where = os.path.relpath(cfg["database"], cfg["root"])
+    total = len({id(r) for _, rows, _, _, _ in plan for r in rows})
+    subs = {"when": when, "tool": cfg["tool"], "root": cfg["root"],
+            "database": where, "open": total, "one": one, "many": many,
+            "collective": collective}
+    about = slot(cfg, "about", subs)
+    evidence = slot(cfg, "evidence", subs)
+    writes = slot(cfg, "writes", subs)
+    if not writes:
+        raise ValueError(
+            "`prompt.writes` is what says where a closure is recorded and in "
+            "what words, and that is the owner's. koine will not guess a "
+            "vocabulary or a page shape")
+    # The owner's sections go in as literal blocks: they are already written
+    # the way their author wants them, and re-wrapping somebody's prose is not
+    # this program's business.
+    own = lambda text: [text.splitlines()] if text else []
+    return page(
+        f"You are closing {many} in the {collective} of **{cfg['tool']}**, at "
+        f"{cfg['root']}. `{where}` holds {total} open {many} that nobody has "
+        f"ruled on.",
+        *own(about),
+        "**Your question is what each of those projects has since done about "
+        "them.** Not whether a check still fires: what a commit of theirs "
+        "changed, and whether it makes one of our claims false.",
+        *[scope(cfg, name, rows, base, why, text)
+          for name, rows, base, why, text in plan],
+        *[nothing_open(cfg, name) for name in quiet],
+        f"The {many} are in `{where}`, by id, with the owner, the claim, and "
+        f"where it was found. **You add fields to an entry you close and change "
+        f"nothing else about it**; what to write is below.",
+        *discipline(one, many),
+        *own(evidence),
+        "**Then write what the closure is, and nothing else.**",
+        *own(writes),
+        f"Record the date as {when} where a date is called for.",
+        "**Then check what you wrote:**",
+        checks(cfg),
+        f"`koine_check_db` is the one that fails on a run that changed anything "
+        f"other than the closure fields it added -- a reworded claim, a dropped "
+        f"entry, a reordering. It compares `{where}` against the version last "
+        f"committed, which is the database before you touched it. Fix what it "
+        f"says before you report.",
+        "**Finish with a report to the terminal**: per project, what you closed "
+        "and under which commit, what you assessed and left open with the "
+        "reason, and how much of each window you actually read. Say plainly "
+        "where it was too thin to conclude anything -- a project you did not get "
+        "to is a result, and a project you skimmed and called clean is not.",
+        "**Commit nothing and push nothing.** Leave the changes in the working "
+        "tree for a maintainer to read as a diff. Open no pull request, file no "
+        "issue, post no comment, and touch no tracker -- not the watched "
+        "projects', not anybody's. Nothing here reaches a person who did not ask "
+        "for it.") + "\n"
+
+
+def describe(cfg, plan, quiet, local):
+    """The scope, resolved, with nothing started."""
+    out = [f"{cfg['tool']}: {cfg['records']['collective']} at "
+           f"{os.path.relpath(cfg['database'], cfg['root'])}"]
+    for name, rows, base, why, _ in plan:
+        out.append(f"{name}: {len(rows)} open {cfg['records']['many']}"
+                   + (f" -- {grouped(cfg, rows)}" if cfg["group"] else ""))
+        out.append(f"  ref:      {cfg['projects'][name]['ref']}")
+        out.append(f"  baseline: {base} (from {why})")
+        if name in local:
+            w = window(cfg, name, base, local[name], as_json=True)
+            out.append(f"  local:    {w['root']} (from {w['via']}) at {w['head'][:10]}")
+            out.append(f"  window:   {w['count']} commit(s) to assess"
+                       + (f"; {w['behind']} behind the baseline" if w["behind"] else "")
+                       + ("; DIVERGED -- the baseline is not on this branch"
+                          if w["diverged"] else ""))
+            for r in w["elsewhere"]:
+                out.append(f"    {r['ref']} is {r['ahead']} commit(s) ahead of HEAD")
+        else:
+            url = cfg["projects"][name]["url"].removesuffix(".git")
+            out.append(f"  window:   {url}/compare/{base}...{cfg['projects'][name]['ref']}")
+            out.append("            read by the assistant; this makes no network call")
+    for name in quiet:
+        out.append(f"{name}: nothing open; no window to read")
+    return "\n".join(out)
+
+
+def pairs(values, known, flag):
+    """`--since cvc5=abc123` and friends, checked against the config."""
+    out = {}
+    for value in values or []:
+        name, _, rest = value.partition("=")
+        if name not in known:
+            raise ValueError(f"{flag} names {name!r}, which the config's "
+                             f"`projects` does not: {', '.join(known)}")
+        out[name] = rest.strip()
+    return out
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser(
+        prog="koine_close_db",
+        description="Ask an assistant what each watched project has since done "
+                    "about the records we have open on it.")
+    ap.add_argument("project", nargs="*",
+                    help="a project the config names; omitted, every one of them")
+    ap.add_argument("--config", required=True, metavar="PATH",
+                    help="the owner's closure config: what the records are, "
+                         "what is watched, and what a closure is written as")
+    ap.add_argument("--use-local", nargs="*", metavar="NAME=PATH",
+                    help="read local checkouts instead of the remotes")
+    ap.add_argument("--since", action="append", metavar="NAME=REV",
+                    help="baseline for one project, overriding the config's")
+    ap.add_argument("--date", help="the date to record; default: today")
+    ap.add_argument("--dry-run", action="store_true",
+                    help="print the scope and exit, starting nothing")
+    ap.add_argument("--show-prompt", action="store_true",
+                    help="print the prompt and exit, starting nothing")
+    ap.add_argument("--codex", action="store_true", help="run codex instead of claude")
+    ap.add_argument("--print", action="store_true", dest="noninteractive",
+                    help="run non-interactively and print the result")
+    args = ap.parse_args(argv)
+
+    try:
+        cfg = load(args.config)
+        known = cfg["projects"]
+        unknown = set(args.project) - set(known)
+        if unknown:
+            raise ValueError(f"not a project this config names: "
+                             f"{', '.join(sorted(unknown))}; it names "
+                             f"{', '.join(known)}")
+        wanted = [n for n in known if not args.project or n in args.project]
+
+        local = {}
+        for name, path in pairs(args.use_local, known, "--use-local").items():
+            path = os.path.expanduser(path)
+            if not os.path.isdir(path):
+                raise ValueError(f"no {name} checkout at {path}")
+            local[name] = (path, "--use-local")
+
+        rows = by_project(cfg, open_rows(cfg))
+        since = {n: (r, "--since") for n, r in
+                 pairs(args.since, known, "--since").items()}
+        busy = [n for n in wanted if rows[n]]
+        quiet = [n for n in wanted if not rows[n]]
+        base = baselines(cfg, since, busy)
+
+        plan = []
+        for name in busy:
+            rev, why = base[name]
+            plan.append((name, rows[name], rev, why,
+                         window(cfg, name, rev, local.get(name))))
+
+        if args.dry_run:
+            print(describe(cfg, plan, quiet, local))
+            return 0
+        if not plan:
+            print(f"-- koine_close_db: no open {cfg['records']['one']} is owned "
+                  f"by {', '.join(wanted)}; nothing to assess", file=sys.stderr)
+            return 0
+
+        from datetime import date
+        when = args.date or date.today().isoformat()
+        text = prompt(cfg, plan, quiet, when)
+        if args.show_prompt:
+            print(text, end="")
+            return 0
+
+        print(f"-- koine_close_db: what each project did after our open "
+              f"{cfg['records']['many']} were recorded", file=sys.stderr)
+        for name, rows_, rev, why, _ in plan:
+            where = (f"{local[name][0]}" if name in local
+                     else cfg["projects"][name]["url"].removesuffix(".git"))
+            print(f"--   {name}: {len(rows_)} from {rev[:10]}, reading {where}",
+                  file=sys.stderr)
+        for name in quiet:
+            print(f"--   {name}: nothing open", file=sys.stderr)
+        print(f"--   writing {os.path.relpath(cfg['database'], cfg['root'])} "
+              "and whatever else this owner's `writes` names, here and "
+              "uncommitted", file=sys.stderr)
+        command = (["codex", "exec"] if args.noninteractive else ["codex"]) \
+            if args.codex else (["claude", "-p"] if args.noninteractive
+                                else ["claude"])
+        return subprocess.run(command + [text], cwd=cfg["root"]).returncode
+    except (OSError, ValueError, KeyError, json.JSONDecodeError) as exc:
+        print(f"koine_close_db: {exc}", file=sys.stderr)
+        return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main())

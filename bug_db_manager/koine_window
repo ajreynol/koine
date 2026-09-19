@@ -1,0 +1,403 @@
+#!/usr/bin/env python3
+"""koine_window -- the window of another project's history a closure run reads.
+
+    koine_window --baseline <rev> --url <url> --ref <ref>       # nobody has it checked out
+    koine_window --baseline <rev> --local <path>                # somebody has
+    koine_window --baseline <rev> --local <path> --json         # the facts, not the prose
+
+A tool in this ecosystem records what it found in somebody else's project, and
+the record says what a check saw and when. **Asking what became of it is a
+different question, and it is asked of a window**: from the revision the open
+rows were recorded at, to what that project ships today. Every closure run needs
+that window resolved, described to an assistant, and -- this is the part that is
+easy to get wrong -- **described honestly when it is not a window at all.**
+
+This is that piece, on its own, because it was written twice. anoieu and
+dokimasia each grew a closure launcher, and each grew its own copy of: find the
+baseline's commits, cut the listing at N and say how many were left out, print
+the `gh api` recipes, warn that the compare view pages at 250. Two copies of one
+mechanism is two places for a lesson to land in only one of them, **and that is
+what happened**: anoieu learned to refuse a shallow clone and to notice that the
+baseline is not an ancestor of HEAD, and dokimasia, having no way to hear about
+it, still presents a merge-base diff as a history.
+
+## What it will not do
+
+**It makes no network call, ever.** `--show-prompt` in a launcher that uses this
+has to print the same text on a machine with no network as on one with, so a
+remote window is *pointed at* and never fetched: the prose says where to read it
+and how, and the reading is the assistant's. That is why `--json` reports
+`commits: null` for a remote window rather than an empty list -- an empty list
+is a claim that nothing landed, and this did not look.
+
+**It writes nothing and changes no checkout.** A local window is read with
+`git log`, `git rev-list` and `git merge-base`, and no fetch, checkout or branch
+is among them. The checkout is somebody's working tree and it is on loan.
+
+**It decides nothing.** An empty window, a diverged branch and a checkout behind
+the baseline are all reported and none is refused: whether a run should start on
+one is the launcher's call, and the launcher is the owner's. This says what is
+there.
+
+## The three ways a window lies
+
+A window is the sentence *these commits are what happened after the baseline*,
+and three things make that sentence false while leaving it looking fine.
+
+**A shallow clone carries no history**, so `base..HEAD` is empty for a reason
+that has nothing to do with the project. Refused, because the alternative is
+reporting an empty window from a clone that was never going to have one.
+
+**A diverged branch is not a history.** When the baseline is not an ancestor of
+HEAD, `base..HEAD` is what this branch has done since the *merge-base* -- and it
+may miss a fix that exists only on the branch the rows were measured on, and it
+may carry files the rows were never about. Reported as `diverged`, in the facts
+and in the prose, because an assistant handed the list without the warning will
+read a branch difference as a change somebody made.
+
+**A checkout parked at the baseline has an empty window by construction**, which
+is what a pinned dependency tree is. Reported with what else that checkout holds
+-- the refs that do carry newer commits -- because the useful answer is almost
+never *the project did nothing*.
+"""
+
+import argparse
+import json
+import subprocess
+import sys
+import textwrap
+import urllib.parse
+
+#: How many commits the prose lists before it stops and says how many it left
+#: out. A prompt is not a substitute for `git log`, and a silent cut would read
+#: as a complete window. The commands in the prose are not cut; the list is.
+LISTED = 30
+
+#: How many refs an empty window names as somewhere else to look. Three, because
+#: the point is *the history is on a ref you did not check out* and a fourth
+#: example does not make that point any better.
+ELSEWHERE = 3
+
+#: What a paragraph is wrapped to. Every paragraph here carries something of
+#: variable length -- a project's name, a path somebody chose, a sha -- so the
+#: wrapping is done at the end rather than written into the source. A paragraph
+#: whose shape depends on how long somebody's checkout path is is one nobody can
+#: edit without re-flowing it by hand.
+WIDTH = 78
+
+
+def git(root, *args):
+    """One git command in that checkout, or why it could not be run."""
+    p = subprocess.run(["git", "-C", str(root), *args],
+                       capture_output=True, text=True)
+    if p.returncode:
+        raise ValueError(f"git {' '.join(args)} failed in {root}: {p.stderr.strip()}")
+    return p.stdout.strip()
+
+
+def quiet(root, *args):
+    """A git command asked for its exit code rather than its output."""
+    return subprocess.run(["git", "-C", str(root), *args],
+                          capture_output=True).returncode
+
+
+def slug(url):
+    """`cvc5/ethos`, from a github remote -- or nothing, where it is not one.
+
+    The `gh api` recipes are worth printing only for a host `gh` talks to, and
+    a project hosted anywhere else gets the compare link and no false promises.
+    """
+    parsed = urllib.parse.urlparse(url if "//" in url else "https://" + url)
+    if parsed.netloc.removeprefix("www.") != "github.com":
+        return ""
+    path = parsed.path.strip("/").removesuffix(".git")
+    return path if path.count("/") == 1 else ""
+
+
+def ahead_of(root, head):
+    """Refs in this checkout that carry commits after HEAD, biggest first.
+
+    The usual reason a local window is empty is not that the project has done
+    nothing: it is that the newer history is fetched and parked on a ref nobody
+    checked out.
+    """
+    refs = git(root, "for-each-ref", "--format=%(refname:short)", "--contains",
+               head, "refs/remotes", "refs/heads").splitlines()
+    counted = [(int(git(root, "rev-list", "--count", f"{head}..{ref}")), ref)
+               for ref in refs]
+    return [{"ref": ref, "ahead": n}
+            for n, ref in sorted((n, ref) for n, ref in counted if n)[::-1][:ELSEWHERE]]
+
+
+def local(root, base):
+    """What a checkout on this machine can already answer for.
+
+    Refuses a shallow clone and a baseline the checkout does not carry, because
+    both produce an empty window that says nothing about the project. Reports a
+    diverged branch rather than refusing it: a diverged window is still a window,
+    it is just not a history, and the prose says so in as many words.
+    """
+    if git(root, "rev-parse", "--is-shallow-repository") == "true":
+        raise ValueError(
+            f"{root} is a shallow clone and carries no history to read. A clone "
+            "made for an analysis is usually shallow and single-commit; name a "
+            "full checkout, or read the history on the remote instead.")
+    if quiet(root, "cat-file", "-e", base + "^{commit}"):
+        raise ValueError(
+            f"{root} does not contain {base}. Fetch it yourself, or read the "
+            "history on the remote; this never fetches.")
+    head = git(root, "rev-parse", "HEAD")
+    commits = [{"sha": sha, "subject": subject} for sha, subject in
+               (line.split("\t", 1) for line in
+                git(root, "log", "--no-merges", "--format=%H\t%s",
+                    f"{base}..HEAD").splitlines())]
+    return {
+        "head": head,
+        "commits": commits,
+        "count": len(commits),
+        # How far this checkout sits *behind* the baseline, which is a different
+        # thing from the window and is nonzero whenever the two have diverged.
+        "behind": int(git(root, "rev-list", "--count", f"{head}..{base}") or 0),
+        # Whether the baseline is on this branch at all. When it is not,
+        # `base..HEAD` is what HEAD has since the merge-base rather than what
+        # happened after the baseline, and the difference is the whole meaning
+        # of the window.
+        "diverged": bool(quiet(root, "merge-base", "--is-ancestor", base, head)),
+        "elsewhere": ahead_of(root, head) if not commits else [],
+    }
+
+
+def facts(args):
+    """Everything known about this window, without reading anything remote."""
+    out = {"project": args.project, "baseline": args.baseline,
+           "url": args.url or "", "ref": args.ref or "",
+           "where": "local" if args.local else "remote"}
+    if args.local:
+        out["root"] = args.local
+        out["via"] = args.via or args.local
+        out.update(local(args.local, args.baseline))
+        return out
+    # Nothing was read, so nothing is claimed. `null` and not `[]`: an empty
+    # list is a claim that nothing landed, and this did not look.
+    out.update({"commits": None, "count": None, "behind": None,
+                "diverged": None, "elsewhere": []})
+    return out
+
+
+def page(*blocks):
+    """The prose, one blank line between blocks.
+
+    A string is a paragraph and is wrapped; a list of strings is literal -- a
+    commit list, a shell recipe -- and is printed as it was written. Nothing here
+    re-wraps a command, because a command that has been wrapped is not one.
+    """
+    out = []
+    for block in blocks:
+        if not block:
+            continue
+        out.append("\n".join(block) if isinstance(block, list) else
+                   textwrap.fill(" ".join(block.split()), width=WIDTH,
+                                 break_long_words=False, break_on_hyphens=False))
+    return "\n\n".join(out)
+
+
+def remeasuring(remeasure):
+    """The owner's re-measure command, as a block, because it is a command.
+
+    koine does not know how an owner re-measures and says so by pointing: the
+    command is the owner's, named on the command line, and this puts it where the
+    prose has just said that a reading is not a run.
+    """
+    return [] if not remeasure else [
+        ["  # re-measuring, which is the run this reading is not",
+         f"  {remeasure}"]]
+
+
+def divergence(base, head, remeasure):
+    """What a diverged window owes the assistant reading it, as blocks.
+
+    Blocks and not a page: a caller splices these into its own, and a page
+    spliced in as one block would be re-wrapped, which would run the re-measure
+    command into the paragraph above it.
+    """
+    return (
+        f"**The baseline is not on this branch, so the window is not a history.** "
+        f"{base} is not an ancestor of {head}: the commits above are what this "
+        f"branch has done since the *merge-base*, not what happened after the rows "
+        f"were recorded. It may miss a fix that exists only on the branch the rows "
+        f"were measured on, and a row may name a file or a line this branch never "
+        f"had -- in which case the claim was never about this branch, and saying so "
+        f"and leaving it open is the result. **Re-measuring is a run and not a "
+        f"reading**, so do not close a row because this branch looks different from "
+        f"the one it was measured on.",
+        *remeasuring(remeasure))
+
+
+def nothing_landed(w, name):
+    """What an empty local window owes the assistant reading it, as blocks."""
+    return (
+        f"**No commit landed between the baseline and that checkout's HEAD**, so it "
+        f"can answer nothing about what {name} has done. A checkout parked at the "
+        f"baseline has an empty window by construction, which is what a pinned "
+        f"dependency tree is.",
+        *([[f"  {r['ref']} in this checkout is {r['ahead']} commit(s) ahead of HEAD"
+            for r in w["elsewhere"]]] if w["elsewhere"] else []),
+        "Name a checkout whose HEAD has moved, or read the history on the remote "
+        "instead.")
+
+
+def local_prose(w, name, base, listed, remeasure, url):
+    """How the prose describes a window somebody has already got on disk."""
+    root, head, commits = w["root"], w["head"], w["commits"]
+    if not commits:
+        return page(f"A checkout of {name} is on this machine at {root} (from "
+                    f"{w['via']}), at {head}.",
+                    *nothing_landed(w, name))
+    # The list is literal and the notice that it was cut is prose, so they are
+    # separate blocks: a commit subject cannot be wrapped and a sentence must be.
+    cut = (f"... and {len(commits) - listed} more. The list above is cut; the "
+           f"commands below are not, and the window is all of them."
+           if len(commits) > listed else "")
+    return page(
+        f"A checkout of {name} is on this machine at {root} (from {w['via']}), at "
+        f"{head}, and these {len(commits)} commit(s) landed between the baseline "
+        f"and it:",
+        [f"  {c['sha']} {c['subject']}" for c in commits[:listed]],
+        cut,
+        ["  # the window, in full",
+         f"  git -C {root} log --no-merges --format='%h %s' {base}..HEAD",
+         "  # what one commit touched",
+         f"  git -C {root} show --stat <commit>"],
+        *(divergence(base, head, remeasure) if w["diverged"] else ()),
+        f"**Read that checkout; never write it.** No fetch, no pull, no checkout, "
+        f"no branch, no build inside it: it is somebody's working tree and it is on "
+        f"loan. Where it cannot answer something -- a commit it does not carry, a "
+        f"pull request and its discussion, anything newer than its HEAD -- fall "
+        f"back to {url or 'the remote'} and say in your report which answers came "
+        f"from where.")
+
+
+def remote_prose(name, url, ref, base, remeasure):
+    """How the prose describes a window nobody has fetched. This is the default."""
+    url = url.removesuffix(".git")
+    where = slug(url)
+    recipes = [] if not where else [
+        "If `gh` is on your PATH it is the cheaper route:",
+        [f"  # the window's size, the revision of {ref} you are about to read, and",
+         f"  # whether the baseline is on {ref} at all",
+         f'  gh api "repos/{where}/compare/{base}...{ref}" \\',
+         f"     --jq '\"\\(.status); \\(.total_commits) commit(s); {ref} at "
+         f"\\(.commits[-1].sha[0:12]); merge-base \\(.merge_base_commit.sha[0:12])\"'",
+         "  # what landed",
+         f'  gh api "repos/{where}/compare/{base}...{ref}" \\',
+         "     --jq '.commits[] | \"\\(.sha) \\(.commit.message | "
+         "split(\"\\n\")[0])\"'",
+         "  # what one commit touched",
+         f"  gh api repos/{where}/commits/<sha> --jq '.files[].filename'",
+         "  # a file as it stands now",
+         f'  gh api "repos/{where}/contents/<path>?ref={ref}" --jq \'.content\' '
+         "| base64 -d"],
+        f"The web pages say the same things: a commit is `/commit/<sha>`, a file as "
+        f"it stands now is `/blob/{ref}/<path>`."]
+    named = ("the first command above names it" if where else
+             "the compare view names it, at the end of its commit list")
+    says = ("**If that first command says `diverged`" if where else
+            "**If that compare view says the two have diverged")
+    return page(
+        f"{name} is at {url} and nothing of it is checked out here: read its "
+        f"history there. What landed after the baseline is",
+        [f"  {url}/compare/{base}...{ref}"],
+        *recipes,
+        f"**That compare view pages at 250 commits.** If the window is larger, walk "
+        f"it in pieces and say in your report that you did and how far you got -- a "
+        f"silent truncation reads as a window you covered. Do not clone {name} into "
+        f"this repository.",
+        f"**Say which revision of `{ref}` you read** -- {named}. Every *still true "
+        f"today* below means true at that revision and at no later one.",
+        f"{says}, the window is not a history.** The baseline is on a branch "
+        f"`{ref}` does not contain, so the commits listed are what `{ref}` has done "
+        f"since the *merge-base* -- not what happened after the rows were recorded. "
+        f"Two things follow, and both belong in your report. The window may "
+        f"**miss** a fix that exists only on the abandoned branch, which closes "
+        f"nothing here because that branch is not what the project ships. And a row "
+        f"may name a file or a line that `{ref}` never had, in which case the claim "
+        f"was never about `{ref}` at all: say so and leave it open. **Re-measuring "
+        f"against `{ref}` is a run and not a reading**, so do not close a row on the "
+        f"grounds that `{ref}` looks different from the branch it was measured on.",
+        *remeasuring(remeasure))
+
+
+def prose(w, args):
+    """The block a launcher splices into its prompt, wherever it describes scope."""
+    if w["where"] == "local":
+        return local_prose(w, args.project, args.baseline, args.listed,
+                           args.remeasure, (args.url or "").removesuffix(".git"))
+    return remote_prose(args.project, args.url, args.ref, args.baseline,
+                        args.remeasure)
+
+
+def joined(argv):
+    """`--via --use-local`, which argparse would read as two flags.
+
+    A caller building an argv list passes the value it has, and the provenance a
+    launcher has to hand is routinely the name of the flag it came from. argparse
+    takes `--via=--use-local` and refuses `--via --use-local`, so the two are made
+    the same thing here rather than left as a trap that fires on one value.
+    """
+    out, wants = [], {"--via", "--project", "--remeasure"}
+    for n, arg in enumerate(argv):
+        if out and out[-1] in wants and arg.startswith("-"):
+            out[-1] += "=" + arg
+        else:
+            out.append(arg)
+    return out
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser(
+        prog="koine_window",
+        description="The window of another project's history a closure run reads.")
+    ap.add_argument("--baseline", required=True, metavar="REV",
+                    help="the revision the open rows were recorded against")
+    ap.add_argument("--project", default="the project", metavar="NAME",
+                    help="what to call it in the prose (default: 'the project')")
+    ap.add_argument("--local", metavar="PATH",
+                    help="a checkout on this machine to read the window from; "
+                         "without it, the window is pointed at and never fetched")
+    ap.add_argument("--via", metavar="TEXT",
+                    help="where PATH came from, for the prose to say so")
+    ap.add_argument("--url", metavar="URL",
+                    help="the project's own repository; required without --local")
+    ap.add_argument("--ref", metavar="REF",
+                    help="the branch a finding is about; required without --local")
+    ap.add_argument("--remeasure", metavar="COMMAND",
+                    help="the owner's command for re-measuring, named where the "
+                         "prose says a reading is not one")
+    ap.add_argument("--listed", type=int, default=LISTED, metavar="N",
+                    help=f"how many commits the prose lists (default: {LISTED})")
+    ap.add_argument("--json", action="store_true",
+                    help="print the facts rather than the prose")
+    args = ap.parse_args(joined(sys.argv[1:] if argv is None else argv))
+
+    try:
+        if not args.local and not (args.url and args.ref):
+            raise ValueError("a window nobody has checked out is pointed at, so "
+                             "--url and --ref are what say where: give both, or "
+                             "give --local")
+        if args.listed < 1:
+            raise ValueError("--listed is how many commits to show, so it is at "
+                             "least 1")
+        w = facts(args)
+    except (OSError, ValueError) as exc:
+        print(f"-- refused: {exc}", file=sys.stderr)
+        return 1
+
+    if args.json:
+        print(json.dumps(w, indent=2, ensure_ascii=False))
+    else:
+        print(prose(w, args))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

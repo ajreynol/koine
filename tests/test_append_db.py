@@ -209,9 +209,13 @@ def test_a_bad_dump_writes_nothing():
     broken = os.path.join(t.dir, "broken.json")
     open(broken, "w").write("{not json")
     check("so is a file that is not JSON", t.run(broken).returncode == 1)
-    notalist = t.write("d.json", {"findings": []})
-    check("and so is JSON that is not a list of bugs",
-          "expected a list of bugs" in t.run(notalist).stderr)
+    check("and so is an object with no list in it",
+          "expected a list of records"
+          in t.run(t.write("d.json", {"bugs": {}})).stderr)
+    # Which list is the records has to be answerable, and with two it is not.
+    check("and one with two, where nothing says which is the records",
+          "no way to tell which one is the records"
+          in t.run(t.write("e.json", {"bugs": [], "runs": []})).stderr)
 
 
 def test_dry_run_writes_nothing():
@@ -345,6 +349,51 @@ def test_an_interrupted_write_leaves_a_readable_database():
     os.remove(stale)
 
 
+def test_a_database_keeps_saying_what_it_holds():
+    print("\na database whose records are not defects:")
+    t = Tree()
+    db = os.path.join(t.dir, "rewrites.json")
+    # koine's tooling is called bug_db; a consumer's database is its own, and a
+    # third customer's records are rewrite candidates rather than bugs.
+    with open(db, "w", encoding="utf-8") as fh:
+        json.dump({"rewrites": [{"id": "M-1", "description": "str.len distributes",
+                                 "first_seen": "2026-09-19",
+                                 "last_seen": "2026-09-19"}]}, fh)
+    dump = t.write("run.json", [{"id": "M-1", "description": "str.len distributes"},
+                                {"id": "M-4", "description": "bvand narrows"}])
+    r = t.run(dump, db=db)
+    check("the run works on it", r.returncode == 0, r.stderr)
+    with open(db, encoding="utf-8") as fh:
+        written = json.load(fh)
+    check("and it is still a rewrite database afterwards",
+          list(written) == ["rewrites"], str(list(written)))
+    check("holding both records", len(written["rewrites"]) == 2)
+    check("the run reports in the word the database uses",
+          "1 new rewrite(s)" in r.stdout and "holds 2 rewrite(s)" in r.stdout,
+          r.stdout)
+    # A record identified by an id alone owes no tool, and `? 2` is not a
+    # breakdown.
+    check("and names no tools where no record names one",
+          "tool(s)" not in r.stdout, r.stdout)
+
+    fresh = os.path.join(t.dir, "fresh.json")
+    r = t.run(dump, "--records", "rewrites", db=fresh)
+    with open(fresh, encoding="utf-8") as fh:
+        check("a database this run creates takes the key it was given",
+              list(json.load(fh)) == ["rewrites"])
+    # The default is unchanged, so neither existing consumer sees anything new.
+    plain = os.path.join(t.dir, "plain.json")
+    t.run(dump, db=plain)
+    with open(plain, encoding="utf-8") as fh:
+        check("and one created without being told is still bugs",
+              list(json.load(fh)) == ["bugs"])
+    r = t.run(dump, "--records", "rewrites", db=t.db)
+    t.run(t.write("f.json", RUN1), db=t.db)
+    with open(t.db, encoding="utf-8") as fh:
+        check("an existing database ignores --records and keeps its own word",
+              list(json.load(fh)) == ["rewrites"])
+
+
 def test_the_file_it_writes():
     print("\nwhat the database looks like on disk:")
     t = Tree()
@@ -367,6 +416,107 @@ def test_the_file_it_writes():
           os.path.getsize(t.db + ".lock") == 0)
 
 
+CLOSED = [{"id": "aaa", "bug": "EO0031-17", "tool": "anoieu", "description": "x",
+           "closed_verdict": "fixed and landed", "closed_on": "2026-09-19",
+           "closed_commit": "deadbeef", "closed_why": "the claim is now false"},
+          {"id": "bbb", "bug": "EO0031-18", "tool": "anoieu", "description": "y"}]
+
+
+def test_a_closed_bug_seen_again_is_reported():
+    print("\na bug the owner closed, and a later run found anyway:")
+    t = Tree()
+    t.run(t.write("first.json", CLOSED), "--date", "2026-03-04")
+    # The owner rules on one of them, which is a thing that happens to the file
+    # between runs and not a thing this script does.
+    bugs = t.bugs()
+    bugs[0].update({k: v for k, v in CLOSED[0].items() if k.startswith("closed_")})
+    with open(t.db, "w", encoding="utf-8") as fh:
+        json.dump({"bugs": bugs}, fh)
+
+    seen = [{"id": "aaa", "bug": "EO0031-17", "tool": "anoieu", "description": "x"},
+            {"id": "bbb", "bug": "EO0031-18", "tool": "anoieu", "description": "y"}]
+    r = t.run(t.write("again.json", seen), "--date", "2026-10-01")
+    check("the run succeeds; a contradiction is a report and not a refusal",
+          r.returncode == 0, r.stderr)
+    check("the closed one is named as a reopen candidate",
+          "reopen candidate: id aaa was closed on 2026-09-19" in r.stderr, r.stderr)
+    check("and said to have been seen again, with the date of this run",
+          "saw it again on 2026-10-01" in r.stderr, r.stderr)
+    check("the open one is not named", "bbb" not in r.stderr, r.stderr)
+    check("the count is on the summary line",
+          "1 reopen candidate(s)" in r.stdout, r.stdout)
+
+    after = {b["id"]: b for b in t.bugs()}
+    check("the verdict is left exactly as the owner wrote it",
+          after["aaa"]["closed_verdict"] == "fixed and landed"
+          and after["aaa"]["closed_on"] == "2026-09-19"
+          and after["aaa"]["closed_commit"] == "deadbeef"
+          and after["aaa"]["closed_why"] == "the claim is now false",
+          json.dumps(after["aaa"]))
+    check("and last_seen moves, which is what makes the two disagree",
+          after["aaa"]["last_seen"] == "2026-10-01", after["aaa"]["last_seen"])
+    check("first_seen still does not move",
+          after["aaa"]["first_seen"] == "2026-03-04")
+    # A closure is not a dump's business either: the run's entry carried no
+    # closure fields, and nothing invented one.
+    check("nothing was closed by this run",
+          not [b for b in t.bugs() if b["id"] == "bbb" and
+               any(k.startswith("closed_") for k in b)])
+
+
+def test_any_closed_field_marks_a_ruling():
+    print("\nwhose vocabulary a closure is written in:")
+    t = Tree()
+    # dokimasia writes no verdict word at all, and anoieu's seven-word list is
+    # its own. The convention both keep is the prefix, so the prefix is what is
+    # read -- a `closed_` field nobody here has heard of still marks a ruling.
+    t.run(t.write("a.json", [{"id": "one", "description": "x"},
+                             {"id": "two", "description": "y"},
+                             {"id": "three", "description": "z"}]),
+          "--date", "2026-03-04")
+    bugs = t.bugs()
+    bugs[0]["closed_on"] = "2026-09-19"
+    bugs[1]["closed_somethingelse"] = "a word koine does not know"
+    with open(t.db, "w", encoding="utf-8") as fh:
+        json.dump({"bugs": bugs}, fh)
+    r = t.run(t.write("b.json", [{"id": "one"}, {"id": "two"}, {"id": "three"}]),
+              "--date", "2026-10-01")
+    check("a closure with a date is a reopen candidate",
+          "id one was closed on 2026-09-19" in r.stderr, r.stderr)
+    check("so is one in a vocabulary this script has never seen",
+          "id two was closed, and this run saw it again" in r.stderr, r.stderr)
+    check("an entry with no closed_ field is not one",
+          "id three" not in r.stderr, r.stderr)
+    check("two of the three", "2 reopen candidate(s)" in r.stdout, r.stdout)
+
+
+def test_the_count_is_printed_even_when_it_is_zero():
+    print("\na run with nothing to contradict:")
+    t = Tree()
+    r = t.run(t.write("a.json", RUN1), "--date", "2026-03-04")
+    # A counter that appears only when it fires cannot tell *looked and found
+    # none* from *did not look*, which is the distinction this whole script is
+    # written around.
+    check("the line still carries the counter",
+          "0 reopen candidate(s)" in r.stdout, r.stdout)
+
+
+def test_a_dry_run_reports_a_reopen_candidate_too():
+    print("\nand a reading run says so without writing:")
+    t = Tree()
+    t.run(t.write("a.json", [{"id": "aaa", "description": "x"}]), "--date", "2026-03-04")
+    bugs = t.bugs()
+    bugs[0]["closed_on"] = "2026-09-19"
+    with open(t.db, "w", encoding="utf-8") as fh:
+        json.dump({"bugs": bugs}, fh)
+    before = open(t.db, encoding="utf-8").read()
+    r = t.run(t.write("b.json", [{"id": "aaa", "description": "x"}]),
+              "--dry-run", "--date", "2026-10-01")
+    check("it is reported", "reopen candidate: id aaa" in r.stderr, r.stderr)
+    check("and the database is untouched",
+          open(t.db, encoding="utf-8").read() == before)
+
+
 if __name__ == "__main__":
     for fn in (test_a_first_run_creates_the_database,
                test_the_same_dump_twice_adds_nothing,
@@ -381,7 +531,12 @@ if __name__ == "__main__":
                test_two_runs_at_once_both_survive,
                test_a_run_that_cannot_take_the_lock_refuses,
                test_an_interrupted_write_leaves_a_readable_database,
-               test_the_file_it_writes):
+               test_the_file_it_writes,
+               test_a_database_keeps_saying_what_it_holds,
+               test_a_closed_bug_seen_again_is_reported,
+               test_any_closed_field_marks_a_ruling,
+               test_the_count_is_printed_even_when_it_is_zero,
+               test_a_dry_run_reports_a_reopen_candidate_too):
         fn()
     print()
     if FAILURES:

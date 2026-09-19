@@ -65,14 +65,32 @@ def manifest():
     return json.load(open(os.path.join(STORE, "commands.json")))
 
 
-def forms(kind="prompt"):
-    """Every form the manifest advertises for commands of this kind."""
+def located(entry):
+    """Where a manifest command actually lives.
+
+    Most are in `eo_cmd/`; one with a `path` is somewhere else in this tree,
+    because it serves a different purpose and lives with it. install_eo reads
+    the same key, and a test that assumed the directory would find a command
+    that installs fine and cannot be run from here.
+    """
+    return os.path.join(ROOT, entry.get("path")
+                        or os.path.join("eo_cmd", entry["name"]))
+
+
+def forms(kind="prompt", people_only=False):
+    """Every form the manifest advertises for commands of this kind.
+
+    `people_only` drops the ones marked `audience: tooling`, which another
+    tool's launcher calls with that tool's config rather than a person typing.
+    """
     for entry in manifest()["commands"]:
         if entry.get("kind") != kind:
             continue
+        if people_only and entry.get("audience") == "tooling":
+            continue
         for form in entry["forms"]:
             parts = form.split()
-            yield entry["name"], parts[0], parts[1:]
+            yield entry["name"], parts[0], parts[1:], entry
 
 
 def test_the_readme_table_agrees_with_the_manifest():
@@ -116,17 +134,18 @@ def test_only_prompts_take_show_prompt():
     for entry in manifest()["commands"]:
         if entry.get("kind") != "program":
             continue
-        path = os.path.join(ROOT, entry.get("path")
-                            or os.path.join("eo_cmd", entry["name"]))
-        out = subprocess.run([path, "--show-prompt"], capture_output=True,
+        out = subprocess.run([located(entry), "--show-prompt"], capture_output=True,
                              text=True)
         ok(f"{entry['name']} is a program and refuses --show-prompt",
            out.returncode != 0)
 
 
 def test_every_advertised_form_runs():
+    # The forms a person types. A prompt marked `audience: tooling` takes
+    # another tool's config as its form, and running it from here would be a
+    # test of whatever fixture that config was.
     print("every form the manifest advertises")
-    for name, command, args in forms():
+    for name, command, args, _ in forms(people_only=True):
         # `from-child` needs a directory that exists; any tree will do, and it
         # is read rather than written even when the command is not previewing.
         args = concrete(args)
@@ -186,7 +205,7 @@ def test_no_prompt_names_a_command_that_is_gone():
     text is written *into their README*, so the bad name outlives the run.
     """
     print("no prompt names a command or page that moved")
-    for name, command, args in forms():
+    for name, command, args, _ in forms(people_only=True):
         args = concrete(args)
         text = show(command, *args).stdout
         label = " ".join([command, *args]) if args else command
@@ -864,6 +883,10 @@ def test_every_form_previews_on_a_machine_with_nothing_on_it():
     # write into the tree they are run in and look nothing up, so there is
     # nothing for them to report not finding.
     SAYS_WHAT_IT_COULD_NOT_READ = ("eo_topic", "eo_respond", "eo_housekeeping")
+    # Only the commands a person types. A prompt marked `audience: tooling` is
+    # called by another tool's launcher with that tool's config, and its form is
+    # that config -- there is nothing for it to preview on a machine that has
+    # none, and a placeholder config would make this a test of a fixture.
     tmp = tempfile.mkdtemp()
     try:
         home = os.path.join(tmp, "home")
@@ -873,11 +896,11 @@ def test_every_form_previews_on_a_machine_with_nothing_on_it():
         subprocess.run(["git", "init", "-q", here], check=True)
         bare = dict(os.environ, HOME=home, ANOIEU_REPOS="")
 
-        for name, command, args in forms():
+        for name, command, args, entry in forms(people_only=True):
             args = concrete(args)
             label = " ".join([command, *args]) if args else command
             out = subprocess.run(
-                [os.path.join(STORE, command), *args, "--show-prompt"],
+                [located(entry), *args, "--show-prompt"],
                 capture_output=True, text=True, cwd=here, env=bare)
             check(f"{label} exits 0 with nothing beside it", out.returncode, 0)
             ok(f"{label} still prints a prompt", len(out.stdout.strip()) > 200)

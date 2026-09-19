@@ -13,10 +13,13 @@ fails. `eo_housekeeping --no-main` explicitly keeps the current branch.
 Read [`bug_db_manager/README.md`](../bug_db_manager/README.md) and
 [`eo_cmd/README.md`](../eo_cmd/README.md) for the two implementations.
 
-Run the same six suites as [.github/workflows/koine.yml](../.github/workflows/koine.yml):
+Run the same nine suites as [.github/workflows/koine.yml](../.github/workflows/koine.yml):
 
 ```bash
 python3 tests/test_append_db.py
+python3 tests/test_window.py
+python3 tests/test_check_db.py
+python3 tests/test_close_db.py
 python3 tests/test_install_eo.py
 python3 tests/test_eo_cmd.py
 python3 tests/test_listen.py
@@ -60,8 +63,10 @@ project without that instruction.
 
 ## What is not koine's at all
 
-**Anoieu and dokimasia maintain their own bug databases.** Koine maintains
-`bug_db_manager/`, the tooling they call. Data upkeep, evidence, triage,
+**Anoieu, dokimasia and metagraphe maintain their own databases.** Koine
+maintains `bug_db_manager/`, the tooling they call. Metagraphe's is a
+`rewrite_db/` of rewrite candidates, in tachyon at `tools/metagraphe/`; the
+tooling is called bug_db regardless and requires no record to be a defect. Data upkeep, evidence, triage,
 corrections, cleanup and close/reopen decisions stay with each database owner.
 
 | responsibility | whose |
@@ -76,13 +81,13 @@ corrections, cleanup and close/reopen decisions stay with each database owner.
 
 These boundaries follow the policy and role register read at kanon `d03447d`
 on 2026-09-18. `eo_init` and `eo_join` are maintained under R35; the other
-commands and `koine_append_db` are shared tooling under R16. **What joining
+commands and the four `koine_` programs are shared tooling under R16. **What joining
 costs remains R4's.** Koine maintains the command that states the rule and does
 not change that rule itself.
 
-`eo_status` reads the register; it never writes it. Installing
-`koine_append_db` on PATH does not replace the lock-based locators used by
-pinned consumers. Layout changes affecting consumers need a local notice before
+`eo_status` reads the register; it never writes it. Installing any `koine_`
+program on PATH does not replace the lock-based locators used by pinned
+consumers. Layout changes affecting consumers need a local notice before
 those consumers are asked to change anything.
 
 ## Check who the instruction is addressed to, before the first edit
@@ -134,15 +139,42 @@ it before relying on the earlier reading.
 
 ## The open work
 
-**Evidence-aware database cleanup is a tooling gap.** The
-[capability assessment](../bug_db_manager/README.md#cleanup-and-closure-tooling)
-reads anoieu's published `5835c6f` and its local work on 2026-09-18. Supporting
-closure needs run coverage and comparability, explicit unmatched identities,
-fuzzer replay evidence and history-preserving updates. Agree the input contract
-with the database owners before implementing it; neither absence from a dump
-nor a repeated corpus export establishes closure. D25 announces the tooling
-rename and this assessment to anoieu and dokimasia. No cleanup or closure
-command is implemented or promised by that notice.
+**Closure tooling was built on 2026-09-19.** `koine_window` resolves and
+describes the window a closure run reads; `koine_close_db` starts an assistant
+on the closure; `koine_check_db` establishes afterwards that the run added
+closure fields and did nothing else; and `koine_append_db` now reports a record
+the owner had closed and a later run found anyway. All four are mechanics. None
+decides that a finding is fixed, and `koine_close_db` refuses to run without the
+owner's `prompt.writes`, because a closure vocabulary is not koine's to guess.
+[What is still not built](../bug_db_manager/README.md#what-is-still-not-built)
+says what remains. D25 announced the tooling rename and the earlier assessment to
+anoieu and dokimasia, and promised no cleanup or closure command; this goes
+beyond that notice and the consumers have not been told.
+
+**No consumer uses any of it yet.** anoieu and dokimasia pin koine at `8efe59c`,
+which is before all of it, and both keep their own copy of the window machinery
+inside `prompts/close_bug_db`. Metagraphe has no database yet and tachyon records
+no koine pin. Adopting is each owner's to decide and to schedule; the ecosystem's
+rule is that a pin only moves to a commit where this repository's CI is green, so
+this wants pushing before any of them is asked.
+
+**Three things want saying to the consumers when they are told.** anoieu's
+`awaiting_landing` does not carry the `closed_` prefix, so it is named with
+`--also` rather than renamed — the flag exists for that case and costs one line
+of config. dokimasia's own launcher has neither the shallow-clone refusal nor the
+diverged-branch warning that anoieu's grew, which is the concrete reason the
+window is one program now. And a closure config's `baseline.command` is where
+each owner's existing baseline logic goes; it is the one part of their launchers
+that does not move here, because which field records a revision — and what to do
+when two rows disagree — each of them has answered differently and correctly.
+
+**The third customer is planned, not built.** Metagraphe, a child project in
+tachyon at `tools/metagraphe/`, will keep a `rewrite_db/` of rewrite candidates:
+a proposed `lhs -> rhs` with its side condition and the evidence that cvc5 does
+not take the opportunity. That is not a defect, which is why these programs read
+the envelope key a database uses rather than assuming one, take the noun for a
+record from configuration, and require no field named `bug`. The tooling stays
+called bug_db.
 
 **No paper is planned for koine**, on the maintainer's instruction of
 2026-09-18. This is koine's answer to anoieu-D14; it is not a judgment about

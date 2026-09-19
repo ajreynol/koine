@@ -4,20 +4,39 @@
 those databases.** Anoieu and dokimasia own their records, evidence, triage,
 cleanup, and close/reopen decisions. Koine maintains the shared programs they
 invoke. [`koine_append_db`](koine_append_db) adds a run's findings to the
-owner's persistent database.
+owner's persistent database; [`koine_window`](koine_window) resolves the window
+of somebody else's history that a closure run reads;
+[`koine_close_db`](koine_close_db) starts an assistant on the closure itself; and
+[`koine_check_db`](koine_check_db) establishes afterwards that the run changed
+only what it was allowed to.
+
+**None of it knows what the records are.** A database of defects, a database of
+static observations and a database of rewrite candidates are the same shape to
+these programs: identities, a claim, and fields a closure adds. What the records
+are *called* is the owner's, and an owner says so once -- in the envelope key
+their database uses and in their closure config. koine's tooling is called
+bug_db whoever is using it.
 
 [anoieu](https://github.com/ajreynol/anoieu) and
 [dokimasia](https://github.com/ajreynol/dokimasia) are the customers, checked on
-2026-09-18. Each records a dependency pin and calls this from its own run.
+2026-09-18, and **metagraphe** — a child project in
+[tachyon](https://github.com/ajreynol/tachyon), at `tools/metagraphe/` — is the
+third, planned as of 2026-09-19. Its database is a `rewrite_db/` holding rewrite
+candidates: a proposed `lhs -> rhs` with its side condition and the evidence that
+cvc5 does not currently take the opportunity. That is not a defect, and nothing
+here requires it to be one. Each records a dependency pin and calls this from its own run.
 Dokimasia uses `scripts/koine.lock`; anoieu's published `5835c6f` uses that path
 too, while its local work moves it to `config/koine.lock`. Resolving and
 enforcing those pins is the consumer's responsibility.
-`scripts/install_eo` also puts this program on a person's PATH and that is a
+`scripts/install_eo` also puts these programs on a person's PATH and that is a
 different thing — PATH gives whatever the operator last installed, so a pinned
 consumer keeps resolving through its lock.
 
 ```
 bug_db_manager/koine_append_db <new bugs> <bug database>
+bug_db_manager/koine_window --baseline <rev> --url <url> --ref <ref>
+bug_db_manager/koine_close_db --config <closure.json>
+bug_db_manager/koine_check_db <bug database>
 ```
 
 ## A worked example
@@ -37,7 +56,7 @@ There is no database yet, so one is made:
 
 ```console
 $ bug_db_manager/koine_append_db run1.json bugs.json
--- 2 new bug(s), 0 already known, 0 conflict(s)
+-- 2 new bug(s), 0 already known, 0 conflict(s), 0 reopen candidate(s)
 -- the database holds 2 bug(s) from 1 tool(s): anoieu 2
 -- wrote bugs.json (created)
 ```
@@ -47,7 +66,7 @@ and dokimasia adds one of its own:
 
 ```console
 $ bug_db_manager/koine_append_db run2.json bugs.json
--- 2 new bug(s), 1 already known, 0 conflict(s)
+-- 2 new bug(s), 1 already known, 0 conflict(s), 0 reopen candidate(s)
 -- the database holds 4 bug(s) from 2 tool(s): anoieu 3, dokimasia 1
 -- wrote bugs.json
 ```
@@ -147,24 +166,233 @@ half-written one.
   and the replacement is atomic, so an interrupted run leaves the old database
   intact.
 
-## Cleanup and closure tooling
+## A bug the owner closed, and this run found anyway
 
-**Appending is implemented; cleanup and closure assessment are not.** Owners
-can safely replay dumps, but this command cannot decide that a finding is
-fixed, merge different identities, replace conflicting evidence, or delete
-historical findings. An absent finding remains in the database.
+**It is reported, and nothing is done about it.** Closing a finding is the
+owner's decision and so is reopening one. What a run can say is that the file
+now contradicts itself: somebody ruled the claim false, and a later run saw it
+again.
 
-Anoieu's latest published update, `5835c6f` (checked against remote `main` on
-2026-09-18), gives its static analyzer and fuzzer one database at
-`bug_db/bugs.json`. Its
-[maintenance plan](https://github.com/ajreynol/anoieu/blob/5835c6fdbe1a64afa4480f8e8b7f20b33255d7e7/docs/maintenance.md#replace-the-deprecated-reporting-policy)
-identifies the missing capability: assess closure from successful, comparable
-runs with recorded coverage, preserving the finding and its evidence. Its
-uncommitted work also provides a GitHub browsing view and relocates its adapter;
-neither supplies closure evidence. Re-exporting a fuzzer record updates its
-ingestion date without replaying the reproducer.
+```console
+$ koine_append_db run3.json bugs.json --date 2026-10-01
+-- reopen candidate: id fbc033a960a2aaa5 was closed on 2026-09-19, and this run saw it again on 2026-10-01
+-- 0 new bug(s), 2 already known, 0 conflict(s), 1 reopen candidate(s)
+```
 
-The next useful shared tooling needs these inputs and guarantees:
+That contradiction is the only thing that surfaces a wrong closure, because **a
+closed entry is one nothing re-derives**: a run does not re-check what somebody
+has ruled on, so a closure made on a fix that never landed sits there being
+believed. Both consumers' closure prompts already tell an assistant that the
+contradiction is a feature and not something to tidy away. Until 2026-09-19
+nothing implemented it — the sighting moved `last_seen`, the run printed *1
+already known*, and the disagreement went into the file unmentioned.
+
+**An entry is closed when it carries any field named `closed_*`.** That is the
+convention its owners already keep — `closed_on`, `closed_commit`, `closed_why`,
+`closed_verdict` — and reading the prefix rather than one name is what keeps this
+out of deciding whose vocabulary is the right one. A `closed_` field koine has
+never heard of still marks a ruling.
+
+**The closure fields are not touched**, by this or by anything else here. The
+entry keeps its verdict, its reasoning, its commit and its date; `last_seen`
+moves, because it did see it again; and the count is printed even when it is
+zero, because a run that looked and found no contradiction and a run with no
+closed entry to contradict are different results.
+
+## The window a closure run reads
+
+**A record says what a check saw and when. Asking what became of it is a
+different question, and it is asked of a window**: from the revision the open
+rows were recorded at, to what that project ships today.
+[`koine_window`](koine_window) resolves that window, and describes it to an
+assistant.
+
+```console
+$ koine_window --baseline aee8742 --url https://github.com/cvc5/cvc5 --ref main --project cvc5
+$ koine_window --baseline aee8742 --local ~/src/cvc5 --via=--use-local --project cvc5
+$ koine_window --baseline aee8742 --local ~/src/cvc5 --json
+```
+
+Without `--local` the window is **pointed at and never fetched**: the prose says
+where to read it and how, and the reading is the assistant's. That is what lets a
+launcher's `--show-prompt` print the same text on a machine with no network as on
+one with. It is also why `--json` reports `"commits": null` for a remote window
+rather than an empty list — an empty list is a claim that nothing landed, and
+this did not look.
+
+**It was written twice before it was written here.** anoieu and dokimasia each
+grew a closure launcher, and each grew its own copy of: find the commits after
+the baseline, cut the listing and say how many were left out, print the `gh api`
+recipes, warn that the compare view pages at 250. Two copies of one mechanism is
+two places for a lesson to land in only one of them, and that is what happened —
+see *The three ways a window lies*, below.
+
+### The three ways a window lies
+
+A window is the sentence *these commits are what happened after the baseline*,
+and three things make that sentence false while leaving it looking fine. Each is
+reported, in the facts and in the prose.
+
+| | what it looks like | what it actually is |
+| --- | --- | --- |
+| **shallow clone** | an empty window | a fact about the clone, not the project. **Refused** |
+| **diverged branch** | a list of commits | what a branch did since the *merge-base*; it may miss a fix on the branch the rows were measured on, and carry files the rows were never about |
+| **parked checkout** | an empty window | what a pinned dependency tree is by construction. The refs that do carry the history are named |
+
+Only the first is refused. A diverged window is still a window — it is just not a
+history — and an empty one is a fact worth reporting; **whether a run should
+start on either is the launcher's call, and the launcher is the owner's.** This
+decides nothing.
+
+The divergence warning is the concrete reason this is one program. anoieu learned
+to make it, in a paragraph telling an assistant not to close a row because a
+branch looks different from the one it was measured on. dokimasia, having no way
+to hear about it, had neither the check nor the paragraph on either of its paths.
+
+### What it will not do
+
+- **It makes no network call, ever**, on any path. A remote window is a link and
+  a set of recipes, and nothing here depends on what github says today.
+- **It writes nothing and changes no checkout.** A local window is read with
+  `git log`, `git rev-list` and `git merge-base`; no fetch, checkout or branch is
+  among them, and [`tests/test_window.py`](../tests/test_window.py) checks that a
+  run moves no ref and leaves no file.
+- **It names no owner's command.** Where the prose says that re-measuring is a
+  run and not a reading, `--remeasure` is how the owner's command gets named.
+  Absent, the sentence stands without one, and koine invents nothing.
+- **It re-wraps no command.** A paragraph is wrapped at the end, because every
+  one of them carries something of variable length — a project's name, a path
+  somebody chose, a sha — and a paragraph whose shape depends on how long a
+  checkout path is is one nobody can edit. A commit list and a shell recipe are
+  printed as written: a command that has been wrapped is not one.
+
+## Closing a record
+
+**Appending says what a run saw. Closing asks what became of it**, and it is a
+different question asked of a different thing: not the owner's project, but a
+window of the watched project's history. [`koine_close_db`](koine_close_db)
+starts an assistant on it and [`koine_check_db`](koine_check_db) reads back what
+that assistant wrote.
+
+```console
+$ koine_close_db --config tools/metagraphe/closure.json --dry-run
+metagraphe: rewrite database at rewrite_db/rewrites.json
+cvc5: 3 open rewrite candidates -- bitvectors 1, strings 2
+  ref:      main
+  baseline: aee8742 (from the 3 open candidates recorded at it)
+  window:   https://github.com/cvc5/cvc5/compare/aee8742...main
+            read by the assistant; this makes no network call
+ethos: nothing open; no window to read
+```
+
+### What is koine's here, and what is not
+
+**koine owns the mechanics.** The window, which is `koine_window`. The
+discipline of a closure assessment: commit-first, one commit at a time, confirm
+in the current source rather than in the commit message, absence closes nothing,
+leave it open if you cannot tell. Where the work is left, which is uncommitted,
+in the owner's tree, reaching nobody. And the check afterwards.
+
+**The owner owns every decision.** Which projects are watched and on which ref.
+What the records are and what one is called. Where the baseline comes from --
+koine will not go reading somebody's database for a revision field, because
+which field that is, and what to do when two rows disagree, is a question each
+owner has already answered differently. What evidence closes a record: a claim
+about a file is confirmed by reading that file, a claim about a program's
+behaviour is not, and which is which is not koine's to say. The closure
+vocabulary. Whatever else gets written. The checks to run afterwards.
+
+**So the prompt is assembled, not templated.** Three sections come from files
+the owner writes and are spliced in whole: `about`, `evidence` and `writes`. A
+launcher that flattened those into one shared wording would be a paraphrase of
+three projects' rules kept in a fourth repository with nothing keeping it
+current — and the paragraphs it would flatten are exactly the ones carrying what
+each owner learned the hard way. koine points at them instead.
+
+### The config
+
+One file, in the owner's tree, naming what koine cannot know. Everything below
+`database` and `projects` has a default.
+
+```json
+{
+  "tool": "metagraphe",
+  "database": "rewrite_db/rewrites.json",
+  "records": {"one": "rewrite candidate", "many": "rewrite candidates",
+              "collective": "rewrite database"},
+  "group": "area",
+  "projects": {
+    "cvc5":  {"url": "https://github.com/cvc5/cvc5.git", "ref": "main",
+              "reads": "the string and bit-vector rewriters and their regressions"},
+    "ethos": {"url": "https://github.com/cvc5/ethos.git", "ref": "main"}
+  },
+  "baseline": {"command": ["python3", "scripts/closure_baseline.py"]},
+  "prompt": {
+    "about":    "prompts/closure/about.md",
+    "evidence": "prompts/closure/evidence.md",
+    "writes":   "prompts/closure/writes.md"
+  },
+  "checks": ["python3 tests/run.py"]
+}
+```
+
+`baseline.command` runs in the owner's root and prints one
+`<project> <rev> <why>` line per project; `--since NAME=REV` overrides it, and a
+project with nothing open needs neither. A prompt section may be
+`{"command": [...]}` instead of a path, for one that has to be computed from the
+owner's own vocabulary. Placeholders — `{when}`, `{database}`, `{one}`, `{many}`
+and the rest — are substituted by literal replacement and never by `format`,
+because a `writes` section carries JSON examples and a `{` in one is not a field.
+
+**`prompt.writes` has no default and the run refuses without it.** Where a
+closure is recorded and in what words is the owner's, and koine will not guess a
+vocabulary or a page shape.
+
+### What a closure may do, and what it may not
+
+`koine_check_db` compares the database against the version last committed —
+which, because every launcher here leaves its work uncommitted, is exactly the
+database before the assistant touched it.
+
+| | |
+| --- | --- |
+| **may** | add `closed_*` fields to a record that carried none |
+| **may not** | remove a record, add one, reorder them, change any field that is not a closure field, or rewrite a closure already recorded |
+
+```console
+$ koine_check_db bug_db/bugs.json
+-- id fbc033a960a2aaa5 closed, adding `closed_commit`, `closed_on`, `closed_pr`, `closed_why`
+-- changed: id 52912b69 `description` was 'rule takes 0 args' and is now 'rule takes 0 args (tidied)'
+-- 82 record(s) at HEAD, 82 now; 1 closure(s), 1 unallowed change(s)
+```
+
+This is the gap that made it worth writing. The reason `koine_append_db` refuses
+to rewrite an entry is that *a record of what was found over time is worth having
+only if nothing quietly rewrites it* — and then closure arrives as an assistant
+with the file open in a text editor, and the only thing between that and the
+record is a person reading a long diff looking for the one hunk that is not what
+they expected.
+
+**`--also` names a closure field without the prefix**, for a vocabulary that
+predates the convention: a verdict closing a finding before its fix reaches a
+default branch owes an `awaiting_landing` saying where the change is.
+**`--amended`** allows a recorded closure to be changed, which is a person
+replacing a promise with the commit that kept it rather than a run making a
+closure. Both are reported either way; the flag decides whether it fails.
+
+Run retroactively over anoieu's history on 2026-09-19, the commit that was a
+closure run passed with 25 closures and no unallowed change, and the commit that
+was a ledger migration did not — which is the right answer for both.
+
+## What is still not built
+
+**Nothing writes a closure, and nothing decides one.** An assistant does both,
+and `koine_check_db` reads the result back. A writer is possible and is not
+obviously wanted: the part an assistant is better at is authoring the reasoning,
+and a program that took the write would have to take that with it.
+
+The rest of what shared tooling could support, with what the owner would have to
+supply for it:
 
 | Owner supplies | Shared tooling could support |
 | --- | --- |
@@ -173,17 +401,9 @@ The next useful shared tooling needs these inputs and guarantees:
 | Fresh fuzzer replay results and their evidence | Assess the replay without treating a stored export as a fresh observation |
 | Reviewed corrections and close/reopen decisions under the owner's reporting policy | Record changes with their evidence and history, using locked, atomic writes and a preview |
 
-This is a capability assessment, not an implemented interface or a reporting
-policy. The owners must define the evidence and decision rules; koine can
-provide the storage, validation and update mechanics. Cleanup must preserve
-original findings, ids, dates, verdicts and evidence. Incomplete or incomparable
-runs must leave closure unassessed. A retention or archival decision belongs to
-the database owner as well.
-
-The local databases inspected on 2026-09-18 contain 60 records for anoieu and
-197 for dokimasia, with no duplicate identities. There is no demonstrated need
-for a duplicate-removal command in those snapshots. Neither database was
-modified during this assessment.
+Cleanup must preserve original findings, ids, dates, verdicts and evidence.
+Incomplete or incomparable runs must leave closure unassessed. A retention or
+archival decision belongs to the database owner as well.
 
 ## The two files
 
@@ -206,13 +426,20 @@ reported and kept as recorded.
 
 ```console
 $ python3 tests/test_append_db.py
+$ python3 tests/test_window.py
+$ python3 tests/test_check_db.py
+$ python3 tests/test_close_db.py
 ```
 
-No dependencies and no network. `--dry-run` says what would change and writes
+No dependencies and no network. `test_window.py` builds git repositories in a
+temporary directory — a shallow clone, a diverged branch, a checkout parked at
+its baseline — and reads a window out of each. `--dry-run` says what would change and writes
 nothing; `--date` records a run under a date other than today;
 `--lock-timeout` and `--no-lock` are above.
 
-**The executable is [`bug_db_manager/koine_append_db`](koine_append_db).** The root
+**The executables are [`koine_append_db`](koine_append_db),
+[`koine_window`](koine_window), [`koine_close_db`](koine_close_db) and
+[`koine_check_db`](koine_check_db), all in `bug_db_manager/`.** The root
 [`koine_append_db`](../koine_append_db) is a tombstone: it prints the executable's
 location and exits non-zero. Consumers must probe and invoke
 `bug_db_manager/koine_append_db`; there is no `bug_db/` compatibility directory.

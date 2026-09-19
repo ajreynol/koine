@@ -57,6 +57,45 @@
       "kind": "program"
     },
     {
+      "name": "koine_window",
+      "short": "the window of another project's history a closure run reads",
+      "audience": "tooling",
+      "path": "bug_db_manager/koine_window",
+      "what": "resolve the window between the revision a tool's open rows were recorded at and what a project ships now, and describe it to an assistant. Reads a local checkout, or points at a remote and never fetches it. Reports the three ways a window lies -- a shallow clone, a branch the baseline is not on, and a checkout parked at the baseline -- and refuses the first. Writes nothing and decides nothing: whether a run should start on the window it found is the owner's call",
+      "forms": [
+        "koine_window --baseline <rev> --url <url> --ref <ref>",
+        "koine_window --baseline <rev> --local <path>",
+        "koine_window --baseline <rev> --local <path> --json"
+      ],
+      "kind": "program"
+    },
+    {
+      "name": "koine_check_db",
+      "short": "check that a closure run changed only what it was allowed to",
+      "audience": "tooling",
+      "path": "bug_db_manager/koine_check_db",
+      "what": "compare a bug database against the version last committed and establish that every difference is the addition of closure fields to a record that carried none. A removed, added, reordered or reworded record fails the run. `--also` names a closure field that does not carry the `closed_` prefix; `--amended` allows a recorded closure to be changed. Writes nothing and fixes nothing",
+      "forms": [
+        "koine_check_db <database>",
+        "koine_check_db <database> --against <rev>",
+        "koine_check_db <database> --also <field> --amended"
+      ],
+      "kind": "program"
+    },
+    {
+      "name": "koine_close_db",
+      "short": "ask an assistant what each watched project has since done",
+      "audience": "tooling",
+      "path": "bug_db_manager/koine_close_db",
+      "what": "start an assistant on closure, in the owner's tree, against a window of each watched project's history. koine writes the mechanics -- the window, the five steps of a closure assessment, where the work is left, the check afterwards -- and splices in whole the sections the owner writes: what their records are, what closes one, and what a closure is recorded as. It knows nothing about what the records are: a bug database, a database of static observations and a rewrite database are the same shape to it, and the prompt speaks the owner's word throughout. Makes no network call, so --show-prompt prints the same text anywhere",
+      "forms": [
+        "koine_close_db --config <closure.json>",
+        "koine_close_db --config <closure.json> --dry-run",
+        "koine_close_db --config <closure.json> --show-prompt"
+      ],
+      "kind": "prompt"
+    },
+    {
       "name": "eo_topic",
       "short": "open one topic, addressed to another tool",
       "what": "open one topic in your own discussion file, addressed to another tool. **It asks you what you want to say** rather than taking it in argv, and carries what is mechanical: the date, the commit their tree is at, and the next free id. Sends nothing -- a topic is carried by a person",

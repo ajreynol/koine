@@ -19,13 +19,34 @@ project and dumps what it found *this time*; its database is everything it has
 ever found. [`bug_db_manager/koine_append_db`](bug_db_manager/koine_append_db) is the trip
 between the two, and it is the same trip in every tool that has one — which is
 why it is written once here instead of three times badly elsewhere.
+Three more programs are the other half of the same argument: asking what a
+project has *since done* about a finding.
+[`koine_window`](bug_db_manager/koine_window) resolves the window of its history
+that question is asked of — honestly, since a shallow clone, a diverged branch
+and a checkout parked at its baseline all give one that lies.
+[`koine_close_db`](bug_db_manager/koine_close_db) starts an assistant on the
+closure, writing the mechanics and splicing in whole the sections the owner
+writes. [`koine_check_db`](bug_db_manager/koine_check_db) establishes afterwards
+that the run added closure fields and did nothing else — which is what
+`koine_append_db` refuses to let a run do, and what an assistant with the file
+open in a text editor can do by accident.
+
+**None of them knows what the records are.** A database of defects, a database
+of static observations and a database of rewrite candidates are the same shape
+to these programs. koine's tooling is called bug_db whoever is using it; what a
+consumer's records are called is theirs.
 [anoieu](https://github.com/ajreynol/anoieu) and
 [dokimasia](https://github.com/ajreynol/dokimasia) are the customers, checked on
 2026-09-18: each records a koine dependency pin and calls the writer from its
-own run. Their database files remain in their own repositories.
+own run. **metagraphe**, a child project in
+[tachyon](https://github.com/ajreynol/tachyon), is the third, planned as of
+2026-09-19; its database is a `rewrite_db/` of rewrite candidates rather than
+bugs. Their database files remain in their own repositories.
 **[`bug_db_manager/README.md`](bug_db_manager/README.md) is the whole of it** — the worked
 example, the one rule that makes it a database, what happens when two runs
-arrive at once, and the evidence needed for future cleanup tooling.
+arrive at once, what a run says when it finds a record the owner had closed, the
+three ways a window lies, what a closure may and may not do, and what is still
+not built.
 
 **2. [`eo_cmd/`](eo_cmd), the commands that run inside somebody else's tree.**
 `eo_init` starts a tool and `eo_join` joins it; `eo_status` says who is in this
@@ -65,14 +86,20 @@ From this checkout:
 
 ```bash
 python3 bug_db_manager/koine_append_db run.json bugs.json
+python3 bug_db_manager/koine_window --baseline <rev> --url <url> --ref main
+python3 bug_db_manager/koine_close_db --config <closure.json> --dry-run
+python3 bug_db_manager/koine_check_db <database>
 scripts/install_eo --prefix ~/bin
 eo_cmd/eo_housekeeping --show-prompt
 eo_cmd/eo_git_status
 ```
 
-The first command appends a JSON dump to a bug database. The installer puts the
-shared commands on your PATH; the preview shows the work an assistant would be
-asked to do. `eo_housekeeping` and `eo_respond` ensure `main` before pulling;
+The first command appends a JSON dump to a bug database. The next three are
+closure: what a project has done since the revision a finding was recorded at,
+the assistant that reads it, and the check that the assistant changed only what
+it was allowed to. None of them fetches anything. The installer puts the shared
+commands on your PATH; the preview shows the work an assistant would be asked
+to do. `eo_housekeeping` and `eo_respond` ensure `main` before pulling;
 `--no-main` keeps the current branch. **Every command that changes a tree leaves
 the work staged and not committed**, and `--push` commits and pushes it instead.
 Their [command guide](eo_cmd/README.md)
@@ -110,9 +137,16 @@ by side on one disk.
   defect with a file and a line number is a finding, and anoieu keeps the
   reporting workflow that says how one is carried. Anything else goes in that
   tool's own `docs/discussion.md`.
-- **Is this where the bug database itself lives?** No. koine keeps the program
-  that appends to one. Anoieu and dokimasia maintain their own databases,
-  including deciding what to close, reopen, correct, or retain.
+- **Is this where the bug database itself lives?** No. koine keeps the programs
+  that append to one, close records in it, and check what a closure run did.
+  Anoieu, dokimasia and metagraphe maintain their own databases, including
+  deciding what to close, reopen, correct, or retain — koine reports that a
+  closed record was seen again and never acts on it, and refuses to guess a
+  closure vocabulary.
+- **My records are not bugs. Can I still use this?** Yes, and one customer's
+  are not: metagraphe records rewrite candidates in a `rewrite_db/`. The
+  database keeps whatever key it uses, the closure prompt speaks whatever noun
+  you configure, and the tooling goes on being called bug_db.
 
 ## How this repository is maintained
 

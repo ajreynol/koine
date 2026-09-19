@@ -112,7 +112,7 @@ decisions with history and a preview. It does **not** justify closing or deletin
 records merely because they disappear from a dump. Re-ingesting stored fuzzer
 outcomes is not replay evidence. The database owner supplies the decision rules.
 
-The [capability assessment](../bug_db_manager/README.md#cleanup-and-closure-tooling)
+The [capability assessment](../bug_db_manager/README.md#what-is-still-not-built)
 records these requirements and limits. No cleanup or closure command is
 implemented yet. The inspected databases have 60 anoieu records and 197
 dokimasia records with no duplicate identities, so duplicate deletion would not

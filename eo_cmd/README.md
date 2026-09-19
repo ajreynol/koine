@@ -17,6 +17,9 @@ Prompt commands hand work to an assistant; programs do the work themselves.
 | [`eo_brainstorm`](eo_brainstorm) | explore possibilities and discuss them with you; write only a private note |
 | [`eo_housekeeping`](eo_housekeeping) | update documentation, answer incoming topics, fix local tooling, and check CI |
 | `koine_append_db` | append a run's bugs to a database; implementation and usage in [`../bug_db_manager/`](../bug_db_manager/README.md) |
+| `koine_window` | resolve and describe the window of another project's history a closure run reads; in [`../bug_db_manager/`](../bug_db_manager/README.md) |
+| `koine_check_db` | check that a closure run changed only what it was allowed to; in [`../bug_db_manager/`](../bug_db_manager/README.md) |
+| `koine_close_db` | ask an assistant what each watched project has since done about our open records; in [`../bug_db_manager/`](../bug_db_manager/README.md) |
 
 [`commands.json`](commands.json) is the ground truth for this roster and the
 installer's output. Its `short` fields supply the installation summary; `what`
@@ -51,8 +54,8 @@ That state filename is stable, so renaming the installer preserves the chosen
 directory and its installed-file ownership records.
 
 A run reports where it installs, what changed, and what you can type next.
-Commands for people appear first; `koine_append_db`, marked `audience: tooling`
-in the manifest, appears separately. `--verbose` shows the file table;
+Commands for people appear first; the four `koine_` commands, marked
+`audience: tooling` in the manifest, appear separately. `--verbose` shows the file table;
 an install `--dry-run` prints only shell-quoted `cp` commands and creates
 nothing, even with `--verbose`. It prints nothing when no files need copying.
 Files that are current or protected from replacement are omitted. A normal
@@ -83,8 +86,11 @@ checkouts and say what cannot be read. A real run may require those checkouts.
 advertised form with an empty home directory and no neighboring repositories.
 
 `--print` runs non-interactively. `eo_topic` and `eo_child` refuse it because
-they must ask you what to write. `eo_status`, `eo_git_status`, `eo_listen` and
-`koine_append_db` are programs, so they do not take `--show-prompt`.
+they must ask you what to write. `eo_status`, `eo_git_status`, `eo_listen`,
+`koine_append_db`, `koine_window` and `koine_check_db` are programs, so they
+do not take `--show-prompt`. `koine_close_db` is a prompt and does; it is `audience:
+tooling` all the same, because a consumer's own launcher calls it with that
+consumer's config rather than a person typing it.
 
 ## How the work is left
 

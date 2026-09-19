@@ -1,0 +1,266 @@
+#!/usr/bin/env python3
+"""koine_check_db -- did a closure run change only what it was allowed to?
+
+    koine_check_db <database>                  # against the committed version
+    koine_check_db <database> --against <rev>  # against some other one
+
+`koine_append_db` refuses to rewrite an entry, and the reason is written at the
+top of it: **a record of what was found over time is worth having only if
+nothing quietly rewrites it.** Then closure arrives, and closure is an assistant
+with the file open in a text editor. It adds a verdict to one entry, and nothing
+at all establishes that it did not reorder a second, reword a third's claim, or
+drop a fourth. The only thing between that and the record is a person reading a
+long diff, looking for the one hunk that is not what they expected.
+
+This is that reading, done by a program. It compares the database as it stands
+against the version the owner last committed, and **every difference has to be
+the addition of closure fields to an entry that had none.** Anything else is
+reported and the run exits non-zero.
+
+## Why the committed version is the baseline
+
+Because that is what the workflow already produces. Every closure launcher in
+this ecosystem leaves its work uncommitted, in as many words, so that a
+maintainer reads it as a diff before any of it is in a history somebody has to
+undo. The committed version is therefore exactly *the database before the
+assistant touched it*, and no new state has to be invented to hold it.
+
+`--against` names another revision for the cases where that is not so: checking
+a closure that was committed, or one made on top of another.
+
+## What a closure may do, and what it may not
+
+**May:** add `closed_*` fields to an entry that carried none. That is the work.
+
+**May not:** remove an entry, add one (koine_append_db is the only thing that
+creates one), reorder them, change any field that is not a `closed_*` field, or
+change or remove a `closed_*` field already recorded. The last is `--amended`,
+for the legitimate case: a person replacing an `awaiting_landing` with the
+commit that landed it is amending a closure, not making one, and saying so is
+cheap.
+
+**An entry is closed when it carries any field named `closed_*`** -- the same
+convention `koine_append_db` reads, and for the same reason. The vocabulary past
+the prefix is the owner's: one consumer writes a verdict from a list of seven
+words, another writes a date and a pull request, and a third has not decided
+yet. None of them is koine's to know.
+
+**`--also` names a closure field that does not carry the prefix.** One exists
+already: a verdict that closes a finding before its fix reaches a default branch
+owes an `awaiting_landing` saying where the change is, and that field predates
+the convention. An owner in that position names it once rather than renaming a
+field in a database somebody else's audit reads.
+
+## What it will not do
+
+**It knows nothing about what the records are.** A database of defects and a
+database of rewrite candidates are the same shape to this: identities, fields
+that were recorded, and fields a closure added. It reads the envelope key the
+file uses rather than assuming one, so a `{"rewrites": [...]}` database is
+checked like any other.
+
+**It writes nothing and fixes nothing.** It reads two versions of one file and
+says how they differ. Correcting a database is the owner's, and a report naming
+the entry and the field is what that takes.
+
+**It makes no network call and does not fetch.** `git show` against a revision
+the checkout already has, and nothing else.
+"""
+
+import argparse
+import json
+import os
+import subprocess
+import sys
+
+#: What marks a field as part of a ruling rather than part of the record. The
+#: same prefix `koine_append_db` reads.
+CLOSED = "closed_"
+
+
+def git(root, *args):
+    p = subprocess.run(["git", "-C", root, *args], capture_output=True, text=True)
+    if p.returncode:
+        raise ValueError(f"git {' '.join(args)} failed in {root}: {p.stderr.strip()}")
+    return p.stdout
+
+
+def tracked(path):
+    """The repository holding this file, and the file's path inside it.
+
+    A database is routinely not at the root of the repository that carries it --
+    a child project's database sits several directories down -- so both halves
+    are asked of git rather than worked out from the path.
+    """
+    where = os.path.dirname(os.path.abspath(path)) or "."
+    if not os.path.isdir(where):
+        raise ValueError(f"{where}: no such directory")
+    try:
+        root = git(where, "rev-parse", "--show-toplevel").strip()
+    except ValueError:
+        raise ValueError(f"{path} is not in a git repository, so there is no "
+                         "committed version to compare it against")
+    # No --error-unmatch: a file git does not know about should produce this
+    # program's explanation of why that matters, not git's advice about `add`.
+    inside = git(where, "ls-files", "--full-name",
+                 os.path.basename(path)).strip()
+    if not inside:
+        raise ValueError(f"{path} is not tracked by {root}, so nothing was "
+                         "recorded to compare it against")
+    return root, inside
+
+
+def records(text, where):
+    """The records in one version of the database, and what it calls them."""
+    data = json.loads(text)
+    if isinstance(data, list):
+        return data, ""
+    if isinstance(data, dict):
+        lists = [k for k, v in data.items() if isinstance(v, list)]
+        if len(lists) == 1:
+            return data[lists[0]], lists[0]
+        if len(lists) > 1:
+            raise ValueError(f"{where}: {len(lists)} lists in it and no way to "
+                             "tell which one is the records")
+    raise ValueError(f"{where}: expected a list of records, or an object with "
+                     "one list in it")
+
+
+def key_of(entry):
+    """What this record is. The same identity `koine_append_db` uses."""
+    if entry.get("id"):
+        return ("id", str(entry["id"]))
+    return ("tool+bug", str(entry.get("tool", "")), str(entry.get("bug", "")))
+
+
+def name(k):
+    return " ".join(k)
+
+
+def is_closure(field, also):
+    return field.startswith(CLOSED) or field in also
+
+
+def closure(entry, also):
+    return {f: entry[f] for f in entry if is_closure(f, also)}
+
+
+def claim(entry, also):
+    """Everything about a record that a closure may not touch."""
+    return {f: entry[f] for f in entry if not is_closure(f, also)}
+
+
+def compare(before, after, amended, also=()):
+    """How the two versions differ: the work, and everything that is not it."""
+    was = {key_of(e): e for e in before}
+    now = {key_of(e): e for e in after}
+    closed, wrong = [], []
+
+    for k in was:
+        if k not in now:
+            wrong.append(f"{name(k)} is gone from the database. A closure rules "
+                         "on a record; it does not remove one")
+    for k in now:
+        if k not in was:
+            wrong.append(f"{name(k)} is new. koine_append_db is the only thing "
+                         "that adds a record, and a closure run is not it")
+
+    # Order, because the database is read as a diff and a reordering is a diff
+    # nobody can read. Only compared over the records both versions have.
+    shared = [k for k in (key_of(e) for e in before) if k in now]
+    if shared != [k for k in (key_of(e) for e in after) if k in was]:
+        wrong.append("the records are in a different order. The database is "
+                     "written in the order they were first seen, and a run that "
+                     "reorders it makes its own diff unreadable")
+
+    for k in (k for k in (key_of(e) for e in before) if k in now):
+        old, new = was[k], now[k]
+        was_claim, now_claim = claim(old, also), claim(new, also)
+        for field in sorted(set(was_claim) | set(now_claim)):
+            if field not in now_claim:
+                wrong.append(f"{name(k)} lost `{field}`, which was recorded as "
+                             f"{was_claim[field]!r}")
+            elif field not in was_claim:
+                wrong.append(f"{name(k)} gained `{field}` = {now_claim[field]!r}, "
+                             "which is not a closure field and not a record this "
+                             "run was allowed to change. Name it with --also if "
+                             "it is part of this owner's closure vocabulary")
+            elif was_claim[field] != now_claim[field]:
+                wrong.append(f"{name(k)} `{field}` was {was_claim[field]!r} and "
+                             f"is now {now_claim[field]!r}")
+
+        ruled_before, ruled_after = closure(old, also), closure(new, also)
+        for field in sorted(set(ruled_before) | set(ruled_after)):
+            if field not in ruled_before:
+                continue
+            if field not in ruled_after:
+                (closed if amended else wrong).append(
+                    f"{name(k)} lost the recorded `{field}`"
+                    + ("" if amended else ", which was already ruled. Pass "
+                                          "--amended if that was deliberate"))
+            elif ruled_before[field] != ruled_after[field]:
+                (closed if amended else wrong).append(
+                    f"{name(k)} `{field}` was already recorded as "
+                    f"{ruled_before[field]!r} and is now {ruled_after[field]!r}"
+                    + ("" if amended else ". Pass --amended if that was "
+                                          "deliberate"))
+        fresh = sorted(set(ruled_after) - set(ruled_before))
+        if fresh:
+            closed.append(f"{name(k)} closed, adding {', '.join('`' + f + '`' for f in fresh)}")
+    return closed, wrong
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser(
+        prog="koine_check_db",
+        description="Check that a closure run changed only what it was allowed to.")
+    ap.add_argument("db", metavar="<database>",
+                    help="the database, as it stands in the working tree")
+    ap.add_argument("--against", default="HEAD", metavar="REV",
+                    help="the version to compare it against (default: HEAD, "
+                         "which is the database before the closure run)")
+    ap.add_argument("--also", action="append", default=[], metavar="FIELD",
+                    help="a field that is part of this owner's closure "
+                         "vocabulary without carrying the `closed_` prefix, and "
+                         "so may be added by a closure run. Repeatable")
+    ap.add_argument("--amended", action="store_true",
+                    help="allow a closure already recorded to be changed or "
+                         "removed: a person replacing a promise with the commit "
+                         "that kept it is amending a closure, not making one")
+    args = ap.parse_args(argv)
+
+    try:
+        root, inside = tracked(args.db)
+        with open(args.db, encoding="utf-8") as fh:
+            after, key_now = records(fh.read(), args.db)
+        text = git(root, "show", f"{args.against}:{inside}")
+        before, key_was = records(text, f"{args.against}:{inside}")
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        print(f"-- refused: {exc}", file=sys.stderr)
+        return 1
+
+    closed, wrong = compare(before, after, args.amended, frozenset(args.also))
+    if key_was and key_now and key_was != key_now:
+        wrong.append(f"the database called its records `{key_was}` and now calls "
+                     f"them `{key_now}`. That is a change to the file's shape, "
+                     "not a closure")
+
+    # What the run did, then what it should not have, then the count. Flushed,
+    # because the two streams are routinely one terminal and a report whose
+    # lines arrive in a different order than they were written is a worse report.
+    for line in closed:
+        print(f"-- {line}", flush=True)
+    for line in wrong:
+        print(f"-- changed: {line}", file=sys.stderr, flush=True)
+    print(f"-- {len(before)} record(s) at {args.against}, {len(after)} now; "
+          f"{len(closed)} closure(s), {len(wrong)} unallowed change(s)", flush=True)
+    if wrong:
+        print("-- the record is what a claim is checked against, so a closure "
+              "run may only add to it. Put back what changed, and re-run.",
+              file=sys.stderr)
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
