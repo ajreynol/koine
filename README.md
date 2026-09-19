@@ -31,8 +31,8 @@ arrive at once, and the evidence needed for future cleanup tooling.
 `eo_init` starts a tool and `eo_join` joins it; `eo_status` says who is in this
 ecosystem and on what footing; `eo_git_status` shows Git status across local
 checkouts; `eo_child` starts a child project and `eo_topic`
-opens one topic addressed to another tool; `eo_listen` lists and summarizes
-incoming topics without changing any checkout; `eo_respond` answers one topic
+opens one topic addressed to another tool; `eo_listen` prints incoming topics
+without changing any checkout; `eo_respond` answers one topic
 another tool addressed to you; `eo_housekeeping` brings a repository up to date, and
 `eo_brainstorm` looks for what it could do next, works through the list with
 you, and changes nothing. These run where a person is working, with

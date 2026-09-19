@@ -769,7 +769,7 @@ def test_every_form_previews_on_a_machine_with_nothing_on_it():
     # The commands that resolve somebody else's tree. `eo_join` and `eo_init`
     # write into the tree they are run in and look nothing up, so there is
     # nothing for them to report not finding.
-    SAYS_WHAT_IT_COULD_NOT_READ = ("eo_topic", "eo_respond", "eo_housekeeping", "eo_listen")
+    SAYS_WHAT_IT_COULD_NOT_READ = ("eo_topic", "eo_respond", "eo_housekeeping")
     tmp = tempfile.mkdtemp()
     try:
         home = os.path.join(tmp, "home")

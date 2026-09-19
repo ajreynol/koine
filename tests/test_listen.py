@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-"""Discovery, coverage and read-only launches using temporary Git repositories.
+"""Topic selection, discovery and read-only output in temporary repositories.
 
     python3 tests/test_listen.py
 
-Assistant stubs record argv; no real assistant or network is used. Summaries
-are the assistant's judgement, while discovery and launch restrictions are
-checked here against real checkouts, including an installed command.
+No assistant or network is used. Installed copies run with only Python and
+Git on PATH, and snapshots check that every repository stays unchanged.
 """
 
 import json
@@ -52,9 +51,10 @@ class ListenTests(unittest.TestCase):
         self.git(path, "add", "-A")
         self.git(path, "commit", "-qm", "fixture")
 
-    def discussion(self, path):
+    def discussion(self, path, text=None):
         (path / "docs").mkdir(exist_ok=True)
         (path / "docs/discussion.md").write_text(
+            text if text is not None else
             "## D7 — An incoming question\n\n**To:** current, second\n"
             "**Kind:** question\n**Opened:** 2026-09-18\n"
             "**Settles when:** a decision is made\n\nWhat should we do?\n",
@@ -79,29 +79,19 @@ class ListenTests(unittest.TestCase):
         return {str(p.relative_to(path)): (p.read_bytes(), p.stat().st_mtime_ns)
                 for p in path.rglob("*") if p.is_file()}
 
-    def stub_agents(self):
-        bindir = self.root / "bin"
-        bindir.mkdir()
-        for name in ("claude", "codex"):
-            path = bindir / name
-            path.write_text(f"#!{sys.executable}\nimport json, os, sys\n"
-                            "print(json.dumps({'argv': sys.argv[1:], 'cwd': os.getcwd()}))\n",
-                            encoding="utf-8")
-            path.chmod(0o755)
-        self.env["PATH"] = str(bindir) + os.pathsep + self.env["PATH"]
-        return bindir
-
     def test_discovery_and_coverage(self):
         sender = self.repo(self.here.parent / "sender")
         self.discussion(sender)
         self.commit(sender)
-        revision = self.git(sender, "rev-parse", "HEAD").stdout.strip()
-        (sender / "docs/discussion.md").write_text("Local draft\n", encoding="utf-8")
+        with (sender / "docs/discussion.md").open("a", encoding="utf-8") as file:
+            file.write("\nLocal draft\n")
         duplicate = self.repo(self.root / "extra/sender")
         home_sender = self.repo(self.home / "home-sender")
         mapped = self.repo(self.root / "distant/mapped checkout")
         ignored = self.repo(self.here.parent / "unregistered")
         child = self.repo(self.here.parent / "child")
+        for path in (duplicate, home_sender, mapped, ignored, child):
+            self.discussion(path)
         office = self.office({
             "sender": {"status": "member"}, "home-sender": {"status": "associate"},
             "mapped": {"status": "member"}, "missing": {"status": "member"},
@@ -111,51 +101,56 @@ class ListenTests(unittest.TestCase):
                                                     encoding="utf-8")
         subdir = self.here / "subdirectory"
         subdir.mkdir()
-        text = self.listen("--show-prompt", cwd=subdir,
-                           env={"ANOIEU_REPOS": str(duplicate.parent)}).stdout
+        out = self.listen(cwd=subdir, env={"ANOIEU_REPOS": str(duplicate.parent)})
+        text = out.stdout
         for path in (sender, duplicate, home_sender, mapped):
             self.assertIn(str(path), text)
         self.assertNotIn(str(ignored), text)
         self.assertNotIn(str(child), text)
-        self.assertIn("discussion addressed to **current**", text)
-        self.assertIn(revision + "; working tree: dirty", text)
-        self.assertIn("Not checked out: missing", text)
-        self.assertNotIn("Not checked out: child", text)
-        self.assertIn("Discussion: no docs/discussion.md", text)
+        self.assertIn("4 topic(s) addressed to current", out.stderr)
+        self.assertIn("Local draft", text)
+        self.assertIn("Not checked out: missing", out.stderr)
+        self.assertNotIn("Not checked out: child", out.stderr)
+        self.assertIn(f"No discussion file: {office / 'docs/discussion.md'}", out.stderr)
         self.assertIn(str(sender / "docs/discussion.md"), text)
-        self.assertIn(str(office / "docs/policy.md"), text)
 
     def test_identity_from_map_and_remote(self):
         office = self.office({"sender": {"status": "member", "url": "https://example.invalid/org/sender"}})
         sender = self.repo(self.here.parent / "renamed")
+        self.discussion(sender)
         self.git(sender, "remote", "add", "origin", "git@example.invalid:org/sender.git")
-        text = self.listen("--show-prompt").stdout
-        self.assertIn(f"- sender: {sender}", text)
+        text = self.listen().stdout
+        self.assertIn(f"# sender — {sender}", text)
         renamed = self.here.with_name("renamed-current")
         self.here.rename(renamed)
         self.here = renamed
         (office / "scripts/repos.local").write_text(f"current {self.here}\n", encoding="utf-8")
-        text = self.listen("--show-prompt").stdout
-        self.assertIn("discussion addressed to **current**", text)
+        out = self.listen()
+        self.assertIn("## D7 — An incoming question", out.stdout)
+        self.assertIn("1 topic(s) addressed to current", out.stderr)
 
     def test_explicit_map_and_missing_path(self):
         self.office({"sender": {"status": "member"}, "missing": {"status": "member"}})
         sender = self.repo(self.root / "distant/renamed")
+        self.discussion(sender)
         mapping = self.root / "alternate map"
         mapping.write_text(f"sender {sender}\nmissing {self.root / 'absent'}\n", encoding="utf-8")
-        text = self.listen("--show-prompt", env={"ANOIEU_REPOS_FILE": str(mapping)}).stdout
-        self.assertIn(f"- sender: {sender}", text)
-        self.assertIn("Mapped checkout unavailable: missing", text)
-        self.assertIn("Not checked out: missing", text)
+        out = self.listen(env={"ANOIEU_REPOS_FILE": str(mapping)})
+        self.assertIn(f"# sender — {sender}", out.stdout)
+        self.assertIn("Mapped checkout unavailable: missing", out.stderr)
+        self.assertIn("Not checked out: missing", out.stderr)
 
-    def test_preview_without_register_or_git_repository(self):
-        text = self.listen("--show-prompt").stdout
-        self.assertIn("No register found", text)
-        self.assertIn("coverage and missing repositories are unknown", text)
-        self.assertIn("No other tool of this ecosystem is checked out", text)
+    def test_without_register_or_git_repository(self):
+        out = self.listen()
+        self.assertIn("No topics addressed to current", out.stdout)
+        self.assertIn("No register found", out.stderr)
+        self.assertIn("coverage and missing repositories are unknown", out.stderr)
+        self.assertIn("No other tool of this ecosystem is checked out", out.stderr)
+        self.assertIn("read 0 discussion file(s)", out.stderr)
+        self.discussion(self.repo(self.here.parent / "sender"))
+        self.assertIn("## D7 — An incoming question", self.listen().stdout)
         bare = self.home / "not-a-repository"
         bare.mkdir()
-        self.listen("--show-prompt", cwd=bare)
         result = self.listen(cwd=bare, code=2)
         self.assertIn("not in a git repository", result.stderr)
         self.assertEqual(result.stdout, "")
@@ -167,17 +162,18 @@ class ListenTests(unittest.TestCase):
         moved = distant / "office"
         office.rename(moved)
         sender = self.repo(distant / "sender")
+        self.discussion(sender)
         unrelated = self.repo(self.here.parent / "unregistered")
         mapping = self.root / "alternate map"
         mapping.write_text(f"office {moved}\nsender {sender}\n", encoding="utf-8")
-        text = self.listen("--show-prompt", env={"ANOIEU_REPOS_FILE": str(mapping)}).stdout
-        self.assertIn(f"Register: {moved / 'scripts/ecosystem/ecosystem.json'}", text)
-        self.assertIn(f"- sender: {sender}", text)
-        self.assertIn("Not checked out: missing", text)
-        self.assertNotIn(str(unrelated), text)
-        self.assertNotIn("No register found", text)
+        out = self.listen(env={"ANOIEU_REPOS_FILE": str(mapping)})
+        self.assertIn(f"Register: {moved / 'scripts/ecosystem/ecosystem.json'}", out.stderr)
+        self.assertIn(f"# sender — {sender}", out.stdout)
+        self.assertIn("Not checked out: missing", out.stderr)
+        self.assertNotIn(str(unrelated), out.stdout)
+        self.assertNotIn("No register found", out.stderr)
 
-    def test_installed_launches_are_read_only_and_receive_exact_preview(self):
+    def test_installed_program_needs_no_agent_and_changes_nothing(self):
         sender = self.repo(self.here.parent / "sender")
         self.discussion(sender)
         self.office({"sender": {"status": "member"}})
@@ -185,44 +181,75 @@ class ListenTests(unittest.TestCase):
         self.git(self.here, "add", "docs/discussion.md")
         (self.here / "README.md").write_text("Unstaged changes\n", encoding="utf-8")
         (self.here / "discussion-response.local.md").write_text("A draft\n", encoding="utf-8")
-        bindir = self.stub_agents()
+        bindir = self.root / "bin"
+        bindir.mkdir()
+        (bindir / "python3").symlink_to(sys.executable)
+        (bindir / "git").symlink_to(shutil.which("git"))
+        self.env["PATH"] = str(bindir)
         installed = bindir / "eo_listen"
         shutil.copy2(COMMAND, installed)
         before = {p: self.snapshot(p) for p in (self.here, sender)}
         # A hostile inherited Git environment must not redirect observations.
         env = {"GIT_DIR": str(sender / ".git"), "GIT_WORK_TREE": str(sender)}
-        preview = self.listen("--show-prompt", command=installed, env=env).stdout
-        for agent in ("claude", "codex"):
-            for printing in (False, True):
-                with self.subTest(agent=agent, printing=printing):
-                    flags = ["--" + agent] + (["--print"] if printing else [])
-                    out = self.listen(*flags, command=installed, env=env)
-                    call = json.loads(out.stdout)
-                    self.assertEqual(call["cwd"], str(self.here))
-                    self.assertEqual(call["argv"][-2:], ["--", preview])
-                    if agent == "codex":
-                        expected = ["--sandbox", "read-only", "--ask-for-approval", "never"]
-                        if printing:
-                            expected.append("exec")
-                    else:
-                        expected = ["--tools", "Read,Glob,Grep"]
-                        if printing:
-                            expected.append("--print")
-                    self.assertEqual(call["argv"][:-2], expected)
+        out = self.listen(command=installed, env=env)
+        topic = (sender / "docs/discussion.md").read_text(encoding="utf-8")
+        self.assertEqual(out.stdout, f"# sender — {sender / 'docs/discussion.md'}:1\n\n{topic}")
+        self.assertNotIn("A draft", out.stdout)
+        self.assertNotIn(f"# current — {self.here}", out.stdout)
+        self.assertEqual(self.listen(command=installed, env=env).stdout, out.stdout)
         for path, snapshot in before.items():
             self.assertEqual(self.snapshot(path), snapshot)
-        flat = " ".join(preview.split())
-        self.assertIn("opening `To:` field", flat)
-        self.assertIn("complete recipient name", flat)
-        self.assertIn("discussion-response.local.md", flat)
-        self.assertIn("distinguish a draft", flat)
-        self.assertIn("Do not answer or implement", flat)
-        self.assertIn("Do not fetch, pull, switch branches", flat)
-        self.assertIn("including reports", flat)
-        self.assertIn("unavailable sources are not evidence of an empty inbox", flat)
 
-    def test_bad_register_refuses_before_assistant(self):
-        self.stub_agents()
+    def test_only_opening_recipients_select_complete_topics(self):
+        sender = self.repo(self.here.parent / "sender")
+        prefix = ("# Discussion\n\n> ## D90 — Quoted example\n> **To:** current\n\n"
+                  "````markdown\n## D91 — Fenced example\n**To:** current\n"
+                  "```\n## D92 — Still inside the longer fence\n**To:** current\n````\n\n"
+                  "~~~markdown\n## D93 — Tilde example\n**To:** current\n~~~\n\n")
+        first = ("## D7 — Keep the whole topic\n\n**To:** second, current\n"
+                 "**Kind:** question\n**Opened:** 2026-09-18\n"
+                 "**Settles when:** we agree\n\nThe original request.\n\n"
+                 "### Replies\n\n**current, 2026-09-18.** Already answered.\n\n"
+                 "```markdown\n## D94 — An example inside the topic\n**To:** other\n```\n")
+        excluded = ("\n## Notes\nThis is not part of D7.\n\n"
+                    "## D8 — A different recipient\n\n**To:** currently, not-current\n"
+                    "\nThis mentions current.\n\n### Replies\n\n**To:** current\n\n"
+                    "## D9 — Late address\n\nSome body text.\n**To:** current\n\n"
+                    "## D10suffix — Not a topic ID\n\n**To:** current\n\n")
+        second = "## D11 — Plain field\n\nTo: current\n\nA second request."
+        source = prefix + first + excluded + second
+        self.discussion(sender, source)
+        out = self.listen()
+        path = sender / "docs/discussion.md"
+        first_line = source[:source.index(first)].count("\n") + 1
+        second_line = source[:source.index(second)].count("\n") + 1
+        self.assertEqual(out.stdout,
+                         f"# sender — {path}:{first_line}\n\n{first}\n"
+                         f"# sender — {path}:{second_line}\n\n{second}\n")
+        self.assertIn("2 topic(s) addressed to current", out.stderr)
+
+    def test_empty_results_and_read_failures(self):
+        sender = self.repo(self.here.parent / "sender")
+        self.discussion(sender, "## D1 — Not ours\n\n**To:** another\n")
+        out = self.listen()
+        self.assertEqual(out.stdout, "No topics addressed to current in the discussion files read.\n")
+        self.assertIn("read 1 discussion file(s)", out.stderr)
+        good = self.repo(self.here.parent / "good")
+        self.discussion(good)
+        (sender / "docs/discussion.md").write_bytes(b"\xff\xfe")
+        out = self.listen(code=1)
+        self.assertIn("Cannot read", out.stderr)
+        self.assertIn(str(sender / "docs/discussion.md"), out.stderr)
+        self.assertIn("## D7 — An incoming question", out.stdout)
+
+    def test_prompt_options_are_not_supported(self):
+        for flag in ("--show-prompt", "--print", "--codex", "--claude"):
+            with self.subTest(flag=flag):
+                out = self.listen(flag, code=2)
+                self.assertIn("unrecognized arguments", out.stderr)
+                self.assertEqual(out.stdout, "")
+
+    def test_bad_register_refuses(self):
         office = self.office({})
         register = office / "scripts/ecosystem/ecosystem.json"
         for data in ("{broken", "[]", '{"current": {"status": "member"}}'):

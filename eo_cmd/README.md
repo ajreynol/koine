@@ -12,7 +12,7 @@ Prompt commands hand work to an assistant; programs do the work themselves.
 | [`eo_git_status`](eo_git_status) | show Git status across local checkouts and linked worktrees, without fetching |
 | [`eo_topic`](eo_topic) | ask what you want to say, then draft one topic addressed to another tool |
 | [`eo_child`](eo_child) | start a named child project under `tools/` |
-| [`eo_listen`](eo_listen) | list and summarize topics addressed to your repository, read-only |
+| [`eo_listen`](eo_listen) | print topics addressed to your repository, read-only |
 | [`eo_respond`](eo_respond) | answer one named topic addressed to your repository |
 | [`eo_brainstorm`](eo_brainstorm) | explore possibilities and discuss them with you; write only a private note |
 | [`eo_housekeeping`](eo_housekeeping) | update documentation, answer incoming topics, fix local tooling, and check CI |
@@ -83,7 +83,7 @@ checkouts and say what cannot be read. A real run may require those checkouts.
 advertised form with an empty home directory and no neighboring repositories.
 
 `--print` runs non-interactively. `eo_topic` and `eo_child` refuse it because
-they must ask you what to write. `eo_status`, `eo_git_status` and
+they must ask you what to write. `eo_status`, `eo_git_status`, `eo_listen` and
 `koine_append_db` are programs, so they do not take `--show-prompt`.
 
 ## What koine may change here, and what it may not
@@ -128,19 +128,16 @@ written by hand, as the policy specifies.
 
 ```console
 $ eo_listen
-$ eo_listen --print
-$ eo_listen --codex
-$ eo_listen --show-prompt
+$ eo_listen | less
 ```
 
-Run in the repository receiving correspondence. The assistant lists topics
-whose opening `To:` field names this repository, with their source, ID, title,
-kind, date, link, summary, and settlement condition. It reads appended replies
-and local answers, including `discussion-response.local.md` when present,
-and cites the evidence. A local draft is not evidence of delivery; a live topic
-does not by itself mean an answer is owed. Notices and answered topics remain
-visible. Each entry includes an `eo_respond` command selecting the source
-checkout by its absolute path, for you to run separately.
+Run in the repository receiving correspondence. This program prints each
+complete `## Dn` topic whose opening `To:` field lists this repository as a
+comma-separated recipient. It accepts `**To:**` and plain `To:` fields.
+Each topic is preceded by its source repository, file path and line number.
+The original fields, body and appended replies are printed together. Mentions
+in prose, quoted or fenced examples, and addresses in replies do not select a
+topic. Notices and answered topics remain visible.
 
 Discovery searches immediate checkouts beside this repository, under
 `$ANOIEU_REPOS` (colon-separated directories) and `$HOME`, and in the president's
@@ -150,17 +147,13 @@ directory names and remote URLs resolve checkout identities. Without a register,
 nearby names are explicitly unverified and ecosystem coverage is unknown.
 Multiple checkouts remain visible. No network lookup is performed.
 
-The report names the files read, the revisions and dirty state observed before
-launching the assistant, and missing sources. It summarizes working files,
-including local changes, and makes no claim that they match remote branches.
-Missing sources are reported even when no addressed topic is found.
+Topics go to stdout; counts, missing sources and read failures go to stderr.
+It reads working files, including local changes. No matches is a successful
+result; a present discussion file that cannot be read gives exit status 1,
+while invalid arguments, configuration or a run outside Git give status 2.
 
-**This is a read-only survey.** The prompt permits no answers, implementation,
-files written, messages sent, branch changes, fetches or pulls. The default
-assistant receives only the built-in Read, Glob and Grep tools; `--codex` selects a
-read-only sandbox with escalation disabled. `--print` prints the summary
-non-interactively. `--show-prompt` prints the exact prompt without launching
-an assistant and works even outside a Git repository. A real run requires one.
+Requires Python 3 and Git. It launches no assistant, accepts no prompt or agent
+options, and performs no writes, branch changes, fetches or pulls.
 
 ## eo_respond
 
@@ -183,7 +176,7 @@ Changes here are left staged, and the reply is drafted in
 `discussion-response.local.md`, unstaged. Nothing is sent.
 
 A real run refuses if the target checkout or its discussion file is absent;
-a preview prints the prompt with that limitation. To discover and summarize
+a preview prints the prompt with that limitation. To print
 topics addressed to you, use `eo_listen`. To answer them during a maintenance
 pass, use `eo_housekeeping`.
 

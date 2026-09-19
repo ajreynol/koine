@@ -75,12 +75,12 @@
     },
     {
       "name": "eo_listen",
-      "short": "list and summarize discussion addressed to this repository",
-      "what": "read incoming topics across available local ecosystem checkouts, summarize their requests and existing replies, and report coverage and observed revisions. Changes no checkout, fetches nothing, and answers no topics",
+      "short": "print discussion topics addressed to this repository",
+      "what": "print complete topics whose opening To field names this repository, including their replies, from available local ecosystem checkouts. Report missing sources on stderr. Reads working files, changes no checkout, fetches nothing, and launches no assistant",
       "forms": [
         "eo_listen"
       ],
-      "kind": "prompt"
+      "kind": "program"
     },
     {
       "name": "eo_respond",

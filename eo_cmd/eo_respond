@@ -12,7 +12,7 @@
 #        behave. It is a refusal in argv now: a run with no id does not reach an
 #        assistant at all, which is a gate rather than a request for one.
 #
-#        `eo_listen` surveys and summarizes topics addressed to us across local
+#        `eo_listen` prints topics addressed to us across local
 #        checkouts without answering them. `eo_housekeeping` answers them as
 #        part of a maintenance pass.
 #
