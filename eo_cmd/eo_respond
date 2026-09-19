@@ -12,9 +12,9 @@
 #        behave. It is a refusal in argv now: a run with no id does not reach an
 #        assistant at all, which is a gate rather than a request for one.
 #
-#        The survey the old read-only form did -- *what has anybody addressed to
-#        us?* -- is `eo_housekeeping`, which sweeps every checkout at once and
-#        costs no turn per tool.
+#        `eo_listen` surveys and summarizes topics addressed to us across local
+#        checkouts without answering them. `eo_housekeeping` answers them as
+#        part of a maintenance pass.
 #
 # **WHAT THIS IS FOR THAT HOUSEKEEPING IS NOT: the disagreement check.** Two
 #        independent accounts exist of what somebody wants -- the human's
@@ -82,7 +82,7 @@ usage: eo_respond [--no-main] [--codex] [--print] [--show-prompt] NAME Dn
 
 **Naming the topic is what authorises answering it**, so a run without one is
 refused rather than quietly narrowed. For *what has anybody addressed to us*,
-which names no topic, run eo_housekeeping instead.
+which names no topic, run eo_listen.
 
 **It stops where your instruction and the topic disagree**, which is the one
 thing a habitual sweep cannot do: it says where they differ and waits, rather
@@ -112,7 +112,7 @@ done
 [ -n "$TOPIC" ] || {
   echo "eo_respond: name the topic. A human naming it is what authorises" >&2
   echo "         answering it, and this refuses rather than guessing which." >&2
-  echo "         For what is addressed to you at all, run eo_housekeeping." >&2
+  echo "         For what is addressed to you at all, run eo_listen." >&2
   exit 2; }
 
 if ! US_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); then

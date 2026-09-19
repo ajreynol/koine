@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # eo_brainstorm -- read the standard, then look for what this tool could do next.
 #
-# WHERE: run it at the root of YOUR repository. It is the one command here that
-#        changes nothing: every tree on the machine is read, including this one,
-#        and the only thing written is `brainstorm.local.md` at this root, which
+# WHERE: run it at the root of YOUR repository. It reads the trees it inspects,
+#        including this one, and the only thing written is
+#        `brainstorm.local.md` at this root, which
 #        `*.local.md` keeps out of the record.
 #
 # **WHY IT WRITES NOTHING ELSE, which is the whole of why it is worth running.**

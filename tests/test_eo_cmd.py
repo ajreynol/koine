@@ -294,8 +294,8 @@ def test_the_gate_is_in_argv():
     implement that by making the unnamed form read-only and asking the prompt
     nicely to behave -- a gate held up by prose the model was trusted to obey.
     It refuses now, before an assistant is reached, which is strictly stronger
-    than any wording and is why the read-only form is gone: the survey it did is
-    `eo_housekeeping`, which sweeps every checkout and costs no turn per tool.
+    than any wording. `eo_listen` surveys incoming topics without answering
+    them; housekeeping handles them as part of a maintenance pass.
     """
     print("the discussion gate, in argv")
     bare = subprocess.run([os.path.join(STORE, "eo_respond"), "kanon"],
@@ -304,7 +304,7 @@ def test_the_gate_is_in_argv():
     ok("and says naming it is the authorisation",
        "what authorises" in bare.stderr)
     ok("and sends the survey to the command that does it",
-       "eo_housekeeping" in bare.stderr)
+       "eo_listen" in bare.stderr)
     ok("and refuses on stderr, printing no prompt", bare.stdout.strip() == "")
 
     worked = " ".join(show("eo_respond", "kanon", "D14").stdout.split())
@@ -766,10 +766,10 @@ def test_every_form_previews_on_a_machine_with_nothing_on_it():
     that somebody has cloned nothing.
     """
     print("every form previews with no other checkout on the machine")
-    # The three that resolve somebody else's tree. `eo_join` and `eo_init`
+    # The commands that resolve somebody else's tree. `eo_join` and `eo_init`
     # write into the tree they are run in and look nothing up, so there is
     # nothing for them to report not finding.
-    SAYS_WHAT_IT_COULD_NOT_READ = ("eo_topic", "eo_respond", "eo_housekeeping")
+    SAYS_WHAT_IT_COULD_NOT_READ = ("eo_topic", "eo_respond", "eo_housekeeping", "eo_listen")
     tmp = tempfile.mkdtemp()
     try:
         home = os.path.join(tmp, "home")

@@ -12,5 +12,6 @@ jobs:
       - run: python3 tests/test_append_db.py
       - run: python3 tests/test_install_eo.py
       - run: python3 tests/test_eo_cmd.py
+      - run: python3 tests/test_listen.py
       - run: python3 tests/test_register.py
       - run: python3 tests/test_git_status.py

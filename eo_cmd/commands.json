@@ -74,6 +74,15 @@
       "kind": "prompt"
     },
     {
+      "name": "eo_listen",
+      "short": "list and summarize discussion addressed to this repository",
+      "what": "read incoming topics across available local ecosystem checkouts, summarize their requests and existing replies, and report coverage and observed revisions. Changes no checkout, fetches nothing, and answers no topics",
+      "forms": [
+        "eo_listen"
+      ],
+      "kind": "prompt"
+    },
+    {
       "name": "eo_respond",
       "short": "answer one topic another tool addressed to you",
       "what": "answer one topic another tool has addressed to you. First ensure main and pull with --ff-only; --no-main keeps the current branch. Run in your own repository; naming the topic is what authorises answering it, and a run without one is refused",
