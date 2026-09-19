@@ -124,6 +124,14 @@ highest ever used, including Git history.
 session commits or changes the tree during a run, report what moved and inspect
 it before relying on the earlier reading.
 
+> This is also the convention the `eo_cmd/` prompts state to an assistant, in
+> the same words in every command that changes a tree. **`--push` is the one
+> thing that changes it**: the person running the command asks for the work to
+> be committed and pushed, and a run that was not asked does not commit.
+> `eo_brainstorm` refuses the flag, and so does `eo_housekeeping --report`,
+> because neither produces anything to push. See
+> [`eo_cmd/README.md`](../eo_cmd/README.md#how-the-work-is-left).
+
 ## The open work
 
 **Evidence-aware database cleanup is a tooling gap.** The

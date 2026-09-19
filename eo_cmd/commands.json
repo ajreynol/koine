@@ -7,7 +7,8 @@
       "what": "join the Eunoia ecosystem, run inside the repository that is joining. Two forms: join and say so on the front page, or --soft, which says the repository works with this ecosystem and is held to none of its policy and claims no footing",
       "forms": [
         "eo_join",
-        "eo_join --soft"
+        "eo_join --soft",
+        "eo_join --push"
       ],
       "kind": "prompt"
     },
@@ -17,7 +18,8 @@
       "what": "start a tool: write a README saying what it is for, complying with nothing",
       "forms": [
         "eo_init new",
-        "eo_init from-child <path>"
+        "eo_init from-child <path>",
+        "eo_init new --push"
       ],
       "kind": "prompt"
     },
@@ -59,7 +61,8 @@
       "short": "open one topic, addressed to another tool",
       "what": "open one topic in your own discussion file, addressed to another tool. **It asks you what you want to say** rather than taking it in argv, and carries what is mechanical: the date, the commit their tree is at, and the next free id. Sends nothing -- a topic is carried by a person",
       "forms": [
-        "eo_topic <name>"
+        "eo_topic <name>",
+        "eo_topic --push <name>"
       ],
       "kind": "prompt"
     },
@@ -69,7 +72,8 @@
       "what": "start a child project, tools/<name>/, in this repository. Naming it is what starts it: the policy reserves that to a human. The charter is asked for and never invented",
       "forms": [
         "eo_child <name>",
-        "eo_child --unadvertised <name>"
+        "eo_child --unadvertised <name>",
+        "eo_child --push <name>"
       ],
       "kind": "prompt"
     },
@@ -85,10 +89,11 @@
     {
       "name": "eo_respond",
       "short": "answer one topic another tool addressed to you",
-      "what": "answer one topic another tool has addressed to you. First ensure main and pull with --ff-only; --no-main keeps the current branch. Run in your own repository; naming the topic is what authorises answering it, and a run without one is refused",
+      "what": "answer one topic another tool has addressed to you. First ensure main and pull with --ff-only; --no-main keeps the current branch. Run in your own repository; naming the topic is what authorises answering it, and a run without one is refused. The change is left staged and the reply drafted in an ignored file; --push commits and pushes the change instead",
       "forms": [
         "eo_respond <name> <Dn>",
-        "eo_respond --no-main <name> <Dn>"
+        "eo_respond --no-main <name> <Dn>",
+        "eo_respond --push <name> <Dn>"
       ],
       "kind": "prompt"
     },
@@ -105,17 +110,19 @@
     {
       "name": "eo_housekeeping",
       "short": "bring this repository up to date",
-      "what": "bring a repository up to date: first ensure main and pull with --ff-only, then make documentation true of the tree, answer topics addressed to it, fix its tooling, and ensure CI passes. --no-main keeps the current branch; --report reports after the branch check and pull. Two paragraphs name where the rules are rather than paraphrasing them",
+      "what": "bring a repository up to date: first ensure main and pull with --ff-only, then make documentation true of the tree, answer topics addressed to it, fix its tooling, and ensure CI passes. --no-main keeps the current branch; --report reports after the branch check and pull; --push commits the work and pushes it once CI passes, instead of leaving it staged. Two paragraphs name where the rules are rather than paraphrasing them",
       "forms": [
         "eo_housekeeping",
         "eo_housekeeping --report",
         "eo_housekeeping --no-main",
-        "eo_housekeeping --report --no-main"
+        "eo_housekeeping --report --no-main",
+        "eo_housekeeping --push"
       ],
       "kind": "prompt"
     }
   ],
   "convention": "Every installed command carries a prefix saying whose it is, because the name is claimed inside somebody else's process and on their PATH. `eo_` is the ecosystem's commands, which run inside a tree that is not this one. `koine_` is this repository's own. install_eo refuses anything else.",
+  "handoff": "**Where the work is left is one convention, not each command's own decision.** Every command here that changes a tree tells the assistant to leave the work staged and not committed, in the same words, because the diff is the review: a person reads what was done before any of it is in a history somebody has to undo. `--push` is that person saying they do not want the review -- it commits the work and pushes it, and stops rather than forcing a push that is rejected. A command that changes nothing has nothing to push and refuses the flag with a reason: eo_brainstorm always, eo_housekeeping under --report. A `*.local.md` is staged by neither form.",
   "kinds": "`prompt` hands context to an assistant and takes --show-prompt, which prints what it would hand one and runs nothing. `program` does the work itself.",
   "register": "A command marked `needs: register` has the president's ecosystem.json baked into it when install_eo copies it, with the commit and date it was taken. That makes it usable away from the president's tree without ever presenting a snapshot as the live register.",
   "ground_truth": "This file is the ground truth for what these commands are and what each is for. The copy is the table in eo_cmd/README.md, and test_the_readme_table_agrees_with_the_manifest in tests/test_eo_cmd.py is what compares the two -- it decides that the same names appear in both and that each has somewhere it is written up, and it cannot decide whether a description is still true of the behaviour. The one claim `kinds` makes that a program can check, that only a prompt takes --show-prompt, is checked beside it.",

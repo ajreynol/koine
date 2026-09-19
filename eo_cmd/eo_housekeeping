@@ -40,6 +40,14 @@
 #        `docs/maintenance.md`. Saying so in the prompt is not ceremony: an
 #        assistant that reads the banner without it stops there, correctly.
 #
+# **HOW THE WORK IS LEFT IS ONE CONVENTION ACROSS `eo_cmd/`, not a decision
+#        each command makes.** Every command here that changes a tree leaves it
+#        **staged and not committed**, in the same words, because the diff is
+#        the review: a person reads what an assistant did before any of it is
+#        in a history somebody has to undo. `--push` is that person saying they
+#        do not want the review -- it commits the work and pushes it -- and it
+#        is the only thing that changes where the work is left.
+#
 # THE PRESIDENT IS LOOKED UP, NEVER WRITTEN IN. The register says who holds the
 #        office and lives in the office's tree, so finding the file is finding
 #        the president -- and the prompt keeps naming the right one after the
@@ -55,6 +63,7 @@ PRINT=0
 SHOW=0
 REPORT=0
 MAIN=1
+PUSH=0
 
 usage() {
   # --help is a request: stdout, exit 0. A bad flag is a mistake: stderr, 2.
@@ -70,10 +79,12 @@ is then documentation that is true of the tree, the topics other tools of the
 Eunoia ecosystem have addressed to you answered, bugs in your own tooling fixed,
 and CI green.
 
-usage: eo_housekeeping [--report] [--no-main] [--codex] [--print] [--show-prompt]
+usage: eo_housekeeping [--report] [--no-main] [--push] [--codex] [--print]
+                       [--show-prompt]
 
   --report        report only after switching to main and pulling
   --no-main       keep the current branch; still pull with --ff-only
+  --push          commit the work and push it, instead of leaving it staged
   --codex         run codex instead of claude
   --print         run non-interactively and print the result
   --show-prompt   print the prompt and exit, running nothing
@@ -83,6 +94,13 @@ president holds the policy and the vision, and this looks up who that currently
 is rather than naming one, so the prompt keeps pointing at the standard after
 the office moves. A prompt that paraphrased the policy would be a copy of it
 with nothing keeping it current -- which is the defect it goes looking for.
+
+**The work is left staged and not committed**, which is the convention every
+command in eo_cmd/ that changes a tree keeps: the diff is the review, and a
+person reads it before any of it is in a history. `--push` is you saying you do
+not want that review -- it commits the work and pushes it, and stops rather than
+forcing a push that is rejected. It has nothing to change under `--report`,
+which writes only an ignored file, and that combination is refused.
 
 **The discussion work runs under a standing override**, recorded in this
 repository's docs/maintenance.md. Every discussion file opens with the
@@ -99,6 +117,7 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --report) REPORT=1; shift ;;
     --no-main) MAIN=0; shift ;;
+    --push) PUSH=1; shift ;;
     --codex) AGENT=codex; shift ;;
     --claude) AGENT=claude; shift ;;
     --print) PRINT=1; shift ;;
@@ -111,6 +130,15 @@ while [ $# -gt 0 ]; do
        usage error ;;
   esac
 done
+
+# A report writes one ignored file, so there is nothing for a push to carry and
+# the pair says two different things about what a run is for. Refusing beats
+# picking one of them.
+if [ "$REPORT" = 1 ] && [ "$PUSH" = 1 ]; then
+  echo "eo_housekeeping: --report changes nothing but an ignored file, so" >&2
+  echo "         there is nothing for --push to commit. Choose one." >&2
+  exit 2
+fi
 
 if ! US_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); then
   # --show-prompt still prints what it would send, from wherever you are.
@@ -275,11 +303,24 @@ else
   ALLOWED="that pull"
 fi
 
+# Where the work is left, in the words every command in this directory uses for
+# it. Staged is the default because the diff is the review; `--push` is the
+# person who ran this saying they do not want one.
+if [ "$PUSH" = 1 ]; then
+  HANDOFF="**Commit the work and push it**: \`git add\` what you changed, commit with a
+message saying what changed and why, and \`git push\`. If there is no upstream to
+push to, or the push is rejected, say so and stop rather than forcing it or
+rewriting history."
+else
+  HANDOFF="**Leave the work staged and not committed**: \`git add\` what you changed and
+stop there, so a person reviews a diff rather than a history."
+fi
+
 if [ "$REPORT" = 1 ]; then
   CLOSE="**Change nothing** beyond $ALLOWED: write what you would have done to \`housekeeping.local.md\`
 at the root instead, unstaged, and say whether CI passes here."
 else
-  CLOSE="**Ensure CI passes here as a final step.**"
+  CLOSE="**Ensure CI passes here as a final step.** $HANDOFF"
 fi
 
 read -r -d '' PROMPT <<PROMPT_END || true
@@ -323,7 +364,8 @@ PROMPT=$(wrapped)
 command -v "$AGENT" >/dev/null 2>&1 || {
   echo "eo_housekeeping: $AGENT is not on PATH" >&2; exit 127; }
 
-WHAT="fixing what it can evidence"
+WHAT="fixing what it can evidence, left staged"
+[ "$PUSH" = 1 ] && WHAT="fixing what it can evidence, committed and pushed"
 [ "$REPORT" = 1 ] && WHAT="reporting after branch preparation and pull"
 echo "-- eo_housekeeping: $US ($US_ROOT), $WHAT, via $AGENT" >&2
 if [ -n "$PRES_DIR" ]; then

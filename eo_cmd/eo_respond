@@ -30,6 +30,13 @@
 #        somebody else's merge to get started. Their tree it reads as it stands:
 #        pulling there would be writing in a tree that is not ours.
 #
+# **HOW THE WORK IS LEFT IS ONE CONVENTION ACROSS `eo_cmd/`, not this command's
+#        own decision.** Staged and not committed, in the same words everywhere,
+#        because the diff is the review -- and the reply draft is a
+#        `*.local.md`, which is not staged at all. `--push` is the person who
+#        ran this saying they do not want that review: it commits the change
+#        and pushes it, and the draft stays where it was either way.
+#
 # THE PRESIDENT IS LOOKED UP, NEVER WRITTEN IN. The register says who holds the
 #        office and lives in the office's tree, so finding the file is finding
 #        the president -- and the prompt keeps pointing at the standard after
@@ -54,6 +61,7 @@ AGENT=claude
 PRINT=0
 SHOW=0
 MAIN=1
+PUSH=0
 NAME=""
 TOPIC=""
 
@@ -70,12 +78,14 @@ carries the topic. It brings this checkout up to date on main first, because
 what it stages has to apply to what is current. Their tree is read, never written;
 anything this changes is changed here and left staged for you to review.
 
-usage: eo_respond [--no-main] [--codex] [--print] [--show-prompt] NAME Dn
+usage: eo_respond [--no-main] [--push] [--codex] [--print] [--show-prompt]
+                  NAME Dn
 
   NAME            a directory, or a repository name looked for beside this one
                   and under $ANOIEU_REPOS
   Dn              the topic to answer. **Required**
   --no-main       keep the current branch; still pull with --ff-only
+  --push          commit the work and push it, instead of leaving it staged
   --codex         run codex instead of claude
   --print         run non-interactively and print the result
   --show-prompt   print the prompt and exit, running nothing
@@ -83,6 +93,11 @@ usage: eo_respond [--no-main] [--codex] [--print] [--show-prompt] NAME Dn
 **Naming the topic is what authorises answering it**, so a run without one is
 refused rather than quietly narrowed. For *what has anybody addressed to us*,
 which names no topic, run eo_listen.
+
+**The work is left staged and not committed**, the convention every command in
+eo_cmd/ that changes a tree keeps: the diff is the review. `--push` commits it
+and pushes it instead, and stops rather than forcing a push that is rejected.
+The reply draft is a *.local.md and is staged by neither.
 
 **It stops where your instruction and the topic disagree**, which is the one
 thing a habitual sweep cannot do: it says where they differ and waits, rather
@@ -94,6 +109,7 @@ USAGE
 while [ $# -gt 0 ]; do
   case "$1" in
     --no-main) MAIN=0; shift ;;
+    --push) PUSH=1; shift ;;
     --codex) AGENT=codex; shift ;;
     --claude) AGENT=claude; shift ;;
     --print) PRINT=1; shift ;;
@@ -203,6 +219,19 @@ else
   PULL="**Begin with \`git pull --ff-only\` on the current branch; do not switch branches.**"
 fi
 
+# Where the work is left, in the words every command in this directory uses for
+# it. Staged is the default because the diff is the review; `--push` is the
+# person who ran this saying they do not want one.
+if [ "$PUSH" = 1 ]; then
+  HANDOFF="**Commit the work and push it**: \`git add\` what you changed, commit with a
+message saying what changed and why, and \`git push\`. If there is no upstream to
+push to, or the push is rejected, say so and stop rather than forcing it or
+rewriting history."
+else
+  HANDOFF="**Leave the work staged and not committed**: \`git add\` what you changed and
+stop there, so a person reviews a diff rather than a history."
+fi
+
 read -r -d '' PROMPT <<PROMPT_END || true
 You are answering correspondence in **$US**, at $US_ROOT — one repository of the
 **Eunoia ecosystem**, a group of tools built around the Eunoia language and the
@@ -220,9 +249,9 @@ accounts of what is wanted against each other: what the human asked for by namin
 $TOPIC, and what $TOPIC says. **If they disagree, stop** — do not reconcile them, do not take
 the more plausible reading, and do not do the smaller safe part; say exactly where
 they differ and wait for a person. Otherwise make the change $TOPIC asks for here
-in $US and leave it staged, draft the reply in \`discussion-response.local.md\` at
+in $US, draft the reply in \`discussion-response.local.md\` at
 this root, unstaged, and finish with anything in $TOPIC that points at a defect on
-our side. **Read their tree, write in no tree but this one, and send nothing
+our side. $HANDOFF **Read their tree, write in no tree but this one, and send nothing
 anywhere** — every message that reaches somebody who did not ask for it is sent by
 a person.
 PROMPT_END
@@ -244,7 +273,9 @@ PROMPT=$(wrapped)
 command -v "$AGENT" >/dev/null 2>&1 || {
   echo "eo_respond: $AGENT is not on PATH" >&2; exit 127; }
 
-echo "-- eo_respond: $NAME ($TARGET) $TOPIC -> $US, via $AGENT" >&2
+WHAT="left staged"
+[ "$PUSH" = 1 ] && WHAT="committed and pushed"
+echo "-- eo_respond: $NAME ($TARGET) $TOPIC -> $US, $WHAT, via $AGENT" >&2
 [ -n "$PRES_DIR" ] && echo "--   the standard: $PRES, at $PRES_DIR/docs" >&2
 
 cd "$US_ROOT"

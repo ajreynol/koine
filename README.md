@@ -73,7 +73,9 @@ eo_cmd/eo_git_status
 The first command appends a JSON dump to a bug database. The installer puts the
 shared commands on your PATH; the preview shows the work an assistant would be
 asked to do. `eo_housekeeping` and `eo_respond` ensure `main` before pulling;
-`--no-main` keeps the current branch. Their [command guide](eo_cmd/README.md)
+`--no-main` keeps the current branch. **Every command that changes a tree leaves
+the work staged and not committed**, and `--push` commits and pushes it instead.
+Their [command guide](eo_cmd/README.md)
 describes the options and failure behavior. `eo_git_status` reads nearby
 checkouts and linked worktrees without fetching; give it extra directories for
 checkouts elsewhere.

@@ -48,6 +48,14 @@
 # declaration it could not write without naming somebody else's repositories was
 # a declaration it should not write at all.
 #
+# **HOW THE WORK IS LEFT IS ONE CONVENTION ACROSS `eo_cmd/`**: staged and not
+# committed, because the diff is the review -- and here that diff is a claim
+# about this repository made in its own voice, which is the diff most worth a
+# person reading before it exists in a history. `--push` commits and pushes it
+# instead. **That is somebody deciding to publish a declaration**, which is the
+# decision logos reversed above, so the flag exists and does not volunteer
+# itself: it says what it does and the person types it or does not.
+#
 # **"I think I already complied with this" is a normal answer, and it is not the
 # same as compliance.** Run this on a tree that already has the shape and an
 # agent will often say so and stop, which is correct behaviour: the request is
@@ -98,6 +106,7 @@ AGENT=claude
 PRINT=0
 SHOW=0
 SOFT=0
+PUSH=0
 
 usage() {
   # An explicit --help is a request, not a mistake: it goes to stdout and exits
@@ -113,7 +122,7 @@ any checkout of the ecosystem. An assistant edits that tree -- a README
 section, docs/maintenance.md, sometimes a CI workflow -- and leaves the work
 staged for you to review.
 
-usage: eo_join [--soft] [--codex] [--print] [--show-prompt]
+usage: eo_join [--soft] [--push] [--codex] [--print] [--show-prompt]
 
   (no flag)       join, and declare it on the front page: the declaration,
                   the CI workflow the policy page gives, and a local run of
@@ -121,9 +130,16 @@ usage: eo_join [--soft] [--codex] [--print] [--show-prompt]
   --soft          claim nothing: one README section saying this repository
                   works with the Eunoia ecosystem and is held to none of its
                   policy. No workflow, no checker, no footing
+  --push          commit the work and push it, instead of leaving it staged
   --codex         run codex instead of claude
   --print         run non-interactively and print the result
   --show-prompt   print the prompt and exit, running nothing
+
+**The work is left staged and not committed**, the convention every command in
+eo_cmd/ that changes a tree keeps: the diff is the review, and this diff is a
+declaration made on a front page in that repository's own voice. --push commits
+and pushes it instead -- that is the moment the declaration is published, and it
+is yours to decide rather than a run's.
 
 The two are different claims, not amounts of one, and --soft is not a quieter
 join: it names this ecosystem on a front page and says the repository is held to
@@ -137,6 +153,7 @@ USAGE
 while [ $# -gt 0 ]; do
   case "$1" in
     --soft) SOFT=1; shift ;;
+    --push) PUSH=1; shift ;;
     # Both were forms of this command until 2026-09-18 and both are named in
     # pages this repository does not own, so a run that finds one says what
     # happened rather than *unknown option*.
@@ -200,11 +217,11 @@ Read it, then do what it says, here:
 Change nothing the check does not ask for, and add no file it does not ask for.
 Where the page and this prompt disagree, the page is right.
 
-Leave the work staged and not committed: `git add` what you changed and stop
-there, so a maintainer reviews a diff rather than a history. Then say, in one
-paragraph: what you changed, what
-the check still reports, and anything the page asked for that does not fit this
-repository -- that last one is worth more to us than a clean run.
+Then say, in one paragraph: what you changed, what the check still reports, and
+anything the page asked for that does not fit this repository -- that last one
+is worth more to us than a clean run.
+
+@HANDOFF@
 PROMPT_END
 
 read -r -d '' SOFT_PROMPT <<'SOFT_PROMPT_END' || true
@@ -257,13 +274,29 @@ ecosystem, and the section must not say or imply that it is: naming it and
 joining it are different claims, and only the first is being made. Where the page
 and this prompt disagree, the page is right.
 
-Leave the work staged and not committed: `git add README.md` and stop there, so
-a maintainer reviews a diff rather than a history. Then say, in one paragraph:
-what the section now claims about who maintains this repository, and what you
-could not establish from the tree and left for a person to write.
+Then say, in one paragraph: what the section now claims about who maintains this
+repository, and what you could not establish from the tree and left for a person
+to write.
+
+@HANDOFF@
 SOFT_PROMPT_END
 
+# Where the work is left, in the words every command in this directory uses for
+# it. Staged is the default because the diff is the review, and here the diff is
+# a declaration made in somebody's own voice on their own front page: `--push`
+# is the person who ran this saying they have already decided that.
+if [ "$PUSH" = 1 ]; then
+  HANDOFF="**Commit the work and push it**: \`git add\` what you changed, commit with a
+message saying what changed and why, and \`git push\`. If there is no upstream to
+push to, or the push is rejected, say so and stop rather than forcing it or
+rewriting history."
+else
+  HANDOFF="**Leave the work staged and not committed**: \`git add\` what you changed and
+stop there, so a person reviews a diff rather than a history."
+fi
+
 if [ "$SOFT" = 1 ]; then PROMPT=$SOFT_PROMPT; fi
+PROMPT=${PROMPT//@HANDOFF@/$HANDOFF}
 
 if [ "$SHOW" = 1 ]; then printf '%s\n' "$PROMPT"; exit 0; fi
 
@@ -278,6 +311,8 @@ fi
 
 WHAT=joining
 if [ "$SOFT" = 1 ]; then WHAT="the note only, held to none of it"; fi
+if [ "$PUSH" = 1 ]; then WHAT="$WHAT, committed and pushed"
+else WHAT="$WHAT, left staged"; fi
 echo "-- eo_join: $(basename "$ROOT") ($ROOT), $WHAT, via $AGENT" >&2
 
 cd "$ROOT"

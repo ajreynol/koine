@@ -86,6 +86,34 @@ advertised form with an empty home directory and no neighboring repositories.
 they must ask you what to write. `eo_status`, `eo_git_status`, `eo_listen` and
 `koine_append_db` are programs, so they do not take `--show-prompt`.
 
+## How the work is left
+
+**Every command here that changes a tree leaves the work staged and not
+committed.** The prompts say so in the same words, because the diff is the
+review: a person reads what an assistant did before any of it is in a history
+somebody has to undo. `*.local.md` files — `init-brief.local.md`,
+`discussion-response.local.md`, `brainstorm.local.md`, `housekeeping.local.md` —
+are not staged at all.
+
+**`--push` is the one thing that changes that.** It tells the assistant to
+commit the work with a message saying what changed and why, and to `git push`.
+Where there is no upstream, or the push is rejected, the run says so and stops;
+it does not force a push or rewrite history. `eo_housekeeping --push` commits
+after CI passes, which is still the final step of the work.
+
+| command | `--push` |
+| --- | --- |
+| `eo_join` | yes. It publishes a declaration made on a front page in that repository's own voice |
+| `eo_init` | yes, after the mode: `eo_init new --push` |
+| `eo_topic` | yes. It pushes to your own remote and still sends the topic to nobody |
+| `eo_child` | yes |
+| `eo_respond` | yes, for the change; the reply draft stays an unstaged `*.local.md` |
+| `eo_housekeeping` | yes, unless `--report`, which is refused with that pair |
+| `eo_brainstorm` | refused: it changes nothing, so there is nothing to push |
+
+The programs — `eo_status`, `eo_git_status`, `eo_listen` — write nothing and
+reject the flag as an unknown argument.
+
 ## What koine may change here, and what it may not
 
 As checked on 2026-09-18, [kanon's role
@@ -102,10 +130,13 @@ here. Maintaining the command does not authorize changing the rule it states.
 ```console
 $ eo_join
 $ eo_join --soft
+$ eo_join --push
 ```
 
 Run in the repository making the declaration. Both forms ask whether the
 repository is yours alone to speak for; commit access does not establish that.
+Both leave the work staged. `--push` publishes the declaration instead, which is
+a decision to make before typing it rather than one a run makes.
 
 `eo_join` points to the president's joining policy, adds the membership note
 and the policy workflow it specifies, and runs the corresponding checker
@@ -160,6 +191,7 @@ options, and performs no writes, branch changes, fetches or pulls.
 ```console
 $ eo_respond kanon D14
 $ eo_respond --no-main kanon D14
+$ eo_respond --push kanon D14
 ```
 
 Run at the root of **your** repository. The prompt first asks the assistant to
@@ -173,7 +205,8 @@ The topic is required before an assistant can be launched. The prompt checks
 that the human's instruction and the named topic agree; disagreement stops the
 work. The other repository is read as it stands and never pulled or written.
 Changes here are left staged, and the reply is drafted in
-`discussion-response.local.md`, unstaged. Nothing is sent.
+`discussion-response.local.md`, unstaged. `--push` commits and pushes the
+change; the reply draft stays unstaged either way. Nothing is sent.
 
 A real run refuses if the target checkout or its discussion file is absent;
 a preview prints the prompt with that limitation. To print
@@ -187,6 +220,7 @@ $ eo_housekeeping
 $ eo_housekeeping --no-main
 $ eo_housekeeping --report
 $ eo_housekeeping --report --no-main
+$ eo_housekeeping --push
 ```
 
 Run at the root of the repository being tidied. The first paragraph points to
@@ -201,6 +235,10 @@ The second paragraph asks the assistant to **ensure `main` and run
 answers topics whose `To:` names this repository, fixes its tooling, opens local
 topics for requests to others, and ensures CI passes as the final step. Children
 are included in their parent's work; they open no correspondence of their own.
+
+The work is left staged and not committed; `--push` commits it and pushes it
+once CI has passed. `--report --push` is refused, because a report writes only
+an ignored file.
 
 **`--report` also switches to `main` and pulls**, unless `--no-main` suppresses
 the switch. Beyond that preparation it writes only `housekeeping.local.md`,
@@ -218,11 +256,13 @@ writes in no other tree, and sends nothing. This override does not extend to
 ```console
 $ eo_topic kanon
 $ eo_topic anoieu logos
+$ eo_topic --push kanon
 ```
 
 Run in your repository. The assistant asks what you want to say and waits;
 `--print` is refused. It drafts and stages one topic in `docs/discussion.md`,
-addressed to the named tools, and sends nothing.
+addressed to the named tools, and sends nothing. `--push` commits and pushes it
+to your own remote, which is still not sending it to anybody.
 
 The prompt supplies the date, the target checkout's commit and dirty state,
 and the next available topic ID. IDs are allocated above every ID in this
@@ -237,13 +277,15 @@ before drafting. Other repositories are read and never written.
 ```console
 $ eo_child euthyna
 $ eo_child --unadvertised euthyna
+$ eo_child --push euthyna
 ```
 
 Naming the child is the human instruction to start `tools/<name>/`; a run
 without a name is refused. The assistant asks for the question, goals, and
 boundaries rather than inventing a charter. `--print` is refused.
 
-A child reads other trees but writes only within its own directory. It imports
+The work is left staged; `--push` commits and pushes it. A child reads other
+trees but writes only within its own directory. It imports
 nothing from its parent and participates in none of the parent's tests or CI.
 `--unadvertised` records that preference and adds no inward links. The register
 is the president's to update; this command writes only in the current tree.
@@ -258,7 +300,7 @@ $ eo_brainstorm proof reconstruction
 Run in your repository. The assistant reads the local tools and cvc5 checkout,
 records ideas and rejected ideas in `brainstorm.local.md`, then discusses the
 list with you. `--print` produces the list without that conversation. It stages
-nothing and implements nothing.
+nothing and implements nothing, and `--push` is refused with that reason.
 
 Each idea identifies the evidence it uses. Missing checkouts and claims resting
 on memory or the network are marked as limitations. A proposed tool or child is
@@ -326,9 +368,11 @@ invalid arguments or configuration give exit 2. No assistant is launched.
 ```console
 $ eo_init new
 $ eo_init from-child <path>
+$ eo_init new --push
 ```
 
-Run in a new repository supplied by a person. The mode is required. `new`
+Run in a new repository supplied by a person. The mode is required and comes
+first, so `--push` follows it. `new`
 uses the person's name and scope and checks the glossary for conflicts;
 `from-child` reads the child's charter and delivered work without changing its
 parent. Both write a README and leave it staged.

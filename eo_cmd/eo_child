@@ -33,6 +33,11 @@
 #        is changed by a person**. The prompt says what the entry would say and
 #        writes nowhere but this tree.
 #
+# **HOW THE WORK IS LEFT IS ONE CONVENTION ACROSS `eo_cmd/`**: staged and not
+#        committed, because the diff is the review, and `--push` is the person
+#        who ran this saying they do not want one. Neither changes what the
+#        work is -- one directory under `tools/`, and nothing else in this tree.
+#
 # THE PRESIDENT IS LOOKED UP, NEVER WRITTEN IN. The register says who holds the
 #        office and lives in the office's tree, so finding the file is finding
 #        the president. Duplicated from the other commands on purpose: each is
@@ -44,6 +49,7 @@ AGENT=claude
 PRINT=0
 SHOW=0
 UNADV=0
+PUSH=0
 NAME=""
 
 usage() {
@@ -58,11 +64,12 @@ Run it at the root of your own repository. A child project is a potential tool
 investigated by writing it down first: it reads the ecosystem, writes only
 inside its own directory, and is not part of what this repository ships.
 
-usage: eo_child [--unadvertised] [--codex] [--show-prompt] NAME
+usage: eo_child [--unadvertised] [--push] [--codex] [--show-prompt] NAME
 
   NAME            what the child is called. **Required**
   --unadvertised  record the unadvertised-child footing, with your reason, so
                   nothing here links inward to it. The default is advertised
+  --push          commit the work and push it, instead of leaving it staged
   --codex         run codex instead of claude
   --show-prompt   print the prompt and exit, running nothing
 
@@ -79,6 +86,10 @@ else's name on it. --print is refused for the same reason: it has nobody to ask.
 **It is an island.** It writes inside tools/NAME/ and nowhere else: nothing on
 the import path, nothing in the test suite, nothing in CI. Deleting the
 directory is the test.
+
+**The work is left staged and not committed**, the convention every command in
+eo_cmd/ that changes a tree keeps: the diff is the review. `--push` commits it
+and pushes it instead, and stops rather than forcing a push that is rejected.
 USAGE
   exit $code
 }
@@ -86,6 +97,7 @@ USAGE
 while [ $# -gt 0 ]; do
   case "$1" in
     --unadvertised) UNADV=1; shift ;;
+    --push) PUSH=1; shift ;;
     --codex) AGENT=codex; shift ;;
     --claude) AGENT=claude; shift ;;
     --show-prompt) SHOW=1; shift ;;
@@ -201,6 +213,19 @@ inward to it from the front page or the docs index on your own initiative; what
 **$US** advertises is the maintainer's call, made later and separately."
 fi
 
+# Where the work is left, in the words every command in this directory uses for
+# it. Staged is the default because the diff is the review; `--push` is the
+# person who ran this saying they do not want one.
+if [ "$PUSH" = 1 ]; then
+  HANDOFF="**Commit the work and push it**: \`git add\` what you changed, commit with a
+message saying what changed and why, and \`git push\`. If there is no upstream to
+push to, or the push is rejected, say so and stop rather than forcing it or
+rewriting history."
+else
+  HANDOFF="**Leave the work staged and not committed**: \`git add\` what you changed and
+stop there, so a person reviews a diff rather than a history."
+fi
+
 read -r -d '' PROMPT <<PROMPT_END || true
 You are starting a child project called **$NAME** in **$US**, at $US_ROOT — one
 repository of the **Eunoia ecosystem**, a group of tools built around the Eunoia
@@ -222,9 +247,9 @@ explicit list of what is **out of scope** — with the etymology, what evidence 
 **$US** this builds on, and who remains the authority on any subject it also
 describes. $ADVERTISE **Write inside \`tools/$NAME/\` and nowhere else in this
 tree**: nothing on the import path, nothing in the test suite, nothing in CI —
-deleting the directory must change nothing — and leave it staged. The register of
+deleting the directory must change nothing. The register of
 which children exist is the president's and **a person writes that entry**: say
-what it would say, and open nothing anywhere.
+what it would say, and open nothing anywhere. $HANDOFF
 PROMPT_END
 
 wrapped() {
@@ -246,6 +271,7 @@ command -v "$AGENT" >/dev/null 2>&1 || {
 
 WHAT="advertised"
 [ "$UNADV" = 1 ] && WHAT="unadvertised"
+[ "$PUSH" = 1 ] && WHAT="$WHAT, committed and pushed"
 echo "-- eo_child: tools/$NAME in $US ($US_ROOT), $WHAT, via $AGENT" >&2
 [ -n "$PRES_DIR" ] && echo "--   the standard: $PRES, at $PRES_DIR/docs" >&2
 echo "--   it will ask you what the child is for before it writes anything" >&2

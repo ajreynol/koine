@@ -469,8 +469,18 @@ def test_housekeeping_states_the_goal_and_ends_on_ci():
     ok("bugs in our own tooling", "bugs in our own tooling" in flat)
     ok("a topic for what needs somebody else",
        "opening a topic in `docs/discussion.md`" in flat)
+    # CI is the last step of the work, and the only thing after it is what
+    # happens to the work -- which, under --push, is a commit that must not
+    # happen before CI has passed.
     ok("and CI is the final step",
-       flat.rstrip().endswith("**Ensure CI passes here as a final step.**"))
+       "**Ensure CI passes here as a final step.**" in flat)
+    after = flat.split("**Ensure CI passes here as a final step.**")[1]
+    ok("with nothing after it but where the work is left",
+       after.strip().startswith("**Leave the work staged and not committed**"))
+    pushed = " ".join(show("eo_housekeeping", "--push").stdout.split())
+    ok("and --push commits only after CI has passed",
+       pushed.index("Ensure CI passes here")
+       < pushed.index("**Commit the work and push it**"))
 
     report = " ".join(show("eo_housekeeping", "--report").stdout.split())
     ok("--report changes nothing", "**Change nothing**" in report)
@@ -712,6 +722,90 @@ def test_brainstorm_changes_nothing_and_says_what_new_is_measured_against():
        "nothing there worth building" in focused)
 
 
+def test_the_work_is_left_staged_unless_a_person_asks_for_a_push():
+    """Where the work is left, which is one convention rather than each
+    command's own decision.
+
+    Every command here that changes a tree ends by saying what happens to the
+    work, **in the same words**, because a person who learned it from one
+    command has learned it from all of them. The default is staged and not
+    committed: the diff is the review, and an assistant that commits has put
+    its work into a history somebody has to undo rather than a diff they can
+    decline. `eo_housekeeping` said nothing at all about this until now, which
+    is exactly the gap a shared convention closes -- the instruction was in the
+    maintenance notes of one repository and nowhere an assistant would read it.
+
+    `--push` is the person who ran it saying they do not want that review. It
+    is the only thing that changes where the work is left, and it is checked
+    the same way: the same words in every command, and a refusal to force a
+    push that is rejected -- a command that rewrote somebody's history to
+    deliver its own work would be worse than one that never pushed.
+
+    A command that changes nothing has nothing to push, and says so rather than
+    accepting the flag and ignoring it: a person who typed it believed the run
+    would produce something.
+    """
+    print("where the work is left, and the one flag that changes it")
+    STAGED = ("**Leave the work staged and not committed**: `git add` what you "
+              "changed and stop there, so a person reviews a diff rather than "
+              "a history.")
+    PUSHED = ("**Commit the work and push it**: `git add` what you changed, "
+              "commit with a message saying what changed and why, and "
+              "`git push`. If there is no upstream to push to, or the push is "
+              "rejected, say so and stop rather than forcing it or rewriting "
+              "history.")
+    # Every prompt command that changes a tree, in a form that previews
+    # anywhere. eo_brainstorm is absent because it changes nothing, which is
+    # checked below rather than here.
+    CHANGES_A_TREE = (("eo_join", []), ("eo_join", ["--soft"]),
+                      ("eo_init", ["new"]), ("eo_init", ["from-child", ROOT]),
+                      ("eo_topic", ["kanon"]), ("eo_child", ["euthyna"]),
+                      ("eo_respond", ["kanon", "D14"]), ("eo_housekeeping", []))
+
+    for command, args in CHANGES_A_TREE:
+        label = " ".join([command, *args]) if args else command
+        # eo_init takes its mode first, so the flag goes after the arguments --
+        # which is where every command here accepts it.
+        staged = " ".join(show(command, *args).stdout.split())
+        pushed = " ".join(show(command, *args, "--push").stdout.split())
+        ok(f"{label} leaves the work staged, in the shared words",
+           STAGED in staged)
+        # *commit* appears in these prompts for other reasons -- commit
+        # access, the commit somebody else's tree was read at -- so what is
+        # checked is that the staged form asks for neither of the two
+        # operations that put the work somewhere a person cannot decline it.
+        ok(f"{label} asks for no commit and no push unless pushing",
+           "git commit" not in staged and "git push" not in staged)
+        ok(f"{label} --push commits and pushes, in the shared words",
+           PUSHED in pushed)
+        ok(f"{label} --push says it where the staged form said it",
+           STAGED not in pushed)
+
+    # The commands that produce nothing to push say so, rather than taking the
+    # flag and quietly doing nothing with it.
+    out = subprocess.run([os.path.join(STORE, "eo_brainstorm"), "--push"],
+                         capture_output=True, text=True)
+    check("eo_brainstorm refuses --push", out.returncode, 2)
+    ok("and says it changes nothing", "changes" in out.stderr
+       and "brainstorm.local.md" in out.stderr)
+    ok("and prints no prompt", out.stdout.strip() == "")
+
+    out = subprocess.run([os.path.join(STORE, "eo_housekeeping"),
+                          "--report", "--push"], capture_output=True, text=True)
+    check("eo_housekeeping --report --push is refused", out.returncode, 2)
+    ok("and says a report has nothing to commit",
+       "nothing for --push to commit" in out.stderr)
+    ok("and prints no prompt", out.stdout.strip() == "")
+
+    # The convention is written down where the roster is, so that a command
+    # added later has something to be consistent with.
+    ok("the manifest records the convention",
+       "--push" in manifest()["handoff"])
+    page = open(os.path.join(STORE, "README.md"), encoding="utf-8").read()
+    ok("and this directory's page has the section it names",
+       "## How the work is left" in page)
+
+
 def test_housekeeping_names_the_president_it_was_told_of():
     """Who holds the office is read, never written in.
 
@@ -894,6 +988,7 @@ def main():
                  test_the_working_prompts_pull_before_they_work,
                  test_branch_options_reach_the_assistant_without_changing_the_checkout,
                  test_housekeeping_takes_in_the_child_projects,
+                 test_the_work_is_left_staged_unless_a_person_asks_for_a_push,
                  test_brainstorm_changes_nothing_and_says_what_new_is_measured_against,
                  test_housekeeping_names_the_president_it_was_told_of,
                  test_every_form_previews_on_a_machine_with_nothing_on_it,

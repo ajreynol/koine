@@ -31,6 +31,12 @@
 #        before it writes, because a finding filed as a topic reaches a
 #        maintainer with no reproducer and no state.
 #
+# **HOW THE WORK IS LEFT IS ONE CONVENTION ACROSS `eo_cmd/`**: staged and not
+#        committed, because the diff is the review, and `--push` is the person
+#        who ran this saying they do not want one. **Neither of them contacts
+#        anybody** -- a push puts the topic on our own remote, where it is still
+#        a topic nobody has carried.
+#
 # THE PRESIDENT IS LOOKED UP, NEVER WRITTEN IN. The register says who holds the
 #        office and lives in the office's tree, so finding the file is finding
 #        the president -- and the prompt keeps pointing at the standard after
@@ -41,6 +47,7 @@ set -euo pipefail
 
 AGENT=claude
 SHOW=0
+PUSH=0
 NAMES=()
 
 usage() {
@@ -55,10 +62,11 @@ Run it at the root of your own repository, naming who the topic is for. It
 writes docs/discussion.md here and leaves it staged; their tree is read and
 never written, and nothing is sent anywhere -- a topic is carried by a person.
 
-usage: eo_topic [--codex] [--show-prompt] NAME [NAME...]
+usage: eo_topic [--push] [--codex] [--show-prompt] NAME [NAME...]
 
   NAME            who the topic is addressed to. **Required**, by the name
                   that tool uses for itself
+  --push          commit the topic and push it, instead of leaving it staged
   --codex         run codex instead of claude
   --show-prompt   print the prompt and exit, running nothing
 
@@ -75,12 +83,18 @@ Git history and nowhere else.
 **A finding is not a topic.** If what you want to say has a file and a line
 number, it goes through the reporting workflow instead, and the prompt stops and
 tells you so rather than writing it here.
+
+**The topic is left staged and not committed**, the convention every command in
+eo_cmd/ that changes a tree keeps: the diff is the review. `--push` commits and
+pushes it instead. Neither contacts the tool it is addressed to -- a push puts
+it on your own remote, and a person still carries it from there.
 USAGE
   exit $code
 }
 
 while [ $# -gt 0 ]; do
   case "$1" in
+    --push) PUSH=1; shift ;;
     --codex) AGENT=codex; shift ;;
     --claude) AGENT=claude; shift ;;
     --show-prompt) SHOW=1; shift ;;
@@ -200,6 +214,20 @@ advertises a way to reach somebody who is not listening. The first id is
 \`$NEXT\`."
 fi
 
+# Where the work is left, in the words every command in this directory uses for
+# it. Staged is the default because the diff is the review; `--push` is the
+# person who ran this saying they do not want one. Neither sends the topic
+# anywhere: a push moves it to our own remote, and a person still carries it.
+if [ "$PUSH" = 1 ]; then
+  HANDOFF="**Commit the work and push it**: \`git add\` what you changed, commit with a
+message saying what changed and why, and \`git push\`. If there is no upstream to
+push to, or the push is rejected, say so and stop rather than forcing it or
+rewriting history."
+else
+  HANDOFF="**Leave the work staged and not committed**: \`git add\` what you changed and
+stop there, so a person reviews a diff rather than a history."
+fi
+
 read -r -d '' PROMPT <<PROMPT_END || true
 You are opening one topic in **$US**, at $US_ROOT, addressed to ${NAMES[*]} — one
 repository of the **Eunoia ecosystem**, a group of tools built around the Eunoia
@@ -222,7 +250,7 @@ claiming less standing costs us nothing — **Opened:** with today's date and th
 commit you checked their tree at, and **Settles when:**, which is required and
 has to be answerable; if what they told you does not give you one, ask again
 rather than inventing one. **Never open a topic about somebody else's discussion
-file.** Then \`git add\` it and stop: **nothing is sent anywhere** — addressing is
+file.** $HANDOFF Either way **nothing is sent anywhere** — addressing is
 not contacting, and a person decides whether this is ever carried.
 PROMPT_END
 
@@ -243,7 +271,9 @@ PROMPT=$(wrapped)
 command -v "$AGENT" >/dev/null 2>&1 || {
   echo "eo_topic: $AGENT is not on PATH" >&2; exit 127; }
 
-echo "-- eo_topic: $US ($US_ROOT) -> ${NAMES[*]}, as $NEXT, via $AGENT" >&2
+WHAT="left staged"
+[ "$PUSH" = 1 ] && WHAT="committed and pushed"
+echo "-- eo_topic: $US ($US_ROOT) -> ${NAMES[*]}, as $NEXT, $WHAT, via $AGENT" >&2
 [ -n "$PRES_DIR" ] && echo "--   the standard: $PRES, at $PRES_DIR/docs" >&2
 echo "--   it will ask you what you want to say before it writes anything" >&2
 

@@ -44,6 +44,13 @@
 #        for rather than something this run does. `--print` has nobody to talk
 #        to and gets the list alone.
 #
+# **`--push` IS REFUSED RATHER THAN IGNORED.** Every other command in
+#        `eo_cmd/` that changes a tree leaves the work staged and takes `--push`
+#        to commit and push it instead. This one changes nothing, so the flag
+#        has nothing to carry -- and a person who typed it believed this run
+#        would produce something to push, which is worth answering rather than
+#        accepting silently.
+#
 # THE PRESIDENT IS LOOKED UP, NEVER WRITTEN IN. The register says who holds the
 #        office and lives in the office's tree, so finding the file is finding
 #        the president -- and the prompt keeps pointing at the standard after the
@@ -90,6 +97,10 @@ policy breaks on purpose -- so this proposes, and creates neither.
 
 **It asks what the vision rules out, too.** A list of features with no
 rejections in it is evidence that nothing was read.
+
+**--push is refused.** The other commands here leave their work staged and take
+that flag to commit and push it instead; this one stages nothing, so there is
+nothing for it to carry.
 USAGE
   exit $code
 }
@@ -100,6 +111,12 @@ while [ $# -gt 0 ]; do
     --claude) AGENT=claude; shift ;;
     --print) PRINT=1; shift ;;
     --show-prompt) SHOW=1; shift ;;
+    --push)
+      echo "eo_brainstorm: --push is refused. It commits and pushes the work" >&2
+      echo "         the other commands here leave staged, and this one changes" >&2
+      echo "         nothing: the list goes to brainstorm.local.md, which the" >&2
+      echo "         record does not keep." >&2
+      exit 2 ;;
     -h|--help) usage ;;
     -*) echo "eo_brainstorm: unknown option $1" >&2; usage error ;;
     *) FOCUS="${FOCUS:+$FOCUS }$1"; shift ;;

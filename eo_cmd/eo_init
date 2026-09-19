@@ -44,6 +44,7 @@ set -euo pipefail
 AGENT=claude
 PRINT=0
 SHOW=0
+PUSH=0
 
 usage() {
   # --help is a request: stdout, exit 0. A wrong mode is a mistake: stderr, 2.
@@ -60,19 +61,25 @@ of the ecosystem. An assistant writes README.md there and leaves it staged.
 layout, no policy -- `eo_join` does all of that later. Knowing what you are
 building is what makes the rest decidable.
 
-usage: eo_init new                 [--codex] [--print] [--show-prompt]
-       eo_init from-child <path>   [--codex] [--print] [--show-prompt]
+usage: eo_init new               [--push] [--codex] [--print] [--show-prompt]
+       eo_init from-child <path> [--push] [--codex] [--print] [--show-prompt]
 
   new                an empty repository. Written from the ecosystem glossary
                      and from what you say the tool is for
   from-child <path>  work graduating out of another tree here. <path> is that
                      directory, read and never written
+  --push             commit the work and push it, instead of leaving it staged
   --codex            run codex instead of claude
   --print            run non-interactively and print the result
   --show-prompt      print the prompt and exit, running nothing
 
 The mode is required: guessing wrong produces a confident README about the
 wrong thing. --show-prompt prints exactly what an assistant would be handed.
+
+**The work is left staged and not committed**, the convention every command in
+eo_cmd/ that changes a tree keeps: the diff is the review. --push commits it and
+pushes it instead, and stops rather than forcing a push that is rejected.
+init-brief.local.md is staged by neither.
 USAGE
   exit $code
 }
@@ -94,6 +101,7 @@ esac
 
 while [ $# -gt 0 ]; do
   case "$1" in
+    --push) PUSH=1; shift ;;
     --codex) AGENT=codex; shift ;;
     --claude) AGENT=claude; shift ;;
     --print) PRINT=1; shift ;;
@@ -221,10 +229,28 @@ to say where the work lives now. And any role the child held in kanon's
 decision recorded against it survive the move.
 PROMPT_END
 
+# Where the work is left, in the words every command in this directory uses for
+# it. Staged is the default because the diff is the review; `--push` is the
+# person who ran this saying they do not want one. `init-brief.local.md` is
+# staged by neither: `*.local.md` is deliberately not committed.
+if [ "$PUSH" = 1 ]; then
+  HANDOFF="**Commit the work and push it**: \`git add\` what you changed, commit with a
+message saying what changed and why, and \`git push\`. If there is no upstream to
+push to, or the push is rejected, say so and stop rather than forcing it or
+rewriting history."
+else
+  HANDOFF="**Leave the work staged and not committed**: \`git add\` what you changed and
+stop there, so a person reviews a diff rather than a history."
+fi
+
 read -r -d '' CLOSE <<'PROMPT_END' || true
-Leave the work staged and not committed. Then say in two sentences what you took
-the scope to be, so a person can correct it before anything is built on it.
+Then say in two sentences what you took the scope to be, so a person can correct
+it before anything is built on it.
+
+@HANDOFF@
 PROMPT_END
+
+CLOSE=${CLOSE//@HANDOFF@/$HANDOFF}
 
 # Joined explicitly: `read` strips a heredoc's leading newline, so a blank line
 # between two sections has to be put back here rather than assumed.
@@ -251,7 +277,9 @@ command -v "$AGENT" >/dev/null 2>&1 || {
   echo "eo_init: $AGENT is not on PATH" >&2; exit 127; }
 
 ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-echo "-- eo_init $MODE: $(basename "$ROOT") ($ROOT), via $AGENT" >&2
+WHAT="left staged"
+[ "$PUSH" = 1 ] && WHAT="committed and pushed"
+echo "-- eo_init $MODE: $(basename "$ROOT") ($ROOT), $WHAT, via $AGENT" >&2
 [ "$MODE" = from-child ] && echo "--   from: $CHILD" >&2
 
 cd "$ROOT"
