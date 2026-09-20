@@ -171,13 +171,14 @@ if [ -n "$PRES" ] && [ -f "$PRES_DIR/docs/policy.md" ]; then
   STANDARD="Its **president** is **$PRES**, at \`$PRES_DIR\`, and holds the standard:
 \`docs/policy.md\`, whose **\`tools/\`** section is what binds this — what a child is
 for, what a charter must name, what the name has to do, and the numbered rules
-a child is held to. **Read that section; this prompt does not restate it**, and a rule
-paraphrased here is a copy of somebody else's that nothing keeps current."
+a child is held to."
 else
   STANDARD="Its **president** holds the standard — \`docs/policy.md\`, whose
 \`tools/\` section is what binds this — and there is no checkout of it here; take
 it from the link this repository's own README carries."
 fi
+STANDARD="$STANDARD **Read that section; this prompt does not restate it**, and a
+rule paraphrased here is a copy of somebody else's that nothing keeps current."
 
 # The glossary registers the names already in use. A name is a claim in a shared
 # namespace, so the one mechanical thing that can be checked before it is spent

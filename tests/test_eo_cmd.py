@@ -996,6 +996,11 @@ def test_every_form_previews_on_a_machine_with_nothing_on_it():
                    re.search(r"no checkout|not checked out|"
                              r"no other tool of this ecosystem is checked out",
                              out.stdout, re.I) is not None)
+            if command == "eo_child":
+                flat = " ".join(out.stdout.split())
+                ok(f"{label} still sends the reader to the policy section",
+                   "`tools/`" in flat
+                   and "Read that section; this prompt does not restate it" in flat)
     finally:
         shutil.rmtree(tmp)
 
