@@ -361,8 +361,25 @@ wrapped() {
 if [ "$SHOW" = 1 ]; then wrapped; exit 0; fi
 PROMPT=$(wrapped)
 
+# The `*.local.md` convention is a naming convention and nothing else. A
+# `--report` run writes one, and in a repository whose `.gitignore` does not
+# cover it the only thing keeping it out of the history is that nobody types
+# `git add -A`. A run that promised to change nothing will not edit a
+# `.gitignore` either, so it says so instead -- to the person, before the run,
+# who can add the line in one edit. Reported by anoieu on 2026-09-17 against
+# `eo_init`, which writes the line; this is the same gap in a repository that
+# already exists. Duplicated per
+# command on purpose: each is installed as one file and imports nothing.
+local_md_is_ignored() {
+  git -C "$1" check-ignore -q -- "$2" 2>/dev/null
+}
+
 command -v "$AGENT" >/dev/null 2>&1 || {
   echo "eo_housekeeping: $AGENT is not on PATH" >&2; exit 127; }
+if [ "$REPORT" = 1 ] && ! local_md_is_ignored "$US_ROOT" housekeeping.local.md; then
+  echo "-- eo_housekeeping: housekeeping.local.md is not ignored in this repository" >&2
+  echo "--   -- add '*.local.md' to .gitignore, or a 'git add -A' will commit it." >&2
+fi
 
 WHAT="fixing what it can evidence, left staged"
 [ "$PUSH" = 1 ] && WHAT="fixing what it can evidence, committed and pushed"

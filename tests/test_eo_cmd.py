@@ -430,8 +430,8 @@ def test_topic_asks_for_the_topic_and_computes_the_id():
        f"`D{max(ever) + 1}`" in flat)
 
 
-def test_child_is_started_by_a_human_and_stays_an_island():
-    """A child project is somebody's decision and nobody's dependency.
+def test_child_is_started_by_a_human_and_wires_nothing_up():
+    """A child project is somebody's decision, and its boundaries are stated.
 
     The policy's first rule is that a human starts one and a human ends one:
     naming it in argv is that decision, and the charter -- the question it is
@@ -439,12 +439,19 @@ def test_child_is_started_by_a_human_and_stays_an_island():
     by the assistant, which would be the same rule broken with a person's name
     on it.
 
-    The second rule is the island. A child writes inside its own directory and
-    nothing else imports it, in the tree or in CI, and **deleting it is the
-    test**. A prompt that let an assistant wire the child up would produce
-    exactly the coupling the rule forbids, on day one.
+    **The second rule is no longer the island**, and this test used to assert
+    it. Kanon retired mandatory isolation on 2026-09-20: a child may be
+    imported, tested and shipped with its parent, and what replaced the rule is
+    that its boundaries are explicit and documented. The prompt shipped the
+    retired wording -- `deleting the directory must change nothing` -- because
+    it had **paraphrased** the policy instead of pointing at it, which is the
+    failure `eo_housekeeping` was rewritten to avoid. So the assertions below
+    are about what this *run* does: it states the boundaries the charter
+    expects and wires none of them up, because which couplings a child has is
+    the charter's to say and a person's to accept, and an assistant deciding
+    them on day one decides them for everybody afterwards.
     """
-    print("eo_child: a person starts it, and it is an island")
+    print("eo_child: a person starts it, and the run wires nothing up")
     flat = " ".join(show("eo_child", "euthyna").stdout.split())
     ok("the name is the person's and not the assistant's",
        "that name is theirs and not yours to improve" in flat)
@@ -457,10 +464,17 @@ def test_child_is_started_by_a_human_and_stays_an_island():
        "out of scope" in flat and "wishue" in flat)
     ok("it writes in the child's directory and nowhere else",
        "and nowhere else in this tree" in flat)
-    ok("nothing imports it, and CI does not see it",
+    ok("it does not ship the retired island rule",
+       "deleting the directory must change nothing" not in flat
+       and "it is an island" not in flat.lower())
+    ok("it says a child may be coupled to its parent",
+       "may be imported, tested and shipped with its parent" in flat)
+    ok("and that the charter states which couplings, not this run",
+       "a boundary the charter states and a person accepts" in flat)
+    ok("so this run wires none of them up",
        "nothing in the test suite, nothing in CI" in flat)
-    ok("deleting it must change nothing",
-       "deleting the directory must change nothing" in flat)
+    ok("it points at the policy section rather than restating it",
+       "`tools/`" in flat and "this prompt does not restate it" in flat)
     ok("the register entry is a person's", "a person writes that entry" in flat)
     ok("and it opens nothing anywhere", "open nothing anywhere" in flat)
     ok("it stays short enough to be read", len(flat.split()) < 500)
@@ -749,8 +763,8 @@ def test_brainstorm_changes_nothing_and_says_what_new_is_measured_against():
         flat = " ".join(show("eo_brainstorm", *args).stdout.split())
         ok(f"{label} writes the list where the record does not keep it",
            "`brainstorm.local.md`" in flat)
-        ok(f"{label} changes nothing else",
-           "change nothing else**: nothing staged, nothing committed, "
+        ok(f"{label} changes nothing beyond those two",
+           "Change nothing else**: nothing staged, nothing committed, "
            "no topic opened" in flat)
         ok(f"{label} sends nothing anywhere", "send nothing anywhere" in flat
            or "nothing sent anywhere" in flat)
@@ -770,7 +784,23 @@ def test_brainstorm_changes_nothing_and_says_what_new_is_measured_against():
         ok(f"{label} asks them where to start", "where they want to start" in flat)
         ok(f"{label} still builds nothing on its own",
            "the next thing they ask for and not this" in flat)
-        ok(f"{label} stays short enough to be read", len(flat.split()) < 500)
+        # The standing register of ideas the shared policy recommends. A run
+        # that has not read it re-proposes what is in it -- including items
+        # somebody already abandoned, which is the half no run can infer -- and
+        # a run that *wrote* it would be the generator this command refuses to
+        # be. So the file is named either way, and named as not written.
+        ok(f"{label} names the standing register of ideas",
+           "`docs/brainstorm.md`" in flat)
+        ok(f"{label} keeps what survives in it",
+           "add what survives to `docs/brainstorm.md`" in flat
+           or "open `docs/brainstorm.md` for it" in flat)
+        ok(f"{label} records a proposal without adopting one",
+           "adopts nothing" in flat or "documentation index" in flat)
+        # 560 rather than the 500 the other prompts are held to, moved on
+        # 2026-09-20 when the command stopped only writing a scratch list and
+        # started keeping the register as well. The guard is against the 1,749
+        # words this family of prompts reached once, not against sixty.
+        ok(f"{label} stays short enough to be read", len(flat.split()) < 560)
         ok(f"{label} is two paragraphs",
            len([p for p in show("eo_brainstorm", *args).stdout.split("\n\n")
                 if p.strip()]) == 2)
@@ -779,6 +809,18 @@ def test_brainstorm_changes_nothing_and_says_what_new_is_measured_against():
     ok("a focus is quoted back whole", '"proof reconstruction"' in focused)
     ok("and may honestly come back empty",
        "nothing there worth building" in focused)
+
+    # Both halves of the register fragment, because this repository exercises
+    # only one of them: koine keeps no `docs/brainstorm.md`, so a run here can
+    # never render the sentence a repository that keeps one would get.
+    with open(os.path.join(ROOT, "eo_cmd", "eo_brainstorm"), encoding="utf-8") as fh:
+        source = fh.read()
+    ok("a repository that keeps one is told to read it first",
+       "Read \\`docs/brainstorm.md\\` first" in source)
+    ok("a repository that keeps none is told the policy recommends one",
+       "There is no \\`docs/brainstorm.md\\` here" in source)
+    ok("and an abandoned item is named as the reason for reading it",
+       "recorded there as abandoned" in source)
 
 
 def test_the_work_is_left_staged_unless_a_person_asks_for_a_push():
@@ -845,8 +887,9 @@ def test_the_work_is_left_staged_unless_a_person_asks_for_a_push():
     out = subprocess.run([os.path.join(STORE, "eo_brainstorm"), "--push"],
                          capture_output=True, text=True)
     check("eo_brainstorm refuses --push", out.returncode, 2)
-    ok("and says it changes nothing", "changes" in out.stderr
-       and "brainstorm.local.md" in out.stderr)
+    ok("and says what it would have pushed instead",
+       "brainstorm.local.md" in out.stderr
+       and "docs/brainstorm.md" in out.stderr)
     ok("and prints no prompt", out.stdout.strip() == "")
 
     out = subprocess.run([os.path.join(STORE, "eo_housekeeping"),
@@ -967,6 +1010,78 @@ def test_every_form_previews_on_a_machine_with_nothing_on_it():
     ok("and prints no prompt", gone.stdout.strip() == "")
 
 
+def test_the_local_md_convention_has_something_behind_it():
+    """`*.local.md` is a naming convention, and a convention ignores nothing.
+
+    Every command here that writes a working document writes it as a
+    `*.local.md` and tells the assistant not to stage it. In a repository whose
+    `.gitignore` does not carry the rule, that holds exactly until somebody
+    types `git add -A` -- and the file is a brief copied out of a page that has
+    since moved, or a reply draft, or a list of ideas, none of which anybody
+    meant to commit.
+
+    Anoieu reported this on 2026-09-17 as one of two prompt gaps in a topic
+    addressed to kanon -- since settled and removed at their end, which is why
+    the date is the citation -- and kanon answered that **both are koine's
+    commands**.
+    It is closed in two places, because the repository is in two states:
+    `eo_init` writes the `.gitignore` line, since the repository it runs in is
+    new and has no other chance to get one; and the commands that run in a tree
+    that already exists cannot write to a `.gitignore` they promised not to
+    touch, so they say so on stderr before the run, to the person who can add
+    the line in one edit.
+
+    `aisthesis` is why this is a test rather than a note: on 2026-09-20 it was a
+    member repository of this ecosystem with no `.gitignore` at all.
+    """
+    print("the *.local.md convention has a .gitignore behind it")
+    brief = " ".join(show("eo_init", "new").stdout.split())
+    ok("eo_init writes the rule into a new repository",
+       "`*.local.md` to `.gitignore`" in brief)
+    ok("and says why not staging it is not enough",
+       "git add -A" in brief)
+    child = " ".join(show("eo_init", "from-child", ROOT).stdout.split())
+    ok("and does the same when the work is graduating",
+       "`*.local.md` to `.gitignore`" in child)
+
+    # A repository with no rule, and a stub agent so the run reaches its launch.
+    # The arguments differ: eo_brainstorm has no branch flag to give it, and
+    # eo_housekeeping only writes a local file under --report.
+    writers = {"eo_brainstorm": ("brainstorm.local.md", []),
+               "eo_housekeeping": ("housekeeping.local.md", ["--report", "--no-main"])}
+    tmp = tempfile.mkdtemp()
+    try:
+        tree = os.path.join(tmp, "unignoring")
+        os.makedirs(tree)
+        subprocess.run(["git", "init", "-q", tree], check=True)
+        bin_dir = os.path.join(tmp, "bin")
+        os.makedirs(bin_dir)
+        stub = os.path.join(bin_dir, "claude")
+        with open(stub, "w", encoding="utf-8") as fh:
+            fh.write("#!/bin/sh\nexit 0\n")
+        os.chmod(stub, 0o755)
+        # HOME and ANOIEU_REPOS are emptied for the same reason the preview
+        # test empties them: otherwise the run walks every checkout on the
+        # machine it happens to be on, which is slow and not what is under test.
+        env = dict(os.environ, PATH=bin_dir + os.pathsep + os.environ["PATH"],
+                   HOME=tmp, ANOIEU_REPOS="")
+        for name, (fname, args) in writers.items():
+            run = subprocess.run([os.path.join(STORE, name), *args],
+                                 capture_output=True, text=True, cwd=tree, env=env)
+            ok(f"{name} warns that {fname} is not ignored there",
+               fname in run.stderr and ".gitignore" in run.stderr)
+        # And says nothing where the rule is already in place, which is the
+        # half that makes the warning worth reading when it does appear.
+        with open(os.path.join(tree, ".gitignore"), "w", encoding="utf-8") as fh:
+            fh.write("*.local.md\n")
+        quiet = subprocess.run([os.path.join(STORE, "eo_brainstorm"),],
+                               capture_output=True, text=True, cwd=tree, env=env)
+        ok("and says nothing once the rule is there",
+           "is not ignored" not in quiet.stderr)
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
 def test_help_says_why_and_where():
     """--help has to answer *what is this* and *where do I stand*, on stdout.
 
@@ -1045,7 +1160,7 @@ def main():
                  test_the_soft_note_the_prompt_asks_for_passes_the_checker,
                  test_the_gate_is_in_argv,
                  test_topic_asks_for_the_topic_and_computes_the_id,
-                 test_child_is_started_by_a_human_and_stays_an_island,
+                 test_child_is_started_by_a_human_and_wires_nothing_up,
                  test_housekeeping_points_at_the_standard_rather_than_restating_it,
                  test_housekeeping_states_the_goal_and_ends_on_ci,
                  test_housekeeping_says_the_discussion_gate_is_overridden,
@@ -1056,6 +1171,7 @@ def main():
                  test_brainstorm_changes_nothing_and_says_what_new_is_measured_against,
                  test_housekeeping_names_the_president_it_was_told_of,
                  test_every_form_previews_on_a_machine_with_nothing_on_it,
+                 test_the_local_md_convention_has_something_behind_it,
                  test_help_says_why_and_where,
                  test_runs_as_an_installed_copy):
         test()

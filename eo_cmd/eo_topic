@@ -177,12 +177,12 @@ done
 
 if [ -n "$PRES" ] && [ -f "$PRES_DIR/docs/policy.md" ]; then
   STANDARD="Its **president** is **$PRES**, at \`$PRES_DIR\`, and holds the standard:
-\`docs/policy.md\`, whose **The discussion file** section is what binds this — what
+\`docs/policy.md\`, whose **\`docs/discussion.md\`** section is what binds this — what
 a topic is, the five kinds and what each claims, the fields one carries, and who
 may address whom."
 else
-  STANDARD="Its **president** holds the standard — \`docs/policy.md\`, whose **The
-discussion file** section is what binds this — and there is no checkout of it
+  STANDARD="Its **president** holds the standard — \`docs/policy.md\`, whose
+\`docs/discussion.md\` section is what binds this — and there is no checkout of it
 here; take it from the link this repository's own README carries."
 fi
 

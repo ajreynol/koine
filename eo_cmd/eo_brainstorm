@@ -2,16 +2,32 @@
 # eo_brainstorm -- read the standard, then look for what this tool could do next.
 #
 # WHERE: run it at the root of YOUR repository. It reads the trees it inspects,
-#        including this one, and the only thing written is
-#        `brainstorm.local.md` at this root, which
-#        `*.local.md` keeps out of the record.
+#        including this one, and writes two files here and nowhere else:
+#        `brainstorm.local.md`, which `*.local.md` keeps out of the record, and
+#        the items worth keeping in `docs/brainstorm.md`.
 #
-# **WHY IT WRITES NOTHING ELSE, which is the whole of why it is worth running.**
+# **WHY IT COMMITS NEITHER, which is the whole of why it is worth running.**
 #        An idea is cheap and most ideas are wrong, so the value of this command
-#        is that being wrong in it costs a file somebody deletes. A generator
-#        that edited the tree would be one nobody ran twice, and its output
-#        would arrive mixed into a diff where an idea is indistinguishable from
-#        a fix. Nothing is staged, nothing is committed, no topic is opened.
+#        is that being wrong in it costs a file somebody deletes or a register
+#        entry somebody strikes out. A generator that staged its own output would
+#        be one nobody ran twice, and that output would arrive in a diff where an
+#        idea is indistinguishable from a fix. Nothing is staged, nothing is
+#        committed, no topic is opened.
+#
+# **THE REGISTER IS READ FIRST AND ADDED TO LAST.** The shared policy recommends
+#        `docs/brainstorm.md` as a repository's standing home for ideas worth
+#        keeping -- `X<N>` items with a status and a condition for revisiting.
+#        Reading it first is what stops a run proposing what is already there,
+#        including the items somebody already decided against, which is the one
+#        way a list of ideas wastes the reader's time rather than the writer's.
+#        **And an idea that survives the conversation is added to it**, in that
+#        page's own format, appending and removing nothing: a command that
+#        produces ideas and never feeds the register leaves the register to be
+#        maintained by whoever remembers to. That is the one thing this run
+#        writes outside `brainstorm.local.md`, it is left unstaged like
+#        everything else here, and **recording a proposal adopts nothing** --
+#        the policy says so, and the status field on the item is where it says
+#        so again.
 #
 # **CUTTING EDGE IS A CLAIM ABOUT SOMEBODY ELSE'S TREE, so the prompt sends an
 #        assistant to read one.** What is new is new against what cvc5 produces
@@ -72,10 +88,11 @@ usage() {
 eo_brainstorm -- read the standard the president keeps, then look for what this
 tool could do next that would be worth doing.
 
-Run it at the root of your own repository. **It changes nothing**: every tree is
-read, and the one thing written is brainstorm.local.md at this root, which the
-Eunoia ecosystem's *.local.md convention keeps out of the record. Nothing is
-staged, nothing is committed, and no topic is opened.
+Run it at the root of your own repository. **It commits nothing**: every tree is
+read, the list goes to brainstorm.local.md at this root, which the
+Eunoia ecosystem's *.local.md convention keeps out of the record, and an idea
+worth keeping is added to this repository's docs/brainstorm.md. Both are left
+unstaged, nothing is committed, and no topic is opened.
 
 usage: eo_brainstorm [--codex] [--print] [--show-prompt] [focus...]
 
@@ -98,9 +115,15 @@ policy breaks on purpose -- so this proposes, and creates neither.
 **It asks what the vision rules out, too.** A list of features with no
 rejections in it is evidence that nothing was read.
 
+**docs/brainstorm.md is read first and added to last.** It is the shared
+policy's standing register of ideas: reading it stops the run proposing what is
+already recorded, or already decided against, and an idea that survives the
+conversation is appended to it as a new item. Nothing there is rewritten or
+removed, and recording a proposal adopts nothing.
+
 **--push is refused.** The other commands here leave their work staged and take
-that flag to commit and push it instead; this one stages nothing, so there is
-nothing for it to carry.
+that flag to commit and push it instead; this one stages nothing, and a proposal
+is not a decision somebody should find already in the history.
 USAGE
   exit $code
 }
@@ -113,9 +136,10 @@ while [ $# -gt 0 ]; do
     --show-prompt) SHOW=1; shift ;;
     --push)
       echo "eo_brainstorm: --push is refused. It commits and pushes the work" >&2
-      echo "         the other commands here leave staged, and this one changes" >&2
-      echo "         nothing: the list goes to brainstorm.local.md, which the" >&2
-      echo "         record does not keep." >&2
+      echo "         the other commands here leave staged, and this run has" >&2
+      echo "         nothing to push: the list goes to brainstorm.local.md," >&2
+      echo "         which the record does not keep, and what it adds to" >&2
+      echo "         docs/brainstorm.md is a proposal a person reads first." >&2
       exit 2 ;;
     -h|--help) usage ;;
     -*) echo "eo_brainstorm: unknown option $1" >&2; usage error ;;
@@ -264,6 +288,28 @@ CHILDREN=""
 [ -n "$KIDS" ] && CHILDREN=" This repository's own **child projects** are $KIDS,
 which is where work that is not yet a tool already lives here."
 
+# The standing register of ideas, which the shared policy recommends a
+# repository keep. It is the state of the art *here* in the same way the
+# neighbours are the state of the art elsewhere -- and it carries the items
+# somebody already decided against, which is the half a run cannot infer.
+# Read either way; opened only where there is none and the list earns one,
+# which is the more expensive half and so the one that says what it costs.
+REGISTRY=""
+KEEPING=""
+if [ -f "$US_ROOT/docs/brainstorm.md" ]; then
+  REGISTRY=" **Read \`docs/brainstorm.md\` first**: an item already recorded there,
+or recorded there as abandoned, is not a new idea."
+  KEEPING=" **and add what survives to \`docs/brainstorm.md\`** as new items in that
+page's own format, rewriting and removing nothing — recording a proposal adopts
+nothing, which is what the item's status field is for"
+else
+  REGISTRY=" **There is no \`docs/brainstorm.md\` here**, the register of ideas the
+policy recommends."
+  KEEPING=" **and if anything survives, open \`docs/brainstorm.md\` for it** — the
+register the policy recommends, with the item template that page is asked for
+and a row in this repository's documentation index"
+fi
+
 STARTAT=""
 [ -n "$FOCUS" ] && STARTAT="**The person running this asked you to start from
 \"$FOCUS\"**, so start there — and say plainly if the honest answer is that there
@@ -275,7 +321,7 @@ the **Eunoia ecosystem**, a group of tools built around the Eunoia language and
 the proofs cvc5 produces, sharing one repository policy and written mostly by AI
 agents under light human supervision. $STANDARD Read both, and this repository's
 own \`README.md\` and \`docs/\` for what it is for and what it **refuses to
-claim**; this prompt restates none of it. $UPSTREAM $NEARBY$CHILDREN
+claim**; this prompt restates none of it. $UPSTREAM $NEARBY$CHILDREN$REGISTRY
 
 ${STARTAT:+$STARTAT }**Your goal is a list of things this repository could build
 next that would be worth building** — cutting edge against what cvc5 and these
@@ -286,14 +332,14 @@ a guess and says so. **Say what the vision and this README rule out, too**: a
 list with no rejections in it is evidence that neither page was read. Work that
 would be a new tool starts as a **child project** under \`tools/\`, and opening a
 repository is a decision a person makes — propose either, create neither.
-**Write the list to \`brainstorm.local.md\` at this root and change nothing
-else**: nothing staged, nothing committed, no topic opened, no tree but this one
-written in, and nothing sent anywhere. **Then do not stop at the file — carry on
+**Write the list to \`brainstorm.local.md\` at this root**,$KEEPING. **Change
+nothing else**: nothing staged, nothing committed, no topic opened, no tree but
+this one written in, and nothing sent anywhere. **Then do not stop at the file — carry on
 with the person from it**, in this session: say which two or three you would take
 first and why, which one you would drop and why, and ask them where they want to
 start. They ran this to decide something, and a list handed over and abandoned is
 one nobody opens twice. **Whatever they pick, building it is the next thing they
-ask for and not this** — the file stays the whole of what this run writes.
+ask for and not this run.**
 PROMPT_END
 
 # Every paragraph above is assembled from fragments wrapped at whatever width
@@ -314,10 +360,28 @@ wrapped() {
 if [ "$SHOW" = 1 ]; then wrapped; exit 0; fi
 PROMPT=$(wrapped)
 
+# The `*.local.md` convention is a naming convention and nothing else. This run
+# writes one, and in a repository whose `.gitignore` does not cover it the only
+# thing keeping it out of the history is that nobody types `git add -A`. Editing
+# somebody's `.gitignore` is not what this was run to do, so it says so instead
+# -- to the person, before the run, who can add the line in one edit. Reported by
+# anoieu on 2026-09-17 against `eo_init`, which writes the line into a repository
+# new enough to have no other chance at one; this is the same gap in a tree that
+# already exists. Duplicated per command on purpose: each is installed as one
+# file and may import nothing from beside it.
+local_md_is_ignored() {
+  git -C "$1" check-ignore -q -- "$2" 2>/dev/null
+}
+
 command -v "$AGENT" >/dev/null 2>&1 || {
   echo "eo_brainstorm: $AGENT is not on PATH" >&2; exit 127; }
+if ! local_md_is_ignored "$US_ROOT" brainstorm.local.md; then
+  echo "-- eo_brainstorm: brainstorm.local.md is not ignored in this repository -- add" >&2
+  echo "--   '*.local.md' to .gitignore, or a 'git add -A' will commit it." >&2
+fi
 
-echo "-- eo_brainstorm: $US ($US_ROOT), writing brainstorm.local.md only, via $AGENT" >&2
+echo "-- eo_brainstorm: $US ($US_ROOT), staging and committing nothing, via $AGENT" >&2
+echo "--   the list goes to brainstorm.local.md; what survives goes to docs/brainstorm.md" >&2
 echo "--   it writes the list, then stays and works through it with you" >&2
 if [ -n "$PRES_DIR" ]; then
   echo "--   the standard: $PRES, at $PRES_DIR/docs" >&2

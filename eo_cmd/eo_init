@@ -202,20 +202,25 @@ read -r -d '' TAIL_NEW <<'PROMPT_END' || true
 any supplied proposal into `init-brief.local.md` at the root, naming their
 sources **and the commit of the tree you read each at** — the same thing the
 child mode records, and for the same reason. Otherwise record the person's stated
-name and scope and the missing glossary entry. Do not stage it: `*.local.md` is the
-ecosystem's suffix for a file that is deliberately not committed. It is there so
-that if this README turns out to be wrong, somebody can see what you were working
-from instead of guessing — the register moves, and the version you read is the
-only thing that explains what you wrote.
+name and scope and the missing glossary entry. **Add `*.local.md` to `.gitignore`,
+creating the file if there is none**: the suffix is the ecosystem's convention for
+a document deliberately not committed, and in a repository this new nothing else
+keeps one out of the history — not staging it works until somebody types
+`git add -A`. The brief is there so that if this README turns out to be wrong,
+somebody can see what you were working from instead of guessing — the register
+moves, and the version you read is the only thing that explains what you wrote.
 PROMPT_END
 
 read -r -d '' TAIL_CHILD <<'PROMPT_END' || true
 **Leave a record of what you read.** Copy, verbatim, the child project's charter
 and its statement of what it delivered, into `init-brief.local.md` at the root,
-naming the path and the parent's commit you read them at. Do not stage it:
-`*.local.md` is the ecosystem's suffix for a file that is deliberately not
-committed. The parent keeps moving and the child's directory may be retired in
-it, so the version you read is the only thing that explains what you wrote.
+naming the path and the parent's commit you read them at. **Add `*.local.md` to
+`.gitignore`, creating the file if there is none**: the suffix is the ecosystem's
+convention for a document deliberately not committed, and in a repository this new
+nothing else keeps one out of the history — not staging it works until somebody
+types `git add -A`. The parent keeps moving and the child's directory may be
+retired in it, so the version you read is the only thing that explains what you
+wrote.
 
 **The parent's tree is not yours to change.** The child's directory stays where
 it is until a person retires it there, and how much of it comes across — the
@@ -233,7 +238,11 @@ PROMPT_END
 # Where the work is left, in the words every command in this directory uses for
 # it. Staged is the default because the diff is the review; `--push` is the
 # person who ran this saying they do not want one. `init-brief.local.md` is
-# staged by neither: `*.local.md` is deliberately not committed.
+# staged by neither: `*.local.md` is deliberately not committed, and the prompt
+# writes the `.gitignore` line that makes that true -- a convention with nothing
+# behind it holds until the first `git add -A`. Reported against this command by
+# anoieu on 2026-09-17, in a topic since settled and removed, and closed here
+# rather than in the joining set, which is not koine's to add to.
 if [ "$PUSH" = 1 ]; then
   HANDOFF="**Commit the work and push it**: \`git add\` what you changed, commit with a
 message saying what changed and why, and \`git push\`. If there is no upstream to

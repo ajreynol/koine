@@ -18,7 +18,7 @@ their database uses and in their closure config. koine's tooling is called
 bug_db whoever is using it.
 
 **Three customers, and all three pin this repository at `e4e4e2e`**, checked in
-their trees on 2026-09-19: [anoieu](https://github.com/ajreynol/anoieu) at
+their trees on 2026-09-20: [anoieu](https://github.com/ajreynol/anoieu) at
 `anoieu_analyzer/reporting/config/koine.lock`,
 [dokimasia](https://github.com/ajreynol/dokimasia) at `scripts/koine.lock`, and
 **metagraphe** — a child project in
@@ -500,7 +500,7 @@ The installed command remains `koine_append_db`, with the same arguments and
 JSON format.
 
 **The tombstone is still read, and taking it out is the maintainer's.** As
-checked on 2026-09-19, both adapters name the root path — anoieu's in a
+checked on 2026-09-20, both adapters name the root path — anoieu's in a
 `BEFORE_MOVE` list, dokimasia's alongside the other retired spellings — and
 neither runs it: each is deciding whether a directory it found is koine from
 before the move, so that a consumer that cannot find this repository says which

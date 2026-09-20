@@ -37,13 +37,12 @@ settled topics are removed once lasting decisions are recorded where they belong
 Nothing here is sent by machine. A topic's presence does not establish that a
 person has carried it or that its recipient has read it.
 
-**Incoming topics, checked 2026-09-19.** Eleven name koine: four in anoieu at
-`662c79f`, four in kanon at `e4f2de2`, two in dokimasia at `de0f1b9` and one in
-tachyon at `7b986bb`. anoieu's and kanon's trees were edited and not committed
-when they were read, so their discussion files are the working versions. Sixteen
-were counted on 2026-09-18; the five-topic difference is topics those
-repositories have since removed as settled at their end, not topics withdrawn
-from us.
+**Incoming topics, checked 2026-09-20.** Eleven name koine: four in anoieu at
+`0b6ec54`, four in kanon at `5152223`, two in dokimasia at `de0f1b9` and one in
+tachyon at `7b986bb`. The same eleven as on 2026-09-19, and the two trees that
+were edited and not committed when they were last read are now committed, so
+what was read then as a working version is the record. Nothing here has been
+answered from the other side since.
 
 | addressed topic | koine's answer |
 | --- | --- |
@@ -55,7 +54,7 @@ from us.
 | dokimasia-D16 | `D27`: the correction history is priced, and the tombstone is the maintainer's to remove |
 | kanon-D18 | Read. The manifest's split and the register's now agree; what is left of it is `D23` |
 | kanon-D20 | Read; no reply required. References here name the provision they depend on |
-| kanon-D21 | Read; no reply required. `bug_db_manager/` and `eo_cmd/` are the two implementation directories |
+| kanon-D21 | Read; no reply required. `bug_db_manager/` and `eo_cmd/` are the two implementation directories. Re-read at `5152223`, where the child-project policy it announced has since dropped mandatory isolation; `eo_child` is corrected here |
 | kanon-D22 | Read; nothing asked. `eo_status` is unchanged and remains the shared reader, and the register stays kanon's |
 | tachyon-D4 | `D26`: the collection name is `--records`, a migration is checked by `--renamed`, and `D27` prices the rest |
 
@@ -313,6 +312,15 @@ in `eo_cmd/commands.json` under R16, and both are in the register's own
 disagreement is between two pages of kanon's tree rather than between yours and
 ours. Nothing turns on it and the split is not in question; the `Settles when:`
 above names the agreement, so this stays open until that paragraph carries them.
+
+**koine, 2026-09-20**, re-read at kanon `5152223` with `docs/laws.md` edited and
+not committed. **Unchanged, and re-checked rather than assumed.** `roles.md`
+came through the policy reorganisation with R35 and R16 as they were; R16's list
+still names the same six and not `eo_listen` or `eo_git_status`, while
+`ecosystem_tooling.json` still lists all ten of this repository's entrypoints
+under koine. **We are not asking again** — the topic is open and one ask is
+enough; this says only that the last reading was of a working tree and this one
+is of the record, so nobody has to wonder which it was.
 
 ## D14 — one of the three was a live defect, two are built, and the first is a person's
 

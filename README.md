@@ -39,8 +39,9 @@ consumer's records are called is theirs.
 [anoieu](https://github.com/ajreynol/anoieu),
 [dokimasia](https://github.com/ajreynol/dokimasia) and **metagraphe** — a child
 project in [tachyon](https://github.com/ajreynol/tachyon) — are the three
-customers, and as checked in their trees on 2026-09-19 all three pin koine at
-`e4e4e2e` and call these programs through that pin. Metagraphe's database is a
+customers, and as checked in their trees on 2026-09-20 all three pin koine at
+`e4e4e2e` and call these programs through that pin; commits have landed here
+since, and when a pin moves is theirs to decide. Metagraphe's database is a
 `rewrite_db/` of rewrite candidates rather than bugs, and it is filed through the
 same writer. Their database files remain in their own repositories.
 **[`bug_db_manager/README.md`](bug_db_manager/README.md) is the whole of it** — the worked
@@ -57,7 +58,8 @@ opens one topic addressed to another tool; `eo_listen` prints incoming topics
 without changing any checkout; `eo_respond` answers one topic
 another tool addressed to you; `eo_housekeeping` brings a repository up to date, and
 `eo_brainstorm` looks for what it could do next, works through the list with
-you, and changes nothing. These run where a person is working, with
+you, and keeps what survives in `docs/brainstorm.md` without committing any of
+it. These run where a person is working, with
 `eo_git_status` also accepting directories to search. They live with the tool
 whose job is shared machinery, and
 [`scripts/install_eo`](scripts/install_eo) puts them on a person's path.

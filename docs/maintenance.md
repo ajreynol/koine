@@ -31,8 +31,8 @@ python3 /path/to/anoieu/scripts/policy_check.py --policy-version 1 --root .
 [The policy job](../.github/workflows/anoieu.yml) calls anoieu's shared workflow
 at `main`, selecting **policy contract 1**. The contract fixes requirements and
 severities while implementation fixes arrive automatically; there is no checker
-pin to update. As checked on 2026-09-19 at anoieu `662c79f`, with seventeen files
-edited and not committed, the contract page is
+pin to update. As checked on 2026-09-20 at anoieu `0b6ec54`, which is that tree
+committed and clean, the contract page is
 [`policy_check/README.md`](https://github.com/ajreynol/anoieu/blob/main/policy_check/README.md)
 and it defines this interface: anoieu keeps each document beside the thing it
 describes, and `docs/` holds only that repository's own records. Its `D41`
@@ -41,7 +41,8 @@ publishes the was-to-is table for every path of theirs a link here could name.
 with `--root` and `--policy-version` is named on that page as part of contract 1
 and as the stable launcher for people, whatever the implementation beside it does.
 The shared policy and role register read for this maintenance pass are kanon
-`e4f2de2`, on 2026-09-19, with that tree also edited and not committed.
+`5152223`, on 2026-09-20, with `docs/laws.md` edited and not committed in that
+tree.
 
 Tests must work without neighboring ecosystem checkouts. The prompt suite
 previews every advertised form with an empty home directory and no siblings;
@@ -86,8 +87,8 @@ corrections, cleanup and close/reopen decisions stay with each database owner.
 | The office's document checks | kanon's; they remain separate from register-reading commands |
 | Working-window machinery | withdrawn; koine has no schedule to implement |
 
-These boundaries follow the policy and role register read at kanon `e4f2de2`
-on 2026-09-19. `eo_init` and `eo_join` are maintained under R35; the other
+These boundaries follow the policy and role register read at kanon `5152223`
+on 2026-09-20. `eo_init` and `eo_join` are maintained under R35; the other
 commands and the four `koine_` programs are shared tooling under R16. **What joining
 costs remains R4's.** Koine maintains the command that states the rule and does
 not change that rule itself. R16's own list of commands names six of the eight
@@ -100,6 +101,19 @@ here — the register is the office's page.
 program on PATH does not replace the lock-based locators used by pinned
 consumers. Layout changes affecting consumers need a local notice before
 those consumers are asked to change anything.
+
+**The policy was reorganised on 2026-09-20, and two of its changes reached the
+commands.** Kanon **retired mandatory child isolation** — a child may now be
+imported, tested and shipped with its parent, and documented boundaries replace
+the island rule — and **recommended `docs/brainstorm.md`** as the standing
+register of exploratory ideas, on the same optional footing as this page and
+`discussion.md`. `eo_child` had **paraphrased** the retired rule into its prompt
+and so carried it past the retirement; `eo_brainstorm` now reads that register
+before proposing anything and appends what survives. The general lesson is the one
+`eo_housekeeping` was rewritten for and is worth keeping in front of the next
+pass: **a prompt that restates somebody else's rule is a copy nothing keeps
+current.** Where a command needs a rule, it names the section and sends the
+assistant to read it.
 
 ## Check who the instruction is addressed to, before the first edit
 
@@ -160,13 +174,15 @@ owner's `prompt.writes`, because a closure vocabulary is not koine's to guess.
 [What is still not built](../bug_db_manager/README.md#what-is-still-not-built)
 says what remains, and who asked for it.
 
-**Adoption, as read in each consumer's tree on 2026-09-19.** All three pin
-`e4e4e2e`, which is this repository's tip. The ecosystem's rule is that a pin
-only moves to a commit whose CI passed, and the evidence for this one is
-anoieu's: its lock records that commit verified against remote `main` on
-2026-09-19 with both koine jobs passing, and names the two runs. That is their
-reading rather than one taken here — a local pass covers these commands and not a
-hosted run. anoieu's launcher calls `koine_close_db`, `koine_window` and `koine_check_db`
+**Adoption, as read in each consumer's tree on 2026-09-20.** All three pin
+`e4e4e2e`, **which is no longer this repository's tip**: `a5df029` landed after
+it and nobody's pin has moved, which is the expected state rather than a lag to
+chase. A pin moves when a consumer decides to move it, on evidence of green CI
+at the commit it is moving to, and that decision is theirs. The evidence behind
+the pin they hold is anoieu's: its lock records `e4e4e2e` verified against
+remote `main` on 2026-09-19 with both koine jobs passing, and names the two
+runs. That is their reading rather than one taken here — a local pass covers
+these commands and not a hosted run. anoieu's launcher calls `koine_close_db`, `koine_window` and `koine_check_db`
 through `anoieu_analyzer/reporting/config/koine.lock`, and builds its closure
 config in memory with `also: ["awaiting_landing"]` and its own `baseline.command`
 — the two things this page expected it to need. dokimasia's calls the same three
@@ -191,6 +207,16 @@ Its database is keyed `rewrites`; the tooling stays called bug_db.
 **No paper is planned for koine**, on the maintainer's instruction of
 2026-09-18. This is koine's answer to anoieu's request for one; it is not a
 judgment about another tool's work.
+
+**koine keeps no `docs/brainstorm.md`, and the reason is that the ideas are
+already somewhere.** The shared policy recommends that register for exploratory
+ideas worth retaining, and this repository's are not loose: the four unbuilt
+services below are each priced in a live topic and summarised here, which is the
+document that governs whether koine takes a maintenance obligation on. A second
+home for them would be a copy, and the policy asks for pages somebody intends to
+maintain. `eo_brainstorm` opens one where a repository has ideas and no register;
+if a pass here ever produces ideas that are koine's own rather than a consumer's
+request, that is when this changes.
 
 **Four proposed services are unbuilt, and each needs the maintainer to accept a
 new maintenance obligation.** The first two were koine's own answers to

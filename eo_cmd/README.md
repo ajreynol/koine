@@ -69,7 +69,7 @@ commands and leaves existing directories alone. `--president DIR` explicitly
 selects the register checkout; an invalid selection is refused rather than
 silently replaced. `--dry-run` prints the proposed clone commands.
 
-**Pinned consumers keep their locators.** As checked on 2026-09-19, three
+**Pinned consumers keep their locators.** As checked on 2026-09-20, three
 repositories record their koine dependency in a `koine.lock`: anoieu at
 `anoieu_analyzer/reporting/config/koine.lock`, dokimasia at `scripts/koine.lock`,
 and tachyon's metagraphe child at `tools/metagraphe/rewrite_db/koine.lock`.
@@ -102,6 +102,14 @@ somebody has to undo. `*.local.md` files — `init-brief.local.md`,
 `discussion-response.local.md`, `brainstorm.local.md`, `housekeeping.local.md` —
 are not staged at all.
 
+**The suffix is a naming convention, and a convention ignores nothing.** In a
+repository whose `.gitignore` does not carry `*.local.md`, not staging the file
+holds until somebody types `git add -A`. `eo_init` writes the rule, because the
+repository it runs in is new and has no other chance to get one; the commands
+that run in a tree that already exists will not edit a `.gitignore` they
+promised not to touch, so they say on stderr that the rule is missing, before
+the run, to the person who can add it in one edit.
+
 **`--push` is the one thing that changes that.** It tells the assistant to
 commit the work with a message saying what changed and why, and to `git push`.
 Where there is no upstream, or the push is rejected, the run says so and stops;
@@ -116,14 +124,14 @@ after CI passes, which is still the final step of the work.
 | `eo_child` | yes |
 | `eo_respond` | yes, for the change; the reply draft stays an unstaged `*.local.md` |
 | `eo_housekeeping` | yes, unless `--report`, which is refused with that pair |
-| `eo_brainstorm` | refused: it changes nothing, so there is nothing to push |
+| `eo_brainstorm` | refused: a proposal is not a decision somebody should find already in the history |
 
 The programs — `eo_status`, `eo_git_status`, `eo_listen` — write nothing and
 reject the flag as an unknown argument.
 
 ## What koine may change here, and what it may not
 
-As checked on 2026-09-19, [kanon's role
+As checked on 2026-09-20 at kanon `5152223`, [kanon's role
 register](https://github.com/ajreynol/kanon/blob/main/docs/roles.md) places
 `eo_init` and `eo_join` under **R35**, and the remaining commands under **R16**,
 shared low-level tooling. Koine maintains their text, options, and behavior.
@@ -294,11 +302,15 @@ Naming the child is the human instruction to start `tools/<name>/`; a run
 without a name is refused. The assistant asks for the question, goals, and
 boundaries rather than inventing a charter. `--print` is refused.
 
-The work is left staged; `--push` commits and pushes it. A child reads other
-trees but writes only within its own directory. It imports
-nothing from its parent and participates in none of the parent's tests or CI.
-`--unadvertised` records that preference and adds no inward links. The register
-is the president's to update; this command writes only in the current tree.
+The work is left staged; `--push` commits and pushes it. **This run writes
+inside `tools/<name>/` and nowhere else, and that is about the run rather than
+the child.** Kanon retired mandatory isolation on 2026-09-20: a child may be
+imported, tested and shipped with its parent, and what replaced the rule is that
+its boundaries are explicit and documented. So the charter states the couplings
+this child expects and the run wires none of them up, because which ones it has
+is a person's to accept. `--unadvertised` records that preference and adds no
+inward links. The register is the president's to update; this command writes
+only in the current tree.
 
 ## eo_brainstorm
 
@@ -311,6 +323,17 @@ Run in your repository. The assistant reads the local tools and cvc5 checkout,
 records ideas and rejected ideas in `brainstorm.local.md`, then discusses the
 list with you. `--print` produces the list without that conversation. It stages
 nothing and implements nothing, and `--push` is refused with that reason.
+
+**It reads `docs/brainstorm.md` first and adds to it last.** That page is the
+[register of ideas the shared policy
+recommends](https://github.com/ajreynol/kanon/blob/main/docs/policy.md#docsbrainstormmd)
+for a repository maintained by supervised agents. Reading it is what stops a run
+re-proposing what is already recorded, or already abandoned; an idea that
+survives the conversation is appended as a new item in that page's own format,
+rewriting and removing nothing. Where the repository keeps no such register, the
+run opens one only if the list earns it, with the row in the documentation index
+that a new document needs. Recording a proposal adopts nothing, and neither the
+list nor the register entry is staged.
 
 Each idea identifies the evidence it uses. Missing checkouts and claims resting
 on memory or the network are marked as limitations. A proposed tool or child is

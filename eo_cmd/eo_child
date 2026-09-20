@@ -83,9 +83,11 @@ what it will not do come from the person running this; an assistant that wrote
 them would be starting a child project on its own initiative with somebody
 else's name on it. --print is refused for the same reason: it has nobody to ask.
 
-**It is an island.** It writes inside tools/NAME/ and nowhere else: nothing on
-the import path, nothing in the test suite, nothing in CI. Deleting the
-directory is the test.
+**This run writes inside tools/NAME/ and nowhere else.** Not because a child is
+an island -- the policy stopped saying that on 2026-09-20, and a child may be
+imported, tested and shipped with its parent -- but because which of those it
+does is the charter's to state and a person's to accept, and a run that wired it
+up on day one would have decided that for them.
 
 **The work is left staged and not committed**, the convention every command in
 eo_cmd/ that changes a tree keeps: the diff is the review. `--push` commits it
@@ -167,12 +169,13 @@ done
 
 if [ -n "$PRES" ] && [ -f "$PRES_DIR/docs/policy.md" ]; then
   STANDARD="Its **president** is **$PRES**, at \`$PRES_DIR\`, and holds the standard:
-\`docs/policy.md\`, whose **Child projects** section is what binds this — what a
-child is for, the island rule, what the name has to do, and what a charter must
-name."
+\`docs/policy.md\`, whose **\`tools/\`** section is what binds this — what a child is
+for, what a charter must name, what the name has to do, and the numbered rules
+a child is held to. **Read that section; this prompt does not restate it**, and a rule
+paraphrased here is a copy of somebody else's that nothing keeps current."
 else
-  STANDARD="Its **president** holds the standard — \`docs/policy.md\`, whose **Child
-projects** section is what binds this — and there is no checkout of it here; take
+  STANDARD="Its **president** holds the standard — \`docs/policy.md\`, whose
+\`tools/\` section is what binds this — and there is no checkout of it here; take
 it from the link this repository's own README carries."
 fi
 
@@ -246,8 +249,11 @@ first — the question, the goals in order, the wishue if there is one, and the
 explicit list of what is **out of scope** — with the etymology, what evidence in
 **$US** this builds on, and who remains the authority on any subject it also
 describes. $ADVERTISE **Write inside \`tools/$NAME/\` and nowhere else in this
-tree**: nothing on the import path, nothing in the test suite, nothing in CI —
-deleting the directory must change nothing. The register of
+tree.** A child is not an island and may be imported, tested and shipped with
+its parent — but **which** of those it does is a boundary the charter states and
+a person accepts, so state the ones this child expects and wire none of them up:
+nothing on the import path, nothing in the test suite, nothing in CI, today. The
+register of
 which children exist is the president's and **a person writes that entry**: say
 what it would say, and open nothing anywhere. $HANDOFF
 PROMPT_END
