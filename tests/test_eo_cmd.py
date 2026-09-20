@@ -215,6 +215,41 @@ def test_no_prompt_names_a_command_that_is_gone():
            "kanon/blob/main/prompts/" not in text)
 
 
+def test_no_command_cites_a_topic_that_has_been_settled():
+    """A discussion topic is removed when it settles, so a citation of one rots.
+
+    `eo_join` cited two of this repository's topics, and one of them -- `D18`,
+    *both forms of the check are in eo_join now* -- had already been removed when
+    it settled, exactly as the policy requires. A reader following the pointer
+    found nothing, and nothing checked it: the link checker resolves paths and
+    anchors, and a topic id inside a file is neither.
+
+    The fix was to cite the authority instead of the topic that asked for it, and
+    this is the guard, because the next agent to write one of these will reach
+    for the topic id again. It asks only that a citation resolve: a command may
+    still name a live topic if there is a reason to.
+    """
+    print("no command points at a topic that is not in the file")
+    where = os.path.join(ROOT, "docs", "discussion.md")
+    with open(where, encoding="utf-8") as fh:
+        live = set(re.findall(r"^## (D\d+)", fh.read(), re.M))
+    # The id that *follows* the file's name, so that `kanon's D16` -- somebody
+    # else's topic, in somebody else's file -- is not read as a claim about ours.
+    cites = re.compile(r"docs/discussion\.md`?[^\n]{0,12}?`?(D\d+)\b")
+    seen = 0
+    for entry in manifest()["commands"]:
+        path = located(entry)
+        with open(path, encoding="utf-8") as fh:
+            for found in sorted(set(cites.findall(fh.read()))):
+                seen += 1
+                ok(f"{entry['name']} cites {found}, which is in the file",
+                   found in live)
+    # Counted even at zero. No command citing one and every citation resolving
+    # are different results, and a check that prints only when it fires reports
+    # neither -- which is how this one went unnoticed in the first place.
+    ok(f"{seen} citation(s) of this repository's own topics, all resolved", True)
+
+
 def test_the_soft_form_names_us_and_claims_nothing():
     """The one soft form, and the two claims it has to keep apart.
 
@@ -385,9 +420,14 @@ def test_topic_asks_for_the_topic_and_computes_the_id():
             ever.add(int(m.group(1)))
     check("the id offered is the next one above every id ever issued",
           f"`D{max(ever) + 1}`" in flat, True)
+    # The distinction only changes the answer where a quoted id is *above* ours,
+    # so that is the case worth asserting. Counted even when there is none: a
+    # file that happens to quote no high number is a legitimate state, and a
+    # check that failed on it would be failing for a reason that is not a defect.
     cited = {int(n) for n in re.findall(r"^### `D(\d+)`", page, re.M)}
-    ok("and the ids quoted in replies are not counted as ours",
-       bool(cited - ever))
+    above = {n for n in cited - ever if n > max(ever)}
+    ok(f"{len(above)} id(s) quoted above ours, and none moved the offer",
+       f"`D{max(ever) + 1}`" in flat)
 
 
 def test_child_is_started_by_a_human_and_stays_an_island():
@@ -1000,6 +1040,7 @@ def main():
                  test_only_prompts_take_show_prompt,
                  test_every_advertised_form_runs, test_refusals,
                  test_no_prompt_names_a_command_that_is_gone,
+                 test_no_command_cites_a_topic_that_has_been_settled,
                  test_the_soft_form_names_us_and_claims_nothing,
                  test_the_soft_note_the_prompt_asks_for_passes_the_checker,
                  test_the_gate_is_in_argv,

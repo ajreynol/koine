@@ -31,10 +31,17 @@ python3 /path/to/anoieu/scripts/policy_check.py --policy-version 1 --root .
 [The policy job](../.github/workflows/anoieu.yml) calls anoieu's shared workflow
 at `main`, selecting **policy contract 1**. The contract fixes requirements and
 severities while implementation fixes arrive automatically; there is no checker
-pin to update. As checked on 2026-09-18 at anoieu `b5a7d4e`, the
-[checker guide](https://github.com/ajreynol/anoieu/blob/main/docs/policy-checker.md)
-defines this interface. The shared policy read for this maintenance pass is
-kanon `d03447d`, on 2026-09-18.
+pin to update. As checked on 2026-09-19 at anoieu `662c79f`, with seventeen files
+edited and not committed, the contract page is
+[`policy_check/README.md`](https://github.com/ajreynol/anoieu/blob/main/policy_check/README.md)
+and it defines this interface: anoieu keeps each document beside the thing it
+describes, and `docs/` holds only that repository's own records. Its `D41`
+publishes the was-to-is table for every path of theirs a link here could name.
+**The invocation in the suite above will not move under us**: `scripts/policy_check.py`
+with `--root` and `--policy-version` is named on that page as part of contract 1
+and as the stable launcher for people, whatever the implementation beside it does.
+The shared policy and role register read for this maintenance pass are kanon
+`e4f2de2`, on 2026-09-19, with that tree also edited and not committed.
 
 Tests must work without neighboring ecosystem checkouts. The prompt suite
 previews every advertised form with an empty home directory and no siblings;
@@ -79,11 +86,15 @@ corrections, cleanup and close/reopen decisions stay with each database owner.
 | The office's document checks | kanon's; they remain separate from register-reading commands |
 | Working-window machinery | withdrawn; koine has no schedule to implement |
 
-These boundaries follow the policy and role register read at kanon `d03447d`
-on 2026-09-18. `eo_init` and `eo_join` are maintained under R35; the other
+These boundaries follow the policy and role register read at kanon `e4f2de2`
+on 2026-09-19. `eo_init` and `eo_join` are maintained under R35; the other
 commands and the four `koine_` programs are shared tooling under R16. **What joining
 costs remains R4's.** Koine maintains the command that states the rule and does
-not change that rule itself.
+not change that rule itself. R16's own list of commands names six of the eight
+and not `eo_listen` or `eo_git_status`; both are in this repository's manifest and
+in the register's tooling inventory, so the gap is in one paragraph of the
+register and is recorded in `discussion.md` as a live request rather than fixed
+here — the register is the office's page.
 
 `eo_status` reads the register; it never writes it. Installing any `koine_`
 program on PATH does not replace the lock-based locators used by pinned
@@ -139,49 +150,53 @@ it before relying on the earlier reading.
 
 ## The open work
 
-**Closure tooling was built on 2026-09-19.** `koine_window` resolves and
-describes the window a closure run reads; `koine_close_db` starts an assistant
-on the closure; `koine_check_db` establishes afterwards that the run added
-closure fields and did nothing else; and `koine_append_db` now reports a record
+**The closure tooling is built and all three consumers use it.** `koine_window`
+resolves and describes the window a closure run reads; `koine_close_db` starts an
+assistant on the closure; `koine_check_db` establishes afterwards that the run
+added closure fields and did nothing else; and `koine_append_db` reports a record
 the owner had closed and a later run found anyway. All four are mechanics. None
 decides that a finding is fixed, and `koine_close_db` refuses to run without the
 owner's `prompt.writes`, because a closure vocabulary is not koine's to guess.
 [What is still not built](../bug_db_manager/README.md#what-is-still-not-built)
-says what remains. D25 announced the tooling rename and the earlier assessment to
-anoieu and dokimasia, and promised no cleanup or closure command; this goes
-beyond that notice and the consumers have not been told.
+says what remains, and who asked for it.
 
-**No consumer uses any of it yet.** anoieu and dokimasia pin koine at `8efe59c`,
-which is before all of it, and both keep their own copy of the window machinery
-inside `prompts/close_bug_db`. Metagraphe has no database yet and tachyon records
-no koine pin. Adopting is each owner's to decide and to schedule; the ecosystem's
-rule is that a pin only moves to a commit where this repository's CI is green, so
-this wants pushing before any of them is asked.
+**Adoption, as read in each consumer's tree on 2026-09-19.** All three pin
+`e4e4e2e`, which is this repository's tip. The ecosystem's rule is that a pin
+only moves to a commit whose CI passed, and the evidence for this one is
+anoieu's: its lock records that commit verified against remote `main` on
+2026-09-19 with both koine jobs passing, and names the two runs. That is their
+reading rather than one taken here — a local pass covers these commands and not a
+hosted run. anoieu's launcher calls `koine_close_db`, `koine_window` and `koine_check_db`
+through `anoieu_analyzer/reporting/config/koine.lock`, and builds its closure
+config in memory with `also: ["awaiting_landing"]` and its own `baseline.command`
+— the two things this page expected it to need. dokimasia's calls the same three
+through `scripts/koine.lock`, so the shallow-clone refusal and the
+diverged-branch warning it never had are now the same code anoieu's uses, which
+was the argument for making the window one program. Metagraphe pins it at
+`tools/metagraphe/rewrite_db/koine.lock` and files through a thin adapter,
+`tools/metagraphe/scripts/koine_db.py`.
 
-**Three things want saying to the consumers when they are told.** anoieu's
-`awaiting_landing` does not carry the `closed_` prefix, so it is named with
-`--also` rather than renamed — the flag exists for that case and costs one line
-of config. dokimasia's own launcher has neither the shallow-clone refusal nor the
-diverged-branch warning that anoieu's grew, which is the concrete reason the
-window is one program now. And a closure config's `baseline.command` is where
-each owner's existing baseline logic goes; it is the one part of their launchers
-that does not move here, because which field records a revision — and what to do
-when two rows disagree — each of them has answered differently and correctly.
+**Nobody's copy of the window machinery is left.** Where each consumer's own
+baseline logic stays is `baseline.command`, which is the one part that does not
+move here: which field records a revision, and what to do when two rows disagree,
+each owner has answered differently and correctly.
 
-**The third customer is planned, not built.** Metagraphe, a child project in
-tachyon at `tools/metagraphe/`, will keep a `rewrite_db/` of rewrite candidates:
-a proposed `lhs -> rhs` with its side condition and the evidence that cvc5 does
-not take the opportunity. That is not a defect, which is why these programs read
-the envelope key a database uses rather than assuming one, take the noun for a
-record from configuration, and require no field named `bug`. The tooling stays
-called bug_db.
+**The third customer's records are not defects and never were.** Metagraphe's
+`rewrite_db/` holds rewrite candidates — a proposed `lhs -> rhs` with its side
+condition and the evidence that cvc5 does not take the opportunity. That is why
+these programs read the envelope key a database uses rather than assuming one,
+take the noun for a record from configuration, and require no field named `bug`.
+Its database is keyed `rewrites`; the tooling stays called bug_db.
 
 **No paper is planned for koine**, on the maintainer's instruction of
-2026-09-18. This is koine's answer to anoieu-D14; it is not a judgment about
-another tool's work.
+2026-09-18. This is koine's answer to anoieu's request for one; it is not a
+judgment about another tool's work.
 
-Two proposed services remain unbuilt and require the maintainer to accept a new
-maintenance obligation:
+**Four proposed services are unbuilt, and each needs the maintainer to accept a
+new maintenance obligation.** The first two were koine's own answers to
+dokimasia; the last two are what the consumers asked for on 2026-09-19, once
+koine had asked them to make any follow-up concrete. Every one of them is priced
+in [discussion.md](discussion.md) and none is promised.
 
 - A prompt-drift check that consumers fetch and run in **their own CI**. A
   verdict only in koine's CI cannot fail the consumer's change that causes drift.
@@ -189,8 +204,18 @@ maintenance obligation:
   candidate directories. It must verify the exact revision and clean tracked
   files, reject an invalid override, and perform no network access or checkout
   mutation during analysis. Setup would be a separate operation.
+- A **coverage query**, asked for by anoieu: given two runs, whether a finding
+  was *covered and not reported*, *covered and reported*, or *not covered*. It
+  needs a run record these programs do not keep, and no part of it may become a
+  verdict — *covered and not reported* is evidence for a person.
+- **Correction history**, asked for by dokimasia and by tachyon independently:
+  keeping the original claim, its date and its corrections when a later run under
+  the same identity carries different text. Today the original is kept and the
+  new wording is printed as a conflict and lost. This is storage and so is
+  koine's, which is why it is the one of the four a maintainer is most likely to
+  want; it also changes what a record is, so it is not an afternoon's flag.
 
-These are the requests discussed in dokimasia-D6 and D12, read at `fe47f6c` on
-2026-09-18, and answered here in D14 and D20. Consumers keep their adapters;
-there is no promised replacement. No shared reporting-record checker or
-postmortem protocol is offered by this tree.
+Consumers keep their adapters; there is no promised replacement. No shared
+reporting-record checker is offered by this tree, and no postmortem protocol —
+anoieu retired the postmortem log and its shape checks on 2026-09-19, so there is
+no longer a shape for anyone to hold.

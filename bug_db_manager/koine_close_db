@@ -42,6 +42,16 @@ three different projects' rules with nothing keeping it current -- and the
 paragraphs it would flatten are the ones carrying what each owner learned the
 hard way. koine points at them instead.
 
+## It reports what it cannot cover
+
+A window is a window on one project, so an open record naming no project the
+config watches has none. That is not an error -- a database may carry a row
+about something this owner does not watch -- and it is not silence either: the
+count is printed, the identities are named, and the prompt says why the number
+it gives is smaller than the file. `koine_check_db` reads the whole file
+afterwards, and two counts with nothing explaining the gap between them is a
+report nobody can act on.
+
 ## It knows nothing about what the records are
 
 A database of defects, a database of static observations and a database of
@@ -190,25 +200,43 @@ def open_rows(cfg):
     return [e for e in database(cfg) if not ruled(e, also)]
 
 
+def named(row):
+    """What to call one record in a report. The identity the database uses."""
+    if row.get("id"):
+        return str(row["id"])
+    return " ".join(str(row.get(f, "")) for f in ("tool", "bug")).strip() or "?"
+
+
 def by_project(cfg, rows):
-    """One project's rows, for each -- and a compound owner is in all of them.
+    """One project's rows, for each -- and the open rows no project claims.
 
     `a+b` is a record about a disagreement *between* two projects, which either
     can have resolved. Filing it under one would put it in that window and leave
     the other blind to it.
+
+    **A row naming no project at all is returned rather than dropped.** It is
+    not an error -- a database may carry a row about something this config does
+    not watch -- but no window covers it, so a run that let it disappear would
+    describe a smaller database than the one `koine_check_db` reads afterwards,
+    and nobody would be told which of the two counts to believe. An owner naming
+    a project the config does not know is the loud case and stays one.
     """
     known = cfg["projects"]
     out = {name: [] for name in known}
+    unclaimed = []
     for row in rows:
-        owners = str(row.get(cfg["owner"], "")).split("+")
+        owners = [n for n in str(row.get(cfg["owner"], "")).split("+") if n.strip()]
+        if not owners:
+            unclaimed.append(row)
+            continue
         for name in owners:
             if name in out:
                 out[name].append(row)
-            elif name.strip():
+            else:
                 raise ValueError(
                     f"{row.get('id', row)} is owned by {name!r}, which the "
                     f"config's `projects` does not name: {', '.join(known)}")
-    return out
+    return out, unclaimed
 
 
 def grouped(cfg, rows):
@@ -394,7 +422,7 @@ def discipline(one, many):
             [line for step in steps for line in step]]
 
 
-def prompt(cfg, plan, quiet, when):
+def prompt(cfg, plan, quiet, when, unclaimed=()):
     one = cfg["records"]["one"]
     many = cfg["records"]["many"]
     collective = cfg["records"]["collective"]
@@ -415,10 +443,18 @@ def prompt(cfg, plan, quiet, when):
     # the way their author wants them, and re-wrapping somebody's prose is not
     # this program's business.
     own = lambda text: [text.splitlines()] if text else []
+    # What the plan covers, and never what the file holds: a run narrowed to one
+    # project, or a database carrying rows no project here claims, would make the
+    # second a false sentence about a file the assistant is about to edit.
     return page(
         f"You are closing {many} in the {collective} of **{cfg['tool']}**, at "
-        f"{cfg['root']}. `{where}` holds {total} open {many} that nobody has "
-        f"ruled on.",
+        f"{cfg['root']}. `{where}` holds {total} open {many} owned by the "
+        f"projects below, and nobody has ruled on them.",
+        (f"**`{where}` also holds {len(unclaimed)} open {many} that name no "
+         f"project this config watches**, so nothing below is a window on them "
+         f"and this run cannot rule on them. Leave them exactly as they are; "
+         f"they are why the number above is smaller than the file."
+         if unclaimed else ""),
         *own(about),
         "**Your question is what each of those projects has since done about "
         "them.** Not whether a check still fires: what a commit of theirs "
@@ -533,12 +569,24 @@ def main(argv=None):
                 raise ValueError(f"no {name} checkout at {path}")
             local[name] = (path, "--use-local")
 
-        rows = by_project(cfg, open_rows(cfg))
+        rows, unclaimed = by_project(cfg, open_rows(cfg))
         since = {n: (r, "--since") for n, r in
                  pairs(args.since, known, "--since").items()}
         busy = [n for n in wanted if rows[n]]
         quiet = [n for n in wanted if not rows[n]]
         base = baselines(cfg, since, busy)
+
+        # Before anything branches, because it is a fact about this config
+        # against this database and it is true of a dry run, a preview and a
+        # real run alike. The owner gets the identities; the assistant gets the
+        # count, which is what has to add up against `koine_check_db`.
+        if unclaimed:
+            shown = [named(r) for r in unclaimed[:cfg["listed"]]]
+            rest = len(unclaimed) - len(shown)
+            print(f"-- koine_close_db: {len(unclaimed)} open "
+                  f"{cfg['records']['many']} name no project this config "
+                  f"watches, so no window covers them: " + ", ".join(shown)
+                  + (f", and {rest} more" if rest else ""), file=sys.stderr)
 
         plan = []
         for name in busy:
@@ -556,7 +604,7 @@ def main(argv=None):
 
         from datetime import date
         when = args.date or date.today().isoformat()
-        text = prompt(cfg, plan, quiet, when)
+        text = prompt(cfg, plan, quiet, when, unclaimed)
         if args.show_prompt:
             print(text, end="")
             return 0

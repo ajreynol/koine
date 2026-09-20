@@ -51,6 +51,15 @@ owes an `awaiting_landing` saying where the change is, and that field predates
 the convention. An owner in that position names it once rather than renaming a
 field in a database somebody else's audit reads.
 
+**`--renamed` allows the envelope key to change**, for the one change to the
+file's shape that adds nothing and loses nothing: renaming what the database
+calls its records. `koine_append_db` will not do it -- an existing database keeps
+the key it already uses -- so it is a person's edit, and without this flag the
+only thing this program can say about it is *unallowed change*, which makes a
+deliberate migration a red run somebody has to be told to ignore. Reported
+either way; the flag decides whether it fails, and every record is still
+compared. A migration is not a closure and is not counted as one.
+
 ## What it will not do
 
 **It knows nothing about what the records are.** A database of defects and a
@@ -227,6 +236,11 @@ def main(argv=None):
                     help="allow a closure already recorded to be changed or "
                          "removed: a person replacing a promise with the commit "
                          "that kept it is amending a closure, not making one")
+    ap.add_argument("--renamed", action="store_true",
+                    help="allow the envelope key to change: renaming what the "
+                         "database calls its records is a migration a person "
+                         "makes, not a closure, and every record is still "
+                         "compared")
     args = ap.parse_args(argv)
 
     try:
@@ -240,14 +254,25 @@ def main(argv=None):
         return 1
 
     closed, wrong = compare(before, after, args.amended, frozenset(args.also))
+    # Kept out of `closed`, which is counted as closures: a rename is neither a
+    # closure nor, with --renamed, a fault, and adding it to either count would
+    # make the summary say something that is not so.
+    renamed = []
     if key_was and key_now and key_was != key_now:
-        wrong.append(f"the database called its records `{key_was}` and now calls "
-                     f"them `{key_now}`. That is a change to the file's shape, "
-                     "not a closure")
+        said = (f"the database called its records `{key_was}` and now calls "
+                f"them `{key_now}`")
+        if args.renamed:
+            renamed.append(f"{said} -- a migration, and not a closure. What the "
+                           "records say is compared below either way")
+        else:
+            wrong.append(f"{said}. That is a change to the file's shape, not a "
+                         "closure. Pass --renamed if that was deliberate")
 
     # What the run did, then what it should not have, then the count. Flushed,
     # because the two streams are routinely one terminal and a report whose
     # lines arrive in a different order than they were written is a worse report.
+    for line in renamed:
+        print(f"-- {line}", flush=True)
     for line in closed:
         print(f"-- {line}", flush=True)
     for line in wrong:

@@ -200,8 +200,9 @@ PROMPT_END
 read -r -d '' TAIL_NEW <<'PROMPT_END' || true
 **Leave a record of what you read.** Copy the glossary entry, if one exists, and
 any supplied proposal into `init-brief.local.md` at the root, naming their
-sources. Otherwise record the person's stated name and scope and the missing
-glossary entry. Do not stage it: `*.local.md` is the
+sources **and the commit of the tree you read each at** — the same thing the
+child mode records, and for the same reason. Otherwise record the person's stated
+name and scope and the missing glossary entry. Do not stage it: `*.local.md` is the
 ecosystem's suffix for a file that is deliberately not committed. It is there so
 that if this README turns out to be wrong, somebody can see what you were working
 from instead of guessing — the register moves, and the version you read is the

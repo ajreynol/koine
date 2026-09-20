@@ -247,6 +247,30 @@ def test_the_envelope_key_is_not_a_closure():
     r = o.run()
     check("it is reported as a change to the file's shape",
           r.returncode == 1 and "not a closure" in r.stderr, r.stderr)
+    check("and the way past is named rather than left to be guessed",
+          "--renamed" in r.stderr, r.stderr)
+
+    # A rename adds nothing and loses nothing, and koine_append_db will not do
+    # it -- an existing database keeps its key -- so it is a person's edit. With
+    # no way to say it was deliberate, a migration is a red run somebody has to
+    # be told to ignore, which is the habit a check cannot afford to teach.
+    r = o.run("--renamed")
+    check("declared, the same migration passes",
+          r.returncode == 0 and "a migration, and not a closure" in r.stdout,
+          r.stdout + r.stderr)
+    check("and is not counted as a closure",
+          "0 closure(s), 0 unallowed change(s)" in r.stdout, r.stdout)
+
+    # The flag permits the envelope and nothing else: what the records say is
+    # still compared, which is the whole reason the check exists.
+    with open(o.db, encoding="utf-8") as fh:
+        records = json.load(fh)["findings"]
+    records[0] = {**records[0], "description": "the first claim, tidied"}
+    with open(o.db, "w", encoding="utf-8") as fh:
+        json.dump({"findings": records}, fh, indent=2)
+    r = o.run("--renamed")
+    check("but a record reworded under cover of it still fails",
+          r.returncode == 1 and "`description` was" in r.stderr, r.stderr)
 
 
 def test_what_it_refuses_to_judge():

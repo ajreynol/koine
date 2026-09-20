@@ -1,9 +1,9 @@
 # bug_db_manager
 
 **Tooling for owners to maintain their bug databases. Koine does not maintain
-those databases.** Anoieu and dokimasia own their records, evidence, triage,
-cleanup, and close/reopen decisions. Koine maintains the shared programs they
-invoke. [`koine_append_db`](koine_append_db) adds a run's findings to the
+those databases.** Anoieu, dokimasia and tachyon's metagraphe own their records,
+evidence, triage, cleanup, and close/reopen decisions. Koine maintains the
+shared programs they invoke. [`koine_append_db`](koine_append_db) adds a run's findings to the
 owner's persistent database; [`koine_window`](koine_window) resolves the window
 of somebody else's history that a closure run reads;
 [`koine_close_db`](koine_close_db) starts an assistant on the closure itself; and
@@ -17,17 +17,18 @@ are *called* is the owner's, and an owner says so once -- in the envelope key
 their database uses and in their closure config. koine's tooling is called
 bug_db whoever is using it.
 
-[anoieu](https://github.com/ajreynol/anoieu) and
-[dokimasia](https://github.com/ajreynol/dokimasia) are the customers, checked on
-2026-09-18, and **metagraphe** — a child project in
-[tachyon](https://github.com/ajreynol/tachyon), at `tools/metagraphe/` — is the
-third, planned as of 2026-09-19. Its database is a `rewrite_db/` holding rewrite
-candidates: a proposed `lhs -> rhs` with its side condition and the evidence that
-cvc5 does not currently take the opportunity. That is not a defect, and nothing
-here requires it to be one. Each records a dependency pin and calls this from its own run.
-Dokimasia uses `scripts/koine.lock`; anoieu's published `5835c6f` uses that path
-too, while its local work moves it to `config/koine.lock`. Resolving and
-enforcing those pins is the consumer's responsibility.
+**Three customers, and all three pin this repository at `e4e4e2e`**, checked in
+their trees on 2026-09-19: [anoieu](https://github.com/ajreynol/anoieu) at
+`anoieu_analyzer/reporting/config/koine.lock`,
+[dokimasia](https://github.com/ajreynol/dokimasia) at `scripts/koine.lock`, and
+**metagraphe** — a child project in
+[tachyon](https://github.com/ajreynol/tachyon), at `tools/metagraphe/` — at
+`tools/metagraphe/rewrite_db/koine.lock`. Metagraphe's database is a `rewrite_db/`
+holding rewrite candidates: a proposed `lhs -> rhs` with its side condition and
+the evidence that cvc5 does not currently take the opportunity. That is not a
+defect, and nothing here requires it to be one; its envelope key is `rewrites`.
+Each calls these programs through its own lock, and resolving and enforcing that
+pin is the consumer's responsibility.
 `scripts/install_eo` also puts these programs on a person's PATH and that is a
 different thing — PATH gives whatever the operator last installed, so a pinned
 consumer keeps resolving through its lock.
@@ -285,6 +286,22 @@ cvc5: 3 open rewrite candidates -- bitvectors 1, strings 2
 ethos: nothing open; no window to read
 ```
 
+**A window is a window on one project, so an open record naming none has no
+window** — and the run says so rather than leaving it out:
+
+```console
+$ koine_close_db --config tools/metagraphe/closure.json --dry-run
+-- koine_close_db: 2 open rewrite candidates name no project this config watches,
+   so no window covers them: M-7, M-11
+```
+
+That is not an error; a database may carry a row about something this owner does
+not watch. What it cannot be is silent. `koine_check_db` reads the whole file
+afterwards, so a run that described a smaller database would leave two counts and
+nothing to say which of them to believe — and the prompt carries the same
+sentence, because an assistant told the file holds fewer rows than it does is
+being set up to tidy one.
+
 ### What is koine's here, and what is not
 
 **koine owns the mechanics.** The window, which is `koine_window`. The
@@ -357,7 +374,7 @@ database before the assistant touched it.
 | | |
 | --- | --- |
 | **may** | add `closed_*` fields to a record that carried none |
-| **may not** | remove a record, add one, reorder them, change any field that is not a closure field, or rewrite a closure already recorded |
+| **may not** | remove a record, add one, reorder them, change any field that is not a closure field, rewrite a closure already recorded, or rename the envelope key |
 
 ```console
 $ koine_check_db bug_db/bugs.json
@@ -378,7 +395,9 @@ predates the convention: a verdict closing a finding before its fix reaches a
 default branch owes an `awaiting_landing` saying where the change is.
 **`--amended`** allows a recorded closure to be changed, which is a person
 replacing a promise with the commit that kept it rather than a run making a
-closure. Both are reported either way; the flag decides whether it fails.
+closure. **`--renamed`** allows the envelope key to change, which is a migration
+and is above. All three are reported either way; the flag decides whether it
+fails.
 
 Run retroactively over anoieu's history on 2026-09-19, the commit that was a
 closure run passed with 25 closures and no unallowed change, and the commit that
@@ -390,6 +409,16 @@ was a ledger migration did not — which is the right answer for both.
 and `koine_check_db` reads the result back. A writer is possible and is not
 obviously wanted: the part an assistant is better at is authoring the reasoning,
 and a program that took the write would have to take that with it.
+
+**Two asks are on the table and neither is taken**, both made concrete by
+consumers on 2026-09-19 rather than guessed at here. Each would be a new
+maintenance obligation, which is the maintainer's to accept; `docs/discussion.md`
+carries koine's answer to each and what it would cost.
+
+| Asked by | What is wanted | Where it stands |
+| --- | --- | --- |
+| anoieu | **Was finding X covered by run B** — *covered and not reported*, *covered and reported*, or *not covered*, the last distinguishing an input that was not read from a check that was off from an identity that did not match. Today a finding absent from a dump and a finding nobody looked for are the same fact | Priced, not built. It needs a run record these programs do not keep, and the answer is only as good as the coverage the producer reports |
+| dokimasia, tachyon | **Keep the original claim, its date and its corrections** when a later run under the same identity carries different text. Today the original is kept, `last_seen` moves, and the new wording is printed as a conflict and lost | Priced, not built. This is storage and so is koine's; what it changes is what a record *is*, which is why it is not a flag somebody adds on an afternoon |
 
 The rest of what shared tooling could support, with what the owner would have to
 supply for it:
@@ -404,6 +433,12 @@ supply for it:
 Cleanup must preserve original findings, ids, dates, verdicts and evidence.
 Incomplete or incomparable runs must leave closure unassessed. A retention or
 archival decision belongs to the database owner as well.
+
+**One shape is refused rather than unbuilt.** A second list in the envelope —
+`{"bugs": [...], "runs": [...]}` — is not how a run record would arrive here,
+because every program in this directory reads the envelope by finding the one
+list in it and refuses a file with two. Whatever holds run evidence is a file
+beside the database, which is where the two consumers that keep one already do.
 
 ## The two files
 
@@ -422,6 +457,24 @@ entry those fields are preserved, an existing `first_seen` is retained, and
 For an existing entry, additional fields are not merged; conflicting values are
 reported and kept as recorded.
 
+### What the database calls its records
+
+**The envelope key is read from the file and written back unchanged**, so a
+consumer whose records are not defects is read and written like any other and the
+counts a run prints speak that consumer's word: `-- 2 new rewrite(s)` over a
+`{"rewrites": [...]}` database. **`--records KEY` names the key for a database
+this run creates**; an existing one keeps its own and the flag is ignored, which
+is why metagraphe's `rewrites.json` had to be re-keyed by hand.
+
+**Renaming the key of an existing database is a person's edit, and it is
+checked rather than performed.** Nothing here does it, because a program that
+could rewrite the envelope could rewrite it by accident. What koine owes the
+person who does it is the other half: `koine_check_db --renamed` establishes that
+the rename is *all* that happened — every record, its order and its fields
+compared as ever, the rename reported and not counted as a closure. Without the
+flag it is an unallowed change, which is correct for a closure run and is the
+wrong answer for a migration.
+
 ## Running it
 
 ```console
@@ -435,7 +488,7 @@ No dependencies and no network. `test_window.py` builds git repositories in a
 temporary directory — a shallow clone, a diverged branch, a checkout parked at
 its baseline — and reads a window out of each. `--dry-run` says what would change and writes
 nothing; `--date` records a run under a date other than today;
-`--lock-timeout` and `--no-lock` are above.
+`--records`, `--lock-timeout` and `--no-lock` are above.
 
 **The executables are [`koine_append_db`](koine_append_db),
 [`koine_window`](koine_window), [`koine_close_db`](koine_close_db) and
@@ -446,5 +499,15 @@ location and exits non-zero. Consumers must probe and invoke
 The installed command remains `koine_append_db`, with the same arguments and
 JSON format.
 
-Also to a consumer's account: `bug_reports.writer` and any other caller that
-already serialises its own access wants `--no-lock`, not a second lock.
+**The tombstone is still read, and taking it out is the maintainer's.** As
+checked on 2026-09-19, both adapters name the root path — anoieu's in a
+`BEFORE_MOVE` list, dokimasia's alongside the other retired spellings — and
+neither runs it: each is deciding whether a directory it found is koine from
+before the move, so that a consumer that cannot find this repository says which
+of *wrong path* and *wrong commit* it hit. Dokimasia has said the tombstone may
+go whenever koine's maintainer wants it out and is not asking for it. Removing it
+would cost anoieu one of three signals in a diagnostic and no run anywhere.
+
+Also to a consumer's account: dokimasia's `scripts/bug_reports.py` writer, and
+any other caller that already serialises its own access, wants `--no-lock` rather
+than a second lock.

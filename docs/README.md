@@ -5,7 +5,7 @@ by hand; none is generated.
 
 | document | its job |
 | --- | --- |
-| [maintenance.md](maintenance.md) | Local responsibilities, supervision, verification commands, and outstanding service proposals |
-| [discussion.md](discussion.md) | Live correspondence with other tools, its response gate, and the dated incoming-topic inventory |
-| [bug_db_manager/README.md](../bug_db_manager/README.md) | Owner-operated database tooling, append behavior, and the cleanup capability assessment |
+| [maintenance.md](maintenance.md) | Local responsibilities, supervision, verification commands, which consumers pin what, and the four unbuilt services |
+| [discussion.md](discussion.md) | Correspondence, with the dated inventory of which incoming topics name koine and where each is answered |
+| [bug_db_manager/README.md](../bug_db_manager/README.md) | Owner-operated database tooling: appending, the closure window and its check, and what is not built and who asked for it |
 | [eo_cmd/README.md](../eo_cmd/README.md) | Installation, command behavior, previews, and the boundary between shared machinery and policy |

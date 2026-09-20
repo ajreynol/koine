@@ -50,9 +50,10 @@
       "short": "add a run's new bugs to a bug database",
       "audience": "tooling",
       "path": "bug_db_manager/koine_append_db",
-      "what": "add a run's new bugs to the database of every bug a tool has found. For a person at a terminal: a pinned consumer resolves it through its own lock and must not take it off PATH, which would lose the pin",
+      "what": "add a run's new records to the database of everything a tool has found. It knows nothing about what the records are: the envelope key is read from an existing database and written back unchanged, and --records names one for a database the run creates, so a rewrite database is read and written like a bug one. For a person at a terminal: a pinned consumer resolves it through its own lock and must not take it off PATH, which would lose the pin",
       "forms": [
-        "koine_append_db <new bugs> <bug database>"
+        "koine_append_db <new bugs> <bug database>",
+        "koine_append_db <new records> <database> --records <key>"
       ],
       "kind": "program"
     },
@@ -74,11 +75,12 @@
       "short": "check that a closure run changed only what it was allowed to",
       "audience": "tooling",
       "path": "bug_db_manager/koine_check_db",
-      "what": "compare a bug database against the version last committed and establish that every difference is the addition of closure fields to a record that carried none. A removed, added, reordered or reworded record fails the run. `--also` names a closure field that does not carry the `closed_` prefix; `--amended` allows a recorded closure to be changed. Writes nothing and fixes nothing",
+      "what": "compare a bug database against the version last committed and establish that every difference is the addition of closure fields to a record that carried none. A removed, added, reordered or reworded record fails the run, and so does renaming the envelope key. `--also` names a closure field that does not carry the `closed_` prefix; `--amended` allows a recorded closure to be changed; `--renamed` allows the envelope key to change, which is a migration a person makes and not a closure. Each is reported either way and the flag decides whether it fails. Writes nothing and fixes nothing",
       "forms": [
         "koine_check_db <database>",
         "koine_check_db <database> --against <rev>",
-        "koine_check_db <database> --also <field> --amended"
+        "koine_check_db <database> --also <field> --amended",
+        "koine_check_db <database> --renamed"
       ],
       "kind": "program"
     },

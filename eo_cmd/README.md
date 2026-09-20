@@ -16,7 +16,7 @@ Prompt commands hand work to an assistant; programs do the work themselves.
 | [`eo_respond`](eo_respond) | answer one named topic addressed to your repository |
 | [`eo_brainstorm`](eo_brainstorm) | explore possibilities and discuss them with you; write only a private note |
 | [`eo_housekeeping`](eo_housekeeping) | update documentation, answer incoming topics, fix local tooling, and check CI |
-| `koine_append_db` | append a run's bugs to a database; implementation and usage in [`../bug_db_manager/`](../bug_db_manager/README.md) |
+| `koine_append_db` | append a run's records to a database, whatever that database calls them; implementation and usage in [`../bug_db_manager/`](../bug_db_manager/README.md) |
 | `koine_window` | resolve and describe the window of another project's history a closure run reads; in [`../bug_db_manager/`](../bug_db_manager/README.md) |
 | `koine_check_db` | check that a closure run changed only what it was allowed to; in [`../bug_db_manager/`](../bug_db_manager/README.md) |
 | `koine_close_db` | ask an assistant what each watched project has since done about our open records; in [`../bug_db_manager/`](../bug_db_manager/README.md) |
@@ -69,9 +69,10 @@ commands and leaves existing directories alone. `--president DIR` explicitly
 selects the register checkout; an invalid selection is refused rather than
 silently replaced. `--dry-run` prints the proposed clone commands.
 
-**Pinned consumers keep their locators.** As checked on 2026-09-18, anoieu and
-dokimasia record their koine dependency in a `koine.lock` file; anoieu's local
-work places it under `config/`, and dokimasia keeps it under `scripts/`.
+**Pinned consumers keep their locators.** As checked on 2026-09-19, three
+repositories record their koine dependency in a `koine.lock`: anoieu at
+`anoieu_analyzer/reporting/config/koine.lock`, dokimasia at `scripts/koine.lock`,
+and tachyon's metagraphe child at `tools/metagraphe/rewrite_db/koine.lock`.
 The manifest installs the implementation in `bug_db_manager/`. Consumers must
 probe and invoke `bug_db_manager/koine_append_db`; there is no `bug_db/` alias.
 Installing it on PATH is for terminal use; PATH selects the installed version
@@ -122,10 +123,13 @@ reject the flag as an unknown argument.
 
 ## What koine may change here, and what it may not
 
-As checked on 2026-09-18, [kanon's role
+As checked on 2026-09-19, [kanon's role
 register](https://github.com/ajreynol/kanon/blob/main/docs/roles.md) places
 `eo_init` and `eo_join` under **R35**, and the remaining commands under **R16**,
 shared low-level tooling. Koine maintains their text, options, and behavior.
+R16's list of commands names all but `eo_listen` and `eo_git_status`; both are in
+[`commands.json`](commands.json) and in the register's own tooling inventory, so
+the split is not in question and the list is one paragraph behind.
 
 **What joining costs and what a member is held to belong to R4**, held by the
 president. Changes to those requirements are argued there and then implemented
@@ -383,7 +387,9 @@ uses the person's name and scope and checks the glossary for conflicts;
 `from-child` reads the child's charter and delivered work without changing its
 parent. Both write a README and leave it staged.
 
-The prompt records its sources in `init-brief.local.md`, unstaged. Missing
+The prompt records its sources in `init-brief.local.md`, unstaged, **and the
+commit of the tree it read each at** — in both modes, because the register moves
+and the version read is the only thing that explains what was written. Missing
 scope or a conflicting name requires the person's answer. It adds no policy,
 maintenance note, CI, or layout: `eo_join` is a separate step when there is
 something to join with.

@@ -16,10 +16,12 @@
 # this one. Four commands for what a reader experiences as one question -- *what
 # does this repository say about us* -- and a chooser who gets it wrong writes
 # the wrong claim onto a front page. What is left is: join, or say you work with
-# us and are held to none of it. **`docs/discussion.md` `D17` says so to kanon**,
-# because the office's page names the two flags that are gone and because koine
-# has no standing over what joining costs: the order here is backwards on
-# purpose and the topic says that too.
+# us and are held to none of it. **The office's page agrees**: it offers
+# `eo_join` and `eo_join --soft` and records both withdrawn flags as withdrawn.
+# Koine has no standing over what joining costs, so the order here was backwards
+# on purpose -- the command moved first and the page followed -- and citing the
+# page rather than the topic that asked for it is deliberate: a topic is removed
+# when it settles, and a message pointing at one then points at nothing.
 #
 # **AND THE SOFT FORM CLAIMS NO FOOTING, WHICH IS THE POINT OF THE NOTE.** Three
 # of the office's documents give `associate` two incompatible readings -- the
@@ -75,8 +77,8 @@
 # uses* and *do not substitute a latest checkout for a pinned revision* are
 # instructions it cannot follow. Step 3 branches rather than choosing: which
 # form a member is held to is what joining costs, which is `R4` and the
-# office's. kanon's `D16` asked for this, and `docs/discussion.md` `D18`
-# answers it.
+# office's. The policy's joining section carries both forms and is the authority
+# for which one a joiner takes.
 #
 # --soft is a different act rather than a smaller one. It adds the maintenance
 # note and stops: no membership is declared, no workflow is added and no checker
@@ -167,7 +169,8 @@ while [ $# -gt 0 ]; do
       echo "eo_join: --associate is gone. It wrote a footing marker claiming the" >&2
       echo "         repository is *held to* the policy by its own choice, which" >&2
       echo "         is not what --soft claims and not what this command offers" >&2
-      echo "         any more -- see docs/discussion.md D17, open with kanon." >&2
+      echo "         any more. The policy's footings section is the authority" >&2
+      echo "         on what an associate records, and it is written by hand." >&2
       echo "         To say you work with this ecosystem and are held to none of" >&2
       echo "         it: eo_join --soft. To join: eo_join." >&2
       exit 2 ;;

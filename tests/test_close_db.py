@@ -236,6 +236,35 @@ def test_a_record_owned_by_two_projects_is_in_both_windows():
           r.returncode == 2 and "does not name" in r.stderr, r.stderr)
 
 
+def test_an_open_record_no_project_claims_is_named_rather_than_dropped():
+    print("\nopen records that no watched project owns:")
+    # Three open, one of them owned by a project this config watches. The other
+    # two have no window, which is a fact about the config and not an error --
+    # and a run that dropped them would describe a smaller database than the one
+    # koine_check_db reads afterwards, with nothing saying which count to believe.
+    c = Consumer([{"id": "A-1", "owner": "cvc5", "description": "one"},
+                  {"id": "A-2", "description": "no owner field at all"},
+                  {"tool": "x", "bug": "B-9", "owner": "", "description": "empty"}])
+    r = c.run("--dry-run", "--since", "cvc5=aee8742")
+    check("the run says how many no window covers",
+          r.returncode == 0 and "2 open records name no project this config "
+          "watches" in r.stderr, r.stderr)
+    check("and names them, so the owner can fix the config",
+          "A-2" in r.stderr and "x B-9" in r.stderr, r.stderr)
+    text = c.prompt()
+    check("the prompt counts only what the windows below cover",
+          said(text, "holds 1 open records owned by the projects below"), text)
+    check("and says why that is smaller than the file",
+          said(text, "also holds 2 open records that name no project this "
+                     "config watches"), text)
+    # The loud case is unchanged: a *named* project the config does not know is
+    # a config that disagrees with the database, and that is refused.
+    quiet = Consumer([{"id": "A-1", "owner": "cvc5", "description": "one"}])
+    r = quiet.run("--dry-run", "--since", "cvc5=aee8742")
+    check("and a database every project claims says nothing about it",
+          "name no project" not in r.stderr, r.stderr)
+
+
 def test_the_records_are_called_what_the_owner_calls_them():
     print("\na third customer, whose records are not defects:")
     c = Consumer([{"id": "M-1", "owner": "cvc5", "description": "str.len distributes"}],
@@ -319,6 +348,7 @@ if __name__ == "__main__":
                test_a_ruled_record_is_nobodys_question,
                test_a_project_with_nothing_open_is_named_out_loud,
                test_a_record_owned_by_two_projects_is_in_both_windows,
+               test_an_open_record_no_project_claims_is_named_rather_than_dropped,
                test_the_records_are_called_what_the_owner_calls_them,
                test_a_paragraph_is_wrapped_and_a_command_is_not,
                test_it_starts_nothing_and_fetches_nothing):
