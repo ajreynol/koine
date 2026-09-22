@@ -16,6 +16,10 @@ Prompt commands hand work to an assistant; programs do the work themselves.
 | [`eo_respond`](eo_respond) | answer one named topic addressed to your repository |
 | [`eo_brainstorm`](eo_brainstorm) | explore possibilities and discuss them with you; write only a private note |
 | [`eo_housekeeping`](eo_housekeeping) | update documentation, answer incoming topics, fix local tooling, and check CI |
+| [`eo_cvc5_check_dokimasia`](eo_cvc5_check_dokimasia) | investigate proof-production gaps in cvc5 and fix confirmed defects |
+| [`eo_cvc5_check_anoieu`](eo_cvc5_check_anoieu) | investigate cvc5's Eunoia signatures and fix confirmed defects |
+| [`eo_cvc5_check_emperia`](eo_cvc5_check_emperia) | reproduce, locate, fix and test one numbered cvc5 issue |
+| [`eo_cvc5_check_anakrisis`](eo_cvc5_check_anakrisis) | review one numbered cvc5 PR using the measured inventory delta |
 | `koine_append_db` | append a run's records to a database, whatever that database calls them; implementation and usage in [`../bug_db_manager/`](../bug_db_manager/README.md) |
 | `koine_window` | resolve and describe the window of another project's history a closure run reads; in [`../bug_db_manager/`](../bug_db_manager/README.md) |
 | `koine_check_db` | check that a closure run changed only what it was allowed to; in [`../bug_db_manager/`](../bug_db_manager/README.md) |
@@ -125,6 +129,10 @@ after CI passes, which is still the final step of the work.
 | `eo_respond` | yes, for the change; the reply draft stays an unstaged `*.local.md` |
 | `eo_housekeeping` | yes, unless `--report`, which is refused with that pair |
 | `eo_brainstorm` | refused: a proposal is not a decision somebody should find already in the history |
+| `eo_cvc5_check_dokimasia` | refused: upstream delivery remains a person's decision |
+| `eo_cvc5_check_anoieu` | refused: upstream delivery remains a person's decision |
+| `eo_cvc5_check_emperia` | refused: upstream delivery remains a person's decision |
+| `eo_cvc5_check_anakrisis` | refused: the result is a local review |
 
 The programs — `eo_status`, `eo_git_status`, `eo_listen` — write nothing and
 reject the flag as an unknown argument.
@@ -395,6 +403,91 @@ register the command still shows status and says that missing-repository
 coverage is unavailable. Missing repositories are informational. An unreadable
 checkout is reported without stopping the remaining checks and gives exit 1;
 invalid arguments or configuration give exit 2. No assistant is launched.
+
+## eo_cvc5_check_dokimasia
+
+```console
+$ cd /path/to/cvc5
+$ eo_cvc5_check_dokimasia
+$ eo_cvc5_check_dokimasia --show-prompt
+$ eo_cvc5_check_dokimasia --tool-root /path/to/dokimasia --codex
+```
+
+Asks an assistant to read Dokimasia's charter and evidence bar, run its analyzer
+on this cvc5 checkout without updating its database, and investigate
+proof-production and safe-mode gaps. Confirmed cvc5 defects get fixes and focused
+regressions; static observations alone do not establish reachable bugs.
+
+All four `eo_cvc5_check_` commands launch the selected assistant from the cvc5
+Git root. They keep the current branch and preserve existing work. The first
+three ask for changes to be left staged and not committed; Anakrisis returns a
+review. All refuse `--push`, leaving publication to a person. Tool repositories
+are read without changing their databases, ledgers or baselines.
+
+They accept `--codex`, `--claude`, `--print` for a non-interactive run, and
+`--show-prompt` to preview without starting an assistant. The default agent is
+the same as the other prompt commands. The launcher itself performs no analysis,
+network access, branch changes or writes. A real run requires a Git checkout
+with `configure.sh` and `src/theory/`, and the selected tool's `README.md`.
+A preview needs neither and names missing inputs.
+
+`--tool-root DIR` selects the directory containing the tool's charter. Otherwise
+discovery checks `DOKIMASIA_ROOT`, `ANOIEU_ROOT`, `EMPEIRIA_ROOT` or
+`ANAKRISIS_ROOT`, respectively; `PAIDEIA_ROOT` can locate either child under
+`tools/`. Then it searches the colon-separated roots in `ANOIEU_REPOS`, siblings
+of cvc5, and `$HOME`, using `dokimasia/`, `anoieu/`, or
+`paideia/tools/<child>/`. Explicit paths take precedence, including when invalid.
+No dependency is cloned or fetched by the launcher.
+
+## eo_cvc5_check_anoieu
+
+```console
+$ eo_cvc5_check_anoieu
+$ eo_cvc5_check_anoieu --codex --print
+```
+
+Applies Anoieu's analyzer and fuzzer charter to cvc5's Eunoia signatures and
+available semantic configurations. The prompt asks for the actual signature
+entry points and ordered profiles, evidence for candidates, fixes and regression
+checks. It directs the agent to report missing semantic coverage and checker-side
+defects accurately. This does not run the optional ecosystem policy checker.
+The common options and discovery rules are above.
+
+## eo_cvc5_check_emperia
+
+```console
+$ eo_cvc5_check_emperia 12905
+$ eo_cvc5_check_emperia 12905 --show-prompt
+```
+
+`N` is a required positive cvc5 **issue number**. The command's requested
+`emperia` spelling refers to Paideia's `tools/empeiria/` child. Its charter asks
+for reproduction, diagnosis, the smallest justified fix, and a regression tested
+before and after. Earlier cases may inform the work; the triage index alone is
+not evidence. Proof-completeness bugs are identified as Dokimasia's scope.
+The result stays in the cvc5 tree for review, without writing a child ledger or
+inventing a maintainer response. The common options and discovery rules are above.
+
+## eo_cvc5_check_anakrisis
+
+```console
+$ eo_cvc5_check_anakrisis 12893
+$ eo_cvc5_check_anakrisis 12893 --show-prompt
+```
+
+`N` is a required positive cvc5 **pull-request number**. Run from a clean checkout
+of that PR. The agent must verify its head and base, then use Anakrisis's documented
+delta interface and Dokimasia to compare the merge base with the head at the
+same analysis scope. Missing evidence stops the review; a failed analysis must
+not become an empty delta.
+
+The review follows Paideia's `tools/anakrisis/` charter and review protocol:
+attribute observations to changed hunks, account for renames, and support
+behavioral claims with actual runs. It covers measured observations, proof
+hygiene and the documented contract. An empty delta is not a correctness verdict,
+and “nothing to say” is valid. The agent returns its review locally without
+editing or staging cvc5 source, writing a ledger, or submitting anything.
+The common options and discovery rules are above.
 
 ## eo_init
 

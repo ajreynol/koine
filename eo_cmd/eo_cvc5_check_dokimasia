@@ -1,0 +1,159 @@
+#!/usr/bin/env python3
+"""eo_cvc5_check_dokimasia -- investigate and fix cvc5 proof-production gaps.
+
+Self-contained because install_eo copies each command as a single file.
+The launcher reads paths and builds a prompt; only the selected agent does work.
+"""
+
+import argparse
+import os
+from pathlib import Path
+import re
+import shutil
+import subprocess
+import sys
+
+COMMAND = 'eo_cvc5_check_dokimasia'
+TOOL = 'dokimasia'
+REPOSITORY = 'dokimasia'
+CHILD = ''
+NUMBER_KIND = ''
+SUMMARY = 'investigate and fix cvc5 proof-production gaps'
+TASK = """Read `{tool}/docs/README.md` for the checks, proof-hygiene rules and safe-mode
+contract, and `{tool}/dokimasia_analyzer/README.md` for the evidence bar. Investigate
+cvc5's C++ proof construction, reconstruction, checking and printing: missing proof
+support, unjustified trust, safe-mode inconsistencies, and mismatches with the
+Eunoia proof signature. Run the documented analyzer on this checkout using
+`scripts/dokimasia_analyzer --cvc5` with this root, `--no-update`, and `--dump` in
+a temporary directory outside both repositories. Existing observations are leads;
+verify them against this revision. Static observations alone do not establish a
+reachable bug or incomplete proof. Reproduce behavioral claims with concrete inputs
+and actual output, including proof-completeness checking where relevant. Distinguish
+analyzer mistakes from cvc5 defects. Fix confirmed cvc5 defects at their cause, add
+focused regression coverage, and rerun the relevant analyzer checks and cvc5 tests.
+Do not weaken safe-mode guarantees or suppress observations to obtain a clean run.
+A clean analysis establishes only that the selected checks found nothing.
+
+**Leave the work staged and not committed**: `git add` what you changed and
+stop there, so a person reviews a diff rather than a history. Stage only your
+changes, preserving any changes already staged when the run began."""
+
+
+def positive_number(value):
+    if not re.fullmatch(r"[1-9][0-9]*", value):
+        raise argparse.ArgumentTypeError("N must be a positive issue or PR number")
+    return value
+
+
+def locate_tool(root, explicit):
+    """Explicit settings win, even when invalid; never substitute another tree."""
+    selected = explicit or os.environ.get(TOOL.upper() + "_ROOT")
+    if selected:
+        return Path(selected).expanduser().resolve()
+    if CHILD and os.environ.get("PAIDEIA_ROOT"):
+        return Path(os.environ["PAIDEIA_ROOT"]).expanduser().resolve() / CHILD
+    roots = [Path(p).expanduser() for p in
+             os.environ.get("ANOIEU_REPOS", "").split(os.pathsep) if p]
+    roots += [root.parent, Path.home()]
+    for search in roots:
+        for repository in (search / REPOSITORY, search):
+            candidate = repository / CHILD if CHILD else repository
+            # A search root's own README is not necessarily this tool's charter.
+            if repository == search and repository.name != REPOSITORY:
+                continue
+            if (candidate / "README.md").is_file():
+                return candidate.resolve()
+    return None
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        prog=COMMAND, allow_abbrev=False,
+        usage="%(prog)s [options]" + (" N" if NUMBER_KIND else ""),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=f"{COMMAND} -- {SUMMARY}.\n\n"
+                    "An Eunoia ecosystem prompt command. Run it in a cvc5 repository;\n"
+                    "the agent starts at the checkout root on the current branch.\n"
+                    "Read the tool's charter, investigate, and leave the result locally.",
+        epilog="--show-prompt works without cvc5, the tool, or an agent installed.\n"
+               "Tool discovery: --tool-root, $" + TOOL.upper() + "_ROOT, then\n"
+               "$PAIDEIA_ROOT for children, $ANOIEU_REPOS (colon-separated),\n"
+               "siblings of cvc5, and $HOME. --tool-root names the charter directory.\n"
+               "No launcher switches branches, pulls, runs analyses, or writes files.")
+    if NUMBER_KIND:
+        parser.add_argument("number", metavar="N", type=positive_number,
+                            help=f"the cvc5 {NUMBER_KIND} number (required)")
+    parser.add_argument("--tool-root", metavar="DIR", help="directory containing the tool's README.md")
+    parser.add_argument("--codex", dest="agent", action="store_const", const="codex",
+                        help="select codex instead of claude")
+    parser.add_argument("--claude", dest="agent", action="store_const", const="claude",
+                        help="select claude (the default)")
+    parser.set_defaults(agent="claude")
+    parser.add_argument("--print", dest="noninteractive", action="store_true",
+                        help="run the agent non-interactively and print the result")
+    parser.add_argument("--show-prompt", action="store_true", help="print the prompt and launch nothing")
+    parser.add_argument("--push", action="store_true", help="refused: these runs keep their results local")
+    args = parser.parse_args()
+    if args.push:
+        parser.error("--push is refused: this tool's charter leaves upstream delivery to a person")
+
+    try:
+        git = subprocess.run(["git", "rev-parse", "--show-toplevel"],
+                             capture_output=True, text=True)
+    except FileNotFoundError:
+        git = None
+    root = Path(git.stdout.strip()).resolve() if git and git.returncode == 0 else Path.cwd()
+    is_cvc5 = (git is not None and git.returncode == 0
+               and (root / "configure.sh").is_file() and (root / "src/theory").is_dir())
+    if not is_cvc5 and not args.show_prompt:
+        parser.error("run this in a cvc5 Git checkout (configure.sh and src/theory/ are required)")
+    tool = locate_tool(root, args.tool_root)
+    has_charter = tool is not None and (tool / "README.md").is_file()
+    if not has_charter and not args.show_prompt:
+        parser.error(f"no {TOOL} charter found; set --tool-root DIR to its README.md directory. "
+                     "--show-prompt still prints the workflow")
+
+    if has_charter:
+        context = f"Read `{tool / 'README.md'}` first; it is {TOOL}'s charter."
+    else:
+        context = (f"No checkout with {TOOL}'s README.md was found. Before working, locate "
+                   f"`{REPOSITORY}/{CHILD + '/' if CHILD else ''}README.md` and read its charter; "
+                   "--tool-root selects its directory. Do not invent the missing charter.")
+    if not is_cvc5:
+        context += " This preview is outside a cvc5 checkout; a real run requires one."
+    task = TASK.format(root=root, tool=tool if has_charter else f"<{TOOL}-root>",
+                       number=getattr(args, "number", ""))
+    prompt = f"""You are working in the cvc5 checkout at `{root}`, following {TOOL}'s charter.
+{context} Read cvc5's own contributor instructions and relevant tests. Keep the
+current branch and inspect existing changes before doing anything; preserve work
+that was already here. Do not switch branches, pull, reset, or stash this tree.
+
+{task}
+
+Use the tool checkout as a source of instructions and analysis, without modifying
+its code, database, ledger, or baselines. Put temporary analyzer output and builds
+in temporary directories outside the source checkouts. Report the source revisions,
+commands, actual results, fixes or review findings, and anything still unverified.
+Do not commit, push, open a pull request, post a review or comment, or send anything
+upstream. A person decides what to publish.
+"""
+    # Keep interpolated paths intact, including their spaces.
+    prompt = prompt.strip() + "\n"
+    if args.show_prompt:
+        print(prompt, end="")
+        return 0
+    executable = shutil.which(args.agent)
+    if executable is None:
+        print(f"{COMMAND}: {args.agent} is not on PATH", file=sys.stderr)
+        return 127
+    argv = [args.agent]
+    if args.noninteractive:
+        argv.append("exec" if args.agent == "codex" else "-p")
+    argv.append(prompt)
+    print(f"-- {COMMAND}: {root}, via {args.agent}; charter: {tool / 'README.md'}", file=sys.stderr)
+    os.chdir(root)
+    os.execv(executable, argv)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

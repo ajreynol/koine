@@ -160,10 +160,50 @@
         "eo_housekeeping --push"
       ],
       "kind": "prompt"
+    },
+    {
+      "name": "eo_cvc5_check_dokimasia",
+      "short": "investigate and fix cvc5 proof-production gaps",
+      "what": "run in a cvc5 checkout: ask an assistant to follow dokimasia's charter, analyze proof-production and safe-mode gaps, reproduce candidates, and fix confirmed cvc5 defects with regression coverage. Changes stay staged; nothing is published",
+      "forms": [
+        "eo_cvc5_check_dokimasia",
+        "eo_cvc5_check_dokimasia --codex"
+      ],
+      "kind": "prompt"
+    },
+    {
+      "name": "eo_cvc5_check_anoieu",
+      "short": "investigate and fix cvc5 Eunoia signature defects",
+      "what": "run in a cvc5 checkout: ask an assistant to follow anoieu's analyzer and fuzzer charter, check the actual Eunoia signature profiles and available semantics, reproduce candidates, and fix confirmed cvc5 defects. This is not the repository-policy checker. Changes stay staged; nothing is published",
+      "forms": [
+        "eo_cvc5_check_anoieu",
+        "eo_cvc5_check_anoieu --codex"
+      ],
+      "kind": "prompt"
+    },
+    {
+      "name": "eo_cvc5_check_emperia",
+      "short": "reproduce and fix one numbered cvc5 issue",
+      "what": "run in a cvc5 checkout with an issue number: ask an assistant to follow paideia's empeiria charter, reproduce the report, locate its cause, fix it, and test a regression. The command retains the requested emperia spelling. Changes stay staged; nothing is published",
+      "forms": [
+        "eo_cvc5_check_emperia <N>",
+        "eo_cvc5_check_emperia <N> --codex"
+      ],
+      "kind": "prompt"
+    },
+    {
+      "name": "eo_cvc5_check_anakrisis",
+      "short": "review one numbered cvc5 PR using an inventory delta",
+      "what": "run in a cvc5 checkout with a PR number: ask an assistant to follow paideia's anakrisis charter, verify the PR head and base, compute dokimasia's inventory delta, and review only what that evidence and the proof contract support. The review is returned locally; no source edits, ledger writes or upstream submission",
+      "forms": [
+        "eo_cvc5_check_anakrisis <N>",
+        "eo_cvc5_check_anakrisis <N> --codex"
+      ],
+      "kind": "prompt"
     }
   ],
   "convention": "Every installed command carries a prefix saying whose it is, because the name is claimed inside somebody else's process and on their PATH. `eo_` is the ecosystem's commands, which run inside a tree that is not this one. `koine_` is this repository's own. install_eo refuses anything else.",
-  "handoff": "**Where the work is left is one convention, not each command's own decision.** Every command here that changes a tree tells the assistant to leave the work staged and not committed, in the same words, because the diff is the review: a person reads what was done before any of it is in a history somebody has to undo. `--push` is that person saying they do not want the review -- it commits the work and pushes it, and stops rather than forcing a push that is rejected. A command with nothing to push refuses the flag with a reason: eo_brainstorm always, eo_housekeeping under --report. A `*.local.md` is staged by neither form, and neither is what eo_brainstorm adds to docs/brainstorm.md -- a proposal is not a decision somebody should find already in the history.",
+  "handoff": "**Where the work is left is one convention, not each command's own decision.** Every command here that changes a tree tells the assistant to leave the work staged and not committed, in the same words, because the diff is the review: a person reads what was done before any of it is in a history somebody has to undo. `--push` is that person saying they do not want the review -- it commits the work and pushes it, and stops rather than forcing a push that is rejected. A command with nothing to push refuses the flag with a reason: eo_brainstorm always, eo_housekeeping under --report. The four eo_cvc5_check_ commands also refuse --push: their charters leave upstream delivery to a person. Anakrisis returns a review without changing source files. A `*.local.md` is staged by neither form, and neither is what eo_brainstorm adds to docs/brainstorm.md -- a proposal is not a decision somebody should find already in the history.",
   "kinds": "`prompt` hands context to an assistant and takes --show-prompt, which prints what it would hand one and runs nothing. `program` does the work itself.",
   "register": "A command marked `needs: register` has the president's ecosystem.json baked into it when install_eo copies it, with the commit and date it was taken. That makes it usable away from the president's tree without ever presenting a snapshot as the live register.",
   "ground_truth": "This file is the ground truth for what these commands are and what each is for. The copy is the table in eo_cmd/README.md, and test_the_readme_table_agrees_with_the_manifest in tests/test_eo_cmd.py is what compares the two -- it decides that the same names appear in both and that each has somewhere it is written up, and it cannot decide whether a description is still true of the behaviour. The one claim `kinds` makes that a program can check, that only a prompt takes --show-prompt, is checked beside it.",

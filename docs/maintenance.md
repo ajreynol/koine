@@ -13,7 +13,7 @@ fails. `eo_housekeeping --no-main` explicitly keeps the current branch.
 Read [`bug_db_manager/README.md`](../bug_db_manager/README.md) and
 [`eo_cmd/README.md`](../eo_cmd/README.md) for the two implementations.
 
-Run the same nine suites as [.github/workflows/koine.yml](../.github/workflows/koine.yml):
+Run the same ten suites as [.github/workflows/koine.yml](../.github/workflows/koine.yml):
 
 ```bash
 python3 tests/test_append_db.py
@@ -22,6 +22,7 @@ python3 tests/test_check_db.py
 python3 tests/test_close_db.py
 python3 tests/test_install_eo.py
 python3 tests/test_eo_cmd.py
+python3 tests/test_cvc5_checks.py
 python3 tests/test_listen.py
 python3 tests/test_register.py
 python3 tests/test_git_status.py

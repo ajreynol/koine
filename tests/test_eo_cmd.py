@@ -46,12 +46,14 @@ def concrete(args):
 
     `<path>` wants a tree that exists and is read even when not previewing;
     `<name>` a repository beside this one; `<Dn>` a topic id; `<focus>` free
-    text. One place decides these because both tests below need the same
+    text; `<N>` a positive issue or PR number. One place decides these because
+    both tests below need the same
     answer, and the mapping was written twice before there was a third
     placeholder to get wrong.
     """
     return [ROOT if a == "<path>" else "kanon" if a == "<name>"
-            else "D1" if a == "<Dn>" else "proofs" if a == "<focus>" else a
+            else "D1" if a == "<Dn>" else "proofs" if a == "<focus>"
+            else "12905" if a == "<N>" else a
             for a in args]
 
 
@@ -104,7 +106,7 @@ def test_the_readme_table_agrees_with_the_manifest():
     """
     print("the README's table against commands.json")
     page = open(os.path.join(STORE, "README.md"), encoding="utf-8").read()
-    listed = set(re.findall(r"^\| \[?`(eo_[a-z_]+|koine_[a-z_]+)`",
+    listed = set(re.findall(r"^\| \[?`(eo_[a-z0-9_]+|koine_[a-z0-9_]+)`",
                             page, re.M))
     named = {c["name"] for c in manifest()["commands"]}
     check("the table names every command the manifest offers",
