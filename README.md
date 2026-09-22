@@ -59,9 +59,10 @@ without changing any checkout; `eo_respond` answers one topic
 another tool addressed to you; `eo_housekeeping` brings a repository up to date, and
 `eo_brainstorm` looks for what it could do next, works through the list with
 you, and keeps what survives in `docs/brainstorm.md` without committing any of
-it. The four `eo_cvc5_check_` commands apply Dokimasia, Anoieu, Empeiria and
-Anakrisis to a cvc5 checkout: investigate proof or signature defects, fix a
-numbered issue, or review a numbered PR using the measured inventory delta.
+it. The three `eo_cvc5_check_` commands apply Dokimasia, Empeiria and Anakrisis
+to a cvc5 checkout: investigate proof defects, fix a numbered issue, or review
+a numbered PR using the measured inventory delta. `eo_check_anoieu` investigates
+Eunoia signature and semantics defects in the current target repository.
 These run where a person is working, with
 `eo_git_status` also accepting directories to search. They live with the tool
 whose job is shared machinery, and
@@ -111,7 +112,8 @@ installer puts the shared commands on your PATH; the preview shows the work an
 assistant would be asked to do. `eo_housekeeping` and `eo_respond` ensure `main` before pulling;
 `--no-main` keeps the current branch. **Every command that changes a tree leaves
 the work staged and not committed**. Where supported, `--push` commits and pushes
-it instead. The cvc5 checks keep their results local and refuse that flag.
+it instead. The cvc5 checks and `eo_check_anoieu` keep their results local and
+refuse that flag.
 Their [command guide](eo_cmd/README.md)
 describes the options and failure behavior. `eo_git_status` reads nearby
 checkouts and linked worktrees without fetching; give it extra directories for

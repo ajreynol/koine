@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Exercise installed cvc5 launchers with isolated checkouts and stub agents."""
+"""Exercise cvc5 and Eunoia launchers with isolated checkouts and stub agents."""
 
 import json
 import os
@@ -19,9 +19,13 @@ COMMANDS = {
 }
 
 
+def command_name(suffix):
+    return "eo_check_anoieu" if suffix == "anoieu" else "eo_cvc5_check_" + suffix
+
+
 class Cvc5Checks(unittest.TestCase):
     def setUp(self):
-        self.temp = tempfile.TemporaryDirectory(prefix="koine cvc5 ")
+        self.temp = tempfile.TemporaryDirectory(prefix="koine checks ")
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
         self.bin = self.root / "bin"
@@ -39,7 +43,7 @@ class Cvc5Checks(unittest.TestCase):
         for name in ("python3", "git"):
             (self.bin / name).symlink_to(shutil.which(name))
         for suffix in COMMANDS:
-            name = "eo_cvc5_check_" + suffix
+            name = command_name(suffix)
             shutil.copy2(ROOT / "eo_cmd" / name, self.bin / name)
         for name in ("claude", "codex"):
             stub = self.bin / name
@@ -48,7 +52,7 @@ class Cvc5Checks(unittest.TestCase):
             stub.chmod(0o755)
 
     def run_command(self, suffix, *args, cwd=None, env=None):
-        return subprocess.run([str(self.bin / ("eo_cvc5_check_" + suffix)), *args],
+        return subprocess.run([str(self.bin / command_name(suffix)), *args],
                               cwd=cwd or self.cwd, env=env or self.env,
                               capture_output=True, text=True)
 
@@ -85,7 +89,8 @@ class Cvc5Checks(unittest.TestCase):
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertIn("No checkout", result.stdout)
                 self.assertIn(tool, result.stdout)
-                self.assertIn("outside a cvc5 checkout", result.stdout)
+                outside = "outside a Git checkout" if suffix == "anoieu" else "outside a cvc5 checkout"
+                self.assertIn(outside, result.stdout)
                 self.assertNotIn("Traceback", result.stderr)
         self.assertEqual(list(self.cwd.iterdir()), [])
 
@@ -105,14 +110,16 @@ class Cvc5Checks(unittest.TestCase):
             help_result = self.run_command(suffix, "--help")
             self.assertEqual(help_result.returncode, 0, help_result.stderr)
 
-    def test_real_runs_require_cvc5_and_a_charter(self):
+    def test_real_runs_require_the_target_checkout_and_a_charter(self):
         for suffix, (_, _, args) in COMMANDS.items():
             result = self.run_command(suffix, *args)
             self.assertEqual(result.returncode, 2, result.stderr)
-            self.assertIn("cvc5 Git checkout", result.stderr)
+            self.assertIn("Git checkout", result.stderr)
         self.git("init", "-q")
         self.make_tools()
         for suffix, (_, _, args) in COMMANDS.items():
+            if suffix == "anoieu":
+                continue  # A generic Git checkout is a valid Anoieu target.
             result = self.run_command(suffix, *args)
             self.assertEqual(result.returncode, 2, result.stderr)
             self.assertEqual(result.stdout, "")
@@ -141,6 +148,30 @@ class Cvc5Checks(unittest.TestCase):
                     self.assertEqual(got["cwd"], str(self.cwd))
                     self.assertEqual(got["args"], [*prefix, preview.stdout])
         self.assertEqual(self.snapshot(), before)
+
+    def test_anoieu_runs_in_non_cvc5_targets(self):
+        self.make_tools()
+        for target in ("ethos", "logos", "another-signature-project"):
+            with self.subTest(target=target):
+                self.cwd = self.root / "work" / target
+                definitions = self.cwd / "defs"
+                definitions.mkdir(parents=True)
+                self.git("init", "-q")
+                (definitions / "Signature.eo").write_text("; fixture signature\n")
+                self.git("add", "defs/Signature.eo")
+                before = self.snapshot()
+                preview = self.run_command("anoieu", "--show-prompt")
+                self.assertEqual(preview.returncode, 0, preview.stderr)
+                for flags, prefix in (([], []), (["--print"], ["-p"]),
+                                      (["--codex"], []), (["--codex", "--print"], ["exec"])):
+                    result = self.run_command("anoieu", *flags, cwd=definitions)
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    launched = json.loads(result.stdout)
+                    self.assertEqual(launched["cwd"], str(self.cwd))
+                    self.assertEqual(launched["args"], [*prefix, preview.stdout])
+                self.assertNotIn("cvc5", preview.stdout)
+                self.assertIn("anoieu.json", preview.stdout)
+                self.assertEqual(self.snapshot(), before)
 
     def test_explicit_and_environment_discovery_and_missing_agent(self):
         self.make_cvc5()

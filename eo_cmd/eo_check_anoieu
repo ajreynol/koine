@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""eo_cvc5_check_anoieu -- investigate and fix cvc5 Eunoia signature defects.
+"""eo_check_anoieu -- investigate and fix Eunoia signature and semantics defects.
 
 Self-contained because install_eo copies each command as a single file.
 The launcher reads paths and builds a prompt; only the selected agent does work.
@@ -8,32 +8,32 @@ The launcher reads paths and builds a prompt; only the selected agent does work.
 import argparse
 import os
 from pathlib import Path
-import re
 import shutil
 import subprocess
 import sys
 
-COMMAND = 'eo_cvc5_check_anoieu'
+COMMAND = 'eo_check_anoieu'
 TOOL = 'anoieu'
-REPOSITORY = 'anoieu'
-CHILD = ''
-NUMBER_KIND = ''
-SUMMARY = 'investigate and fix cvc5 Eunoia signature defects'
+SUMMARY = 'investigate and fix Eunoia signature and semantics defects'
 TASK = """Read `{tool}/anoieu_analyzer/usage.md`, `{tool}/anoieu_analyzer/checks.md`,
-and `{tool}/bug_db/reporting-policy.md`. Investigate cvc5's Eunoia `.eo` signatures
-and their agreement with relevant `.eos` semantics: declaration and attribute
+and `{tool}/bug_db/reporting-policy.md`. Investigate this repository's Eunoia
+`.eo` signatures and their agreement with relevant `.eos` semantics: declaration and attribute
 errors, shallow type inconsistencies, unreachable program cases, and disagreements
-between the signature and semantics. Locate the entry points under `proofs/eo/`,
-including `cpc/Cpc.eo` and the ordered expert profile with `cpc/expert/CpcExpert.eo`
-where present. Use `python3 -m anoieu_analyzer check` from the tool checkout,
-with absolute paths into this cvc5 checkout and the documented profiles; do not
-merge unrelated signatures into one scope. Supply semantics and embedding inputs
-only when available and record coverage that is missing. Consult the fuzzer guide
+between the signature and semantics. Discover the target's signature entry points,
+include graphs, semantic configurations and ordered profiles from its documentation,
+tests and `anoieu.json` where present. Use `python3 -m anoieu_analyzer check` with
+Anoieu available on the module path and this target as the working directory,
+using absolute input paths and its configuration or documented profiles. Do not
+inherit the tool checkout's target
+configuration or merge unrelated signatures into one scope. If there are no relevant
+inputs, report that rather than claiming a clean analysis. Supply semantics and
+embedding inputs only when available and record coverage that is missing. Consult the fuzzer guide
 for targeted reproduction or reduction when relevant; use non-recording commands,
 not the standard-target database updater. Existing findings and checker disagreements
-are candidates, not proof of a bug. Reproduce and isolate confirmed cvc5 defects,
-fix their cause, add focused regressions, and rerun the analyzer and relevant proof
-checker or cvc5 tests. Report checker-side defects without changing another tree.
+are candidates, not proof of a bug. Reproduce and isolate confirmed defects in this
+repository, fix their cause, add focused regressions, and rerun the analyzer and relevant proof
+checker or project tests. Distinguish target defects from analysis-tool or external
+checker defects, and report those without changing another tree.
 This is signature and semantics analysis, not the optional ecosystem policy check;
 a clean run or agreement between checkers does not establish soundness.
 
@@ -42,27 +42,18 @@ stop there, so a person reviews a diff rather than a history. Stage only your
 changes, preserving any changes already staged when the run began."""
 
 
-def positive_number(value):
-    if not re.fullmatch(r"[1-9][0-9]*", value):
-        raise argparse.ArgumentTypeError("N must be a positive issue or PR number")
-    return value
-
-
 def locate_tool(root, explicit):
     """Explicit settings win, even when invalid; never substitute another tree."""
     selected = explicit or os.environ.get(TOOL.upper() + "_ROOT")
     if selected:
         return Path(selected).expanduser().resolve()
-    if CHILD and os.environ.get("PAIDEIA_ROOT"):
-        return Path(os.environ["PAIDEIA_ROOT"]).expanduser().resolve() / CHILD
     roots = [Path(p).expanduser() for p in
              os.environ.get("ANOIEU_REPOS", "").split(os.pathsep) if p]
     roots += [root.parent, Path.home()]
     for search in roots:
-        for repository in (search / REPOSITORY, search):
-            candidate = repository / CHILD if CHILD else repository
+        for candidate in (search / TOOL, search):
             # A search root's own README is not necessarily this tool's charter.
-            if repository == search and repository.name != REPOSITORY:
+            if candidate == search and candidate.name != TOOL:
                 continue
             if (candidate / "README.md").is_file():
                 return candidate.resolve()
@@ -72,20 +63,17 @@ def locate_tool(root, explicit):
 def main():
     parser = argparse.ArgumentParser(
         prog=COMMAND, allow_abbrev=False,
-        usage="%(prog)s [options]" + (" N" if NUMBER_KIND else ""),
+        usage="%(prog)s [options]",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description=f"{COMMAND} -- {SUMMARY}.\n\n"
-                    "An Eunoia ecosystem prompt command. Run it in a cvc5 repository;\n"
+                    "An Eunoia ecosystem prompt command. Run it in the repository to check;\n"
                     "the agent starts at the checkout root on the current branch.\n"
                     "Read the tool's charter, investigate, and leave the result locally.",
-        epilog="--show-prompt works without cvc5, the tool, or an agent installed.\n"
+        epilog="--show-prompt works without a Git checkout, the tool, or an agent installed.\n"
                "Tool discovery: --tool-root, $" + TOOL.upper() + "_ROOT, then\n"
-               "$PAIDEIA_ROOT for children, $ANOIEU_REPOS (colon-separated),\n"
-               "siblings of cvc5, and $HOME. --tool-root names the charter directory.\n"
+               "$ANOIEU_REPOS (colon-separated), siblings of the target repository,\n"
+               "and $HOME. --tool-root names the charter directory.\n"
                "No launcher switches branches, pulls, runs analyses, or writes files.")
-    if NUMBER_KIND:
-        parser.add_argument("number", metavar="N", type=positive_number,
-                            help=f"the cvc5 {NUMBER_KIND} number (required)")
     parser.add_argument("--tool-root", metavar="DIR", help="directory containing the tool's README.md")
     parser.add_argument("--codex", dest="agent", action="store_const", const="codex",
                         help="select codex instead of claude")
@@ -106,10 +94,9 @@ def main():
     except FileNotFoundError:
         git = None
     root = Path(git.stdout.strip()).resolve() if git and git.returncode == 0 else Path.cwd()
-    is_cvc5 = (git is not None and git.returncode == 0
-               and (root / "configure.sh").is_file() and (root / "src/theory").is_dir())
-    if not is_cvc5 and not args.show_prompt:
-        parser.error("run this in a cvc5 Git checkout (configure.sh and src/theory/ are required)")
+    is_checkout = git is not None and git.returncode == 0
+    if not is_checkout and not args.show_prompt:
+        parser.error("run this in the target repository's Git checkout")
     tool = locate_tool(root, args.tool_root)
     has_charter = tool is not None and (tool / "README.md").is_file()
     if not has_charter and not args.show_prompt:
@@ -120,21 +107,21 @@ def main():
         context = f"Read `{tool / 'README.md'}` first; it is {TOOL}'s charter."
     else:
         context = (f"No checkout with {TOOL}'s README.md was found. Before working, locate "
-                   f"`{REPOSITORY}/{CHILD + '/' if CHILD else ''}README.md` and read its charter; "
+                   "`anoieu/README.md` and read its charter; "
                    "--tool-root selects its directory. Do not invent the missing charter.")
-    if not is_cvc5:
-        context += " This preview is outside a cvc5 checkout; a real run requires one."
-    task = TASK.format(root=root, tool=tool if has_charter else f"<{TOOL}-root>",
-                       number=getattr(args, "number", ""))
-    prompt = f"""You are working in the cvc5 checkout at `{root}`, following {TOOL}'s charter.
-{context} Read cvc5's own contributor instructions and relevant tests. Keep the
+    if not is_checkout:
+        context += " This preview is outside a Git checkout; a real run requires one."
+    task = TASK.format(tool=tool if has_charter else f"<{TOOL}-root>")
+    prompt = f"""You are working in the target repository at `{root}`, following {TOOL}'s charter.
+{context} Read this repository's own contributor instructions and relevant tests. Keep the
 current branch and inspect existing changes before doing anything; preserve work
 that was already here. Do not switch branches, pull, reset, or stash this tree.
 
 {task}
 
-Use the tool checkout as a source of instructions and analysis, without modifying
-its code, database, ledger, or baselines. Put temporary analyzer output and builds
+Use Anoieu as a source of instructions and analysis. Make fixes only in this target
+repository; leave dependency checkouts and Anoieu's finding database, ledger and
+baselines unchanged. Put temporary analyzer output and builds
 in temporary directories outside the source checkouts. Report the source revisions,
 commands, actual results, fixes or review findings, and anything still unverified.
 Do not commit, push, open a pull request, post a review or comment, or send anything
