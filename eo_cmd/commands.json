@@ -164,7 +164,7 @@
     {
       "name": "eo_cvc5_check_dokimasia",
       "short": "investigate and fix cvc5 proof-production gaps",
-      "what": "run in a cvc5 checkout: ask an assistant to follow dokimasia's charter, analyze proof-production and safe-mode gaps, reproduce candidates, and fix confirmed cvc5 defects with regression coverage. Changes stay staged; nothing is published",
+      "what": "run in a cvc5 checkout: ask an assistant to work dokimasia's open cvc5 observations from its bug database, re-check each at this revision, reproduce behavioral claims, and fix confirmed cvc5 defects with regression coverage. Changes stay staged; nothing is published",
       "forms": [
         "eo_cvc5_check_dokimasia",
         "eo_cvc5_check_dokimasia --codex"
@@ -174,7 +174,7 @@
     {
       "name": "eo_check_anoieu",
       "short": "investigate and fix Eunoia signature and semantics defects",
-      "what": "run in the target repository's Git checkout: ask an assistant to follow anoieu's analyzer and fuzzer charter, discover that target's Eunoia signature profiles and available semantics, reproduce candidates, and fix confirmed defects in that repository. This is not the repository-policy checker. Changes stay staged; nothing is published",
+      "what": "run in the target repository's Git checkout: ask an assistant to work the open findings in anoieu's bug database owned by that repository, re-check each cited location or replay its reproducer, and fix confirmed defects in that repository. This is not the repository-policy checker. Changes stay staged; nothing is published",
       "forms": [
         "eo_check_anoieu",
         "eo_check_anoieu --codex"

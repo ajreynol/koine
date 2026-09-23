@@ -15,27 +15,30 @@ import sys
 COMMAND = 'eo_check_anoieu'
 TOOL = 'anoieu'
 SUMMARY = 'investigate and fix Eunoia signature and semantics defects'
-TASK = """Read `{tool}/anoieu_analyzer/usage.md`, `{tool}/anoieu_analyzer/checks.md`,
-and `{tool}/bug_db/reporting-policy.md`. Investigate this repository's Eunoia
-`.eo` signatures and their agreement with relevant `.eos` semantics: declaration and attribute
-errors, shallow type inconsistencies, unreachable program cases, and disagreements
-between the signature and semantics. Discover the target's signature entry points,
-include graphs, semantic configurations and ordered profiles from its documentation,
-tests and `anoieu.json` where present. Use `python3 -m anoieu_analyzer check` with
-Anoieu available on the module path and this target as the working directory,
-using absolute input paths and its configuration or documented profiles. Do not
-inherit the tool checkout's target
-configuration or merge unrelated signatures into one scope. If there are no relevant
-inputs, report that rather than claiming a clean analysis. Supply semantics and
-embedding inputs only when available and record coverage that is missing. Consult the fuzzer guide
-for targeted reproduction or reduction when relevant; use non-recording commands,
-not the standard-target database updater. Existing findings and checker disagreements
-are candidates, not proof of a bug. Reproduce and isolate confirmed defects in this
-repository, fix their cause, add focused regressions, and rerun the analyzer and relevant proof
-checker or project tests. Distinguish target defects from analysis-tool or external
-checker defects, and report those without changing another tree.
-This is signature and semantics analysis, not the optional ecosystem policy check;
-a clean run or agreement between checkers does not establish soundness.
+TASK = """Start from Anoieu's bug database, not its tooling. Read
+`{tool}/bug_db/README.md` and `{tool}/bug_db/reporting-policy.md`, then
+`{tool}/bug_db/bugs.md` for the open findings and `{tool}/bug_db/bugs.json` for
+their records. Establish which project this repository is from its remote,
+documentation or `anoieu.json`, and select the open entries (no `closed_*` field)
+whose `owner` names it, including joint owners such as `a+b`. Those entries are
+the worklist. For each, read its `where`, `found_at`, code and note; static
+findings cite a source location, and fuzzer findings cite a committed reproducer
+under `{tool}/tests/fuzz/`. A recorded finding is a candidate, not proof of a
+bug, and its dates are ingestion dates, not fresh reproduction. Check whether the
+claim still holds at this revision: re-read the cited source, replay the
+reproducer with the checkers it names, and record the exact commands and actual
+output. For a static code, `{tool}/anoieu_analyzer/checks.md` defines what the
+check asserts. Reproduce and isolate each confirmed defect in this repository,
+fix its cause, add a focused regression, and rerun the reproducer and relevant
+project tests before and after. Report findings that no longer hold, with the
+evidence, rather than closing them; closure is the database owner's workflow.
+Distinguish target defects from analysis-tool or external checker defects, and
+report those without changing another tree. If no open entry names this
+repository, report that and stop; do not substitute a fresh analysis for an
+empty worklist. Run the analyzer (`{tool}/anoieu_analyzer/usage.md`) only to
+confirm a fix, with absolute paths, this target as the working directory and its
+own `anoieu.json` or documented profiles, and never the database updater.
+This is signature and semantics work, not the optional ecosystem policy check.
 
 **Leave the work staged and not committed**: `git add` what you changed and
 stop there, so a person reviews a diff rather than a history. Stage only your
@@ -119,7 +122,7 @@ that was already here. Do not switch branches, pull, reset, or stash this tree.
 
 {task}
 
-Use Anoieu as a source of instructions and analysis. Make fixes only in this target
+Use Anoieu as the source of the worklist and its evidence. Make fixes only in this target
 repository; leave dependency checkouts and Anoieu's finding database, ledger and
 baselines unchanged. Put temporary analyzer output and builds
 in temporary directories outside the source checkouts. Report the source revisions,

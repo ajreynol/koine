@@ -19,20 +19,27 @@ REPOSITORY = 'dokimasia'
 CHILD = ''
 NUMBER_KIND = ''
 SUMMARY = 'investigate and fix cvc5 proof-production gaps'
-TASK = """Read `{tool}/docs/README.md` for the checks, proof-hygiene rules and safe-mode
-contract, and `{tool}/dokimasia_analyzer/README.md` for the evidence bar. Investigate
-cvc5's C++ proof construction, reconstruction, checking and printing: missing proof
-support, unjustified trust, safe-mode inconsistencies, and mismatches with the
-Eunoia proof signature. Run the documented analyzer on this checkout using
-`scripts/dokimasia_analyzer --cvc5` with this root, `--no-update`, and `--dump` in
-a temporary directory outside both repositories. Existing observations are leads;
-verify them against this revision. Static observations alone do not establish a
-reachable bug or incomplete proof. Reproduce behavioral claims with concrete inputs
-and actual output, including proof-completeness checking where relevant. Distinguish
-analyzer mistakes from cvc5 defects. Fix confirmed cvc5 defects at their cause, add
-focused regression coverage, and rerun the relevant analyzer checks and cvc5 tests.
-Do not weaken safe-mode guarantees or suppress observations to obtain a clean run.
-A clean analysis establishes only that the selected checks found nothing.
+TASK = """Start from Dokimasia's observation database, not its tooling.
+Read `{tool}/bug_db/README.md`, then `{tool}/bug_db/bugs.md` for the recorded
+observations and `{tool}/bug_db/bugs.json` for their records; the archived runs in
+`{tool}/bug_db/runs/` hold each observation's evidence, source revision and
+coverage, keyed by id. Select the open entries (no `closed_*` field) owned by
+cvc5. Those entries are the worklist; group them by check code and entity rather
+than working one row at a time. `{tool}/docs/README.md` defines each check, the
+proof-hygiene rules and the safe-mode contract, and
+`{tool}/dokimasia_analyzer/README.md` sets the evidence bar. A recorded
+observation is not necessarily a confirmed bug, and its dates are ingestion
+dates, not fresh confirmation. For each group, re-read the cited cvc5 code at
+this revision and decide whether the claim still holds. Static observations alone
+do not establish a reachable bug or incomplete proof: reproduce behavioral claims
+with concrete inputs and actual output, including proof-completeness checking
+where relevant. Distinguish analyzer mistakes from cvc5 defects. Fix confirmed
+cvc5 defects at their cause, add focused regression coverage, and run the
+relevant cvc5 tests. Report observations that no longer hold, with the evidence,
+rather than closing them; closure is Dokimasia's own workflow. Do not weaken
+safe-mode guarantees or suppress observations. Run the analyzer only to confirm a
+fix, with `scripts/dokimasia_analyzer --cvc5` on this root, `--no-update`, and
+`--dump` in a temporary directory outside both repositories; never append.
 
 **Leave the work staged and not committed**: `git add` what you changed and
 stop there, so a person reviews a diff rather than a history. Stage only your

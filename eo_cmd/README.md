@@ -413,10 +413,13 @@ $ eo_cvc5_check_dokimasia --show-prompt
 $ eo_cvc5_check_dokimasia --tool-root /path/to/dokimasia --codex
 ```
 
-Asks an assistant to read Dokimasia's charter and evidence bar, run its analyzer
-on this cvc5 checkout without updating its database, and investigate
-proof-production and safe-mode gaps. Confirmed cvc5 defects get fixes and focused
-regressions; static observations alone do not establish reachable bugs.
+Asks an assistant to start from Dokimasia's observation database: the open
+cvc5 entries in `bug_db/bugs.json`, with their archived run evidence, are the
+worklist. It re-reads each claim at this revision against the check catalogue and
+evidence bar, reproduces behavioral claims, and fixes confirmed cvc5 defects with
+focused regressions. Static observations alone do not establish reachable bugs;
+observations that no longer hold are reported, not closed. The analyzer is run
+only to confirm a fix, never to update the database.
 
 The three `eo_cvc5_check_` commands and `eo_check_anoieu` launch the selected
 assistant from the target Git root. They keep the current branch and preserve
@@ -449,15 +452,16 @@ $ eo_check_anoieu
 $ eo_check_anoieu --codex --print
 ```
 
-Applies Anoieu's analyzer and fuzzer charter to the current repository's Eunoia
-signatures and available semantic configurations. Run it in any target's Git
-checkout, including cvc5, ethos or logos. The prompt asks the agent to discover
-that target's signature entry points, include graphs, semantic inputs and ordered
-profiles from its documentation, tests and `anoieu.json` where present. It asks
-for evidence, fixes and regression checks in that repository, and reports missing
-inputs or semantic coverage accurately. Finding no inputs is not a clean analysis.
-This does not run the optional ecosystem policy checker or update every standard
-target in Anoieu's database.
+Asks an assistant to start from Anoieu's bug database: the open entries in
+`bug_db/bugs.json` whose owner names the current repository are the worklist.
+Run it in any target's Git checkout, including cvc5, ethos or logos; the agent
+identifies the project from its remote, documentation or `anoieu.json`. Each
+static finding's cited location is re-read and each fuzzer finding's committed
+reproducer replayed at this revision; confirmed defects get fixes and regression
+checks in that repository, and findings that no longer hold are reported, not
+closed. No open entry for this repository is reported as such, not replaced by a
+fresh analysis. The analyzer is run only to confirm a fix. This does not run the
+optional ecosystem policy checker or update Anoieu's database.
 The common options and discovery rules are above.
 
 ## eo_cvc5_check_emperia
