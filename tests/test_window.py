@@ -65,7 +65,8 @@ class Project:
     """A git repository with a history, standing in for somebody else's project."""
 
     def __init__(self):
-        self.dir = tempfile.mkdtemp(prefix="koine-window-")
+        self._temp = tempfile.TemporaryDirectory(prefix="koine-window-")
+        self.dir = self._temp.name
         self.root = os.path.join(self.dir, "src")
         os.makedirs(self.root)
         self.git("init", "--quiet", "--initial-branch=main")

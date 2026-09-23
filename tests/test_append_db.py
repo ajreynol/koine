@@ -45,7 +45,8 @@ class Tree:
     """A scratch directory, with the script pointed at files inside it."""
 
     def __init__(self):
-        self.dir = tempfile.mkdtemp(prefix="koine-append-db-")
+        self._temp = tempfile.TemporaryDirectory(prefix="koine-append-db-")
+        self.dir = self._temp.name
         self.db = os.path.join(self.dir, "bugs.json")
 
     def write(self, name, data):

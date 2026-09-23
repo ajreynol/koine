@@ -68,7 +68,8 @@ class Consumer:
 
     def __init__(self, records, key="bugs", config=None, inside="bug_db",
                  slots=None, named="bugs.json"):
-        self.dir = tempfile.mkdtemp(prefix="koine-close-db-")
+        self._temp = tempfile.TemporaryDirectory(prefix="koine-close-db-")
+        self.dir = self._temp.name
         self.db = os.path.join(inside, named)
         os.makedirs(os.path.join(self.dir, inside), exist_ok=True)
         os.makedirs(os.path.join(self.dir, "prompts"), exist_ok=True)

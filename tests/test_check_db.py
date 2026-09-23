@@ -63,7 +63,8 @@ class Owner:
     """A repository with a committed database, standing in for a consumer."""
 
     def __init__(self, inside="bug_db", key="bugs", records=None):
-        self.dir = tempfile.mkdtemp(prefix="koine-check-db-")
+        self._temp = tempfile.TemporaryDirectory(prefix="koine-check-db-")
+        self.dir = self._temp.name
         self.db = os.path.join(self.dir, inside, "bugs.json")
         os.makedirs(os.path.dirname(self.db), exist_ok=True)
         self.key = key
@@ -276,15 +277,15 @@ def test_the_envelope_key_is_not_a_closure():
 def test_what_it_refuses_to_judge():
     print("\nwhat it will not compare:")
     o = Owner()
-    loose = tempfile.mkdtemp(prefix="koine-check-db-loose-")
-    path = os.path.join(loose, "bugs.json")
-    with open(path, "w", encoding="utf-8") as fh:
-        json.dump({"bugs": RECORDS}, fh)
-    r = subprocess.run([sys.executable, SCRIPT, path], capture_output=True,
-                       text=True)
-    check("a database in no repository is refused", r.returncode == 1)
-    check("and told why", "no committed version" in r.stderr
-          or "not tracked" in r.stderr, r.stderr)
+    with tempfile.TemporaryDirectory(prefix="koine-check-db-loose-") as loose:
+        path = os.path.join(loose, "bugs.json")
+        with open(path, "w", encoding="utf-8") as fh:
+            json.dump({"bugs": RECORDS}, fh)
+        r = subprocess.run([sys.executable, SCRIPT, path], capture_output=True,
+                           text=True)
+        check("a database in no repository is refused", r.returncode == 1)
+        check("and told why", "no committed version" in r.stderr
+              or "not tracked" in r.stderr, r.stderr)
 
     untracked = os.path.join(o.dir, "bug_db", "other.json")
     with open(untracked, "w", encoding="utf-8") as fh:
