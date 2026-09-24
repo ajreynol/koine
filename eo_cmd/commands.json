@@ -164,7 +164,7 @@
     {
       "name": "eo_cvc5_check_dokimasia",
       "short": "investigate and fix cvc5 proof-production gaps",
-      "what": "run in a cvc5 checkout: ask an assistant to work dokimasia's open cvc5 observations from its bug database, re-check each at this revision, reproduce behavioral claims, and fix confirmed cvc5 defects with regression coverage. Changes stay staged; nothing is published",
+      "what": "run in a cvc5 checkout: ask an assistant to work dokimasia's open cvc5 observations from its published bug database, re-check each at this revision, reproduce behavioral claims, and fix confirmed cvc5 defects with regression coverage. --tool-root opts into local context and analyzer confirmation. Changes stay staged; nothing is published",
       "forms": [
         "eo_cvc5_check_dokimasia",
         "eo_cvc5_check_dokimasia --codex"
@@ -174,7 +174,7 @@
     {
       "name": "eo_check_anoieu",
       "short": "investigate and fix Eunoia signature and semantics defects",
-      "what": "run in the target repository's Git checkout: ask an assistant to work the open findings in anoieu's bug database owned by that repository, re-check each cited location or replay its reproducer, and fix confirmed defects in that repository. This is not the repository-policy checker. Changes stay staged; nothing is published",
+      "what": "run in the target repository's Git checkout: ask an assistant to work the open findings in anoieu's published bug database owned by that repository, re-check each cited location or replay its reproducer, and fix confirmed defects in that repository. --tool-root opts into local context and analyzer confirmation. This is not the repository-policy checker. Changes stay staged; nothing is published",
       "forms": [
         "eo_check_anoieu",
         "eo_check_anoieu --codex"
@@ -184,7 +184,7 @@
     {
       "name": "eo_cvc5_check_emperia",
       "short": "reproduce and fix one numbered cvc5 issue",
-      "what": "run in a cvc5 checkout with an issue number: ask an assistant to follow paideia's empeiria charter, reproduce the report, locate its cause, fix it, and test a regression. The command retains the requested emperia spelling. Changes stay staged; nothing is published",
+      "what": "run in a cvc5 checkout with an issue number: ask an assistant to reproduce the report, locate its cause, fix it, and test a regression. --tool-root optionally adds local empeiria context; no tool checkout is used or mentioned in the default prompt. The command retains the requested emperia spelling. Changes stay staged; nothing is published",
       "forms": [
         "eo_cvc5_check_emperia <N>",
         "eo_cvc5_check_emperia <N> --codex"
@@ -194,7 +194,7 @@
     {
       "name": "eo_cvc5_check_anakrisis",
       "short": "review one numbered cvc5 PR using an inventory delta",
-      "what": "run in a cvc5 checkout with a PR number: ask an assistant to follow paideia's anakrisis charter, verify the PR head and base, compute dokimasia's inventory delta, and review only what that evidence and the proof contract support. The review is returned locally; no source edits, ledger writes or upstream submission",
+      "what": "run in a cvc5 checkout with a PR number: ask an assistant to follow the published anakrisis protocol, verify the PR head and base and matching published inventory delta, and review only what that evidence and the proof contract support. --tool-root opts into local context and computing the delta. The review is returned locally; no source edits, ledger writes or upstream submission",
       "forms": [
         "eo_cvc5_check_anakrisis <N>",
         "eo_cvc5_check_anakrisis <N> --codex"

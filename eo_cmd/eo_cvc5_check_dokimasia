@@ -15,9 +15,9 @@ import sys
 
 COMMAND = 'eo_cvc5_check_dokimasia'
 TOOL = 'dokimasia'
-REPOSITORY = 'dokimasia'
-CHILD = ''
 NUMBER_KIND = ''
+SOURCE = 'https://github.com/ajreynol/dokimasia'
+SOURCE_PREFIX = 'dokimasia'
 SUMMARY = 'investigate and fix cvc5 proof-production gaps'
 TASK = """Start from Dokimasia's observation database, not its tooling.
 Read `{tool}/bug_db/README.md`, then `{tool}/bug_db/bugs.md` for the recorded
@@ -37,40 +37,22 @@ where relevant. Distinguish analyzer mistakes from cvc5 defects. Fix confirmed
 cvc5 defects at their cause, add focused regression coverage, and run the
 relevant cvc5 tests. Report observations that no longer hold, with the evidence,
 rather than closing them; closure is Dokimasia's own workflow. Do not weaken
-safe-mode guarantees or suppress observations. Run the analyzer only to confirm a
-fix, with `scripts/dokimasia_analyzer --cvc5` on this root, `--no-update`, and
-`--dump` in a temporary directory outside both repositories; never append.
+safe-mode guarantees or suppress observations.
+{analysis}
 
 **Leave the work staged and not committed**: `git add` what you changed and
 stop there, so a person reviews a diff rather than a history. Stage only your
 changes, preserving any changes already staged when the run began."""
+LOCAL_ANALYSIS = """Run the analyzer only to confirm a fix, with
+`{tool}/scripts/dokimasia_analyzer --cvc5` on this root, `--no-update`, and
+`--dump` in a temporary directory outside both repositories; never append.
+"""
 
 
 def positive_number(value):
     if not re.fullmatch(r"[1-9][0-9]*", value):
         raise argparse.ArgumentTypeError("N must be a positive issue or PR number")
     return value
-
-
-def locate_tool(root, explicit):
-    """Explicit settings win, even when invalid; never substitute another tree."""
-    selected = explicit or os.environ.get(TOOL.upper() + "_ROOT")
-    if selected:
-        return Path(selected).expanduser().resolve()
-    if CHILD and os.environ.get("PAIDEIA_ROOT"):
-        return Path(os.environ["PAIDEIA_ROOT"]).expanduser().resolve() / CHILD
-    roots = [Path(p).expanduser() for p in
-             os.environ.get("ANOIEU_REPOS", "").split(os.pathsep) if p]
-    roots += [root.parent, Path.home()]
-    for search in roots:
-        for repository in (search / REPOSITORY, search):
-            candidate = repository / CHILD if CHILD else repository
-            # A search root's own README is not necessarily this tool's charter.
-            if repository == search and repository.name != REPOSITORY:
-                continue
-            if (candidate / "README.md").is_file():
-                return candidate.resolve()
-    return None
 
 
 def main():
@@ -82,15 +64,14 @@ def main():
                     "An Eunoia ecosystem prompt command. Run it in a cvc5 repository;\n"
                     "the agent starts at the checkout root on the current branch.\n"
                     "Read the tool's charter, investigate, and leave the result locally.",
-        epilog="--show-prompt works without cvc5, the tool, or an agent installed.\n"
-               "Tool discovery: --tool-root, $" + TOOL.upper() + "_ROOT, then\n"
-               "$PAIDEIA_ROOT for children, $ANOIEU_REPOS (colon-separated),\n"
-               "siblings of cvc5, and $HOME. --tool-root names the charter directory.\n"
+        epilog="--show-prompt works without cvc5 or an agent installed.\n"
+               "--tool-root opts into local tool context and analyzer use.\n"
+               "No tool is discovered by default.\n"
                "No launcher switches branches, pulls, runs analyses, or writes files.")
     if NUMBER_KIND:
         parser.add_argument("number", metavar="N", type=positive_number,
                             help=f"the cvc5 {NUMBER_KIND} number (required)")
-    parser.add_argument("--tool-root", metavar="DIR", help="directory containing the tool's README.md")
+    parser.add_argument("--tool-root", metavar="DIR", help="optionally use a local tool checkout containing README.md")
     parser.add_argument("--codex", dest="agent", action="store_const", const="codex",
                         help="select codex instead of claude")
     parser.add_argument("--claude", dest="agent", action="store_const", const="claude",
@@ -102,7 +83,7 @@ def main():
     parser.add_argument("--push", action="store_true", help="refused: these runs keep their results local")
     args = parser.parse_args()
     if args.push:
-        parser.error("--push is refused: this tool's charter leaves upstream delivery to a person")
+        parser.error("--push is refused: upstream delivery remains a person's decision")
 
     try:
         git = subprocess.run(["git", "rev-parse", "--show-toplevel"],
@@ -114,22 +95,25 @@ def main():
                and (root / "configure.sh").is_file() and (root / "src/theory").is_dir())
     if not is_cvc5 and not args.show_prompt:
         parser.error("run this in a cvc5 Git checkout (configure.sh and src/theory/ are required)")
-    tool = locate_tool(root, args.tool_root)
-    has_charter = tool is not None and (tool / "README.md").is_file()
-    if not has_charter and not args.show_prompt:
-        parser.error(f"no {TOOL} charter found; set --tool-root DIR to its README.md directory. "
-                     "--show-prompt still prints the workflow")
-
-    if has_charter:
+    tool = Path(args.tool_root).expanduser().resolve() if args.tool_root is not None else None
+    if tool is not None:
+        if not (tool / "README.md").is_file() and not args.show_prompt:
+            parser.error(f"no {TOOL} charter found at {tool / 'README.md'}; "
+                         "--tool-root must name its README.md directory")
         context = f"Read `{tool / 'README.md'}` first; it is {TOOL}'s charter."
+        context += (" Use the tool checkout as a source of instructions and analysis, "
+                    "without modifying its code, database, ledger, or baselines.")
     else:
-        context = (f"No checkout with {TOOL}'s README.md was found. Before working, locate "
-                   f"`{REPOSITORY}/{CHILD + '/' if CHILD else ''}README.md` and read its charter; "
-                   "--tool-root selects its directory. Do not invent the missing charter.")
+        context = (f"Read {SOURCE} through read-only GitHub access, beginning with "
+                   f"`{SOURCE_PREFIX}/README.md`. Record the source revision and use it "
+                   f"consistently. References below beginning with `{SOURCE_PREFIX}/` "
+                   "name paths in that published repository. If required evidence is "
+                   "unavailable, report the limitation; do not invent findings or treat "
+                   "unread records as an empty worklist.")
     if not is_cvc5:
         context += " This preview is outside a cvc5 checkout; a real run requires one."
-    task = TASK.format(root=root, tool=tool if has_charter else f"<{TOOL}-root>",
-                       number=getattr(args, "number", ""))
+    task = TASK.format(root=root, tool=tool if tool is not None else SOURCE_PREFIX,
+                       analysis=LOCAL_ANALYSIS.format(tool=tool) if tool is not None else "")
     prompt = f"""You are working in the cvc5 checkout at `{root}`, following {TOOL}'s charter.
 {context} Read cvc5's own contributor instructions and relevant tests. Keep the
 current branch and inspect existing changes before doing anything; preserve work
@@ -137,9 +121,8 @@ that was already here. Do not switch branches, pull, reset, or stash this tree.
 
 {task}
 
-Use the tool checkout as a source of instructions and analysis, without modifying
-its code, database, ledger, or baselines. Put temporary analyzer output and builds
-in temporary directories outside the source checkouts. Report the source revisions,
+Leave the source database, ledger and baselines unchanged. Put temporary output
+and builds in temporary directories outside the target repository. Report the source revisions,
 commands, actual results, fixes or review findings, and anything still unverified.
 Do not commit, push, open a pull request, post a review or comment, or send anything
 upstream. A person decides what to publish.
@@ -157,7 +140,8 @@ upstream. A person decides what to publish.
     if args.noninteractive:
         argv.append("exec" if args.agent == "codex" else "-p")
     argv.append(prompt)
-    print(f"-- {COMMAND}: {root}, via {args.agent}; charter: {tool / 'README.md'}", file=sys.stderr)
+    charter = f"; charter: {tool / 'README.md'}" if tool is not None else ""
+    print(f"-- {COMMAND}: {root}, via {args.agent}{charter}", file=sys.stderr)
     os.chdir(root)
     os.execv(executable, argv)
 

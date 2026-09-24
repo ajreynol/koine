@@ -415,11 +415,14 @@ $ eo_cvc5_check_dokimasia --tool-root /path/to/dokimasia --codex
 
 Asks an assistant to start from Dokimasia's observation database: the open
 cvc5 entries in `bug_db/bugs.json`, with their archived run evidence, are the
-worklist. It re-reads each claim at this revision against the check catalogue and
+worklist. By default it reads the published repository through read-only GitHub
+access and records the evidence revision. It re-reads each claim at this revision
+against the check catalogue and
 evidence bar, reproduces behavioral claims, and fixes confirmed cvc5 defects with
 focused regressions. Static observations alone do not establish reachable bugs;
-observations that no longer hold are reported, not closed. The analyzer is run
-only to confirm a fix, never to update the database.
+observations that no longer hold are reported, not closed. `--tool-root` opts into
+a local Dokimasia checkout and running its analyzer only to confirm a fix, never
+to update the database.
 
 The three `eo_cvc5_check_` commands and `eo_check_anoieu` launch the selected
 assistant from the target Git root. They keep the current branch and preserve
@@ -431,17 +434,18 @@ are read without changing their databases, ledgers or baselines.
 They accept `--codex`, `--claude`, `--print` for a non-interactive run, and
 `--show-prompt` to preview without starting an assistant. The default agent is
 the same as the other prompt commands. The launcher itself performs no analysis,
-network access, branch changes or writes. A real run requires a Git checkout
-and the selected tool's `README.md`. The three cvc5 commands additionally require
+network access, branch changes or writes. A real run requires the target Git
+checkout. The three cvc5 commands additionally require
 `configure.sh` and `src/theory/`.
-A preview needs neither and names missing inputs.
+A preview needs no target checkout or agent installed.
 
-`--tool-root DIR` selects the directory containing the tool's charter. Otherwise
-discovery checks `DOKIMASIA_ROOT`, `ANOIEU_ROOT`, `EMPEIRIA_ROOT` or
-`ANAKRISIS_ROOT`, respectively; `PAIDEIA_ROOT` can locate either child under
-`tools/`. Then it searches the colon-separated roots in `ANOIEU_REPOS`, siblings
-of the target repository, and `$HOME`, using `dokimasia/`, `anoieu/`, or
-`paideia/tools/<child>/`. Explicit paths take precedence, including when invalid.
+`--tool-root DIR` explicitly opts into a local tool checkout and selects the
+directory containing its charter. Only this mode requires that tool's
+`README.md`. Without the flag, local tool checkouts are neither discovered nor
+mentioned in the prompt, even when environment variables or neighboring trees
+point to them. Dokimasia, Anoieu and Anakrisis read their published instructions
+and evidence by default; unavailable evidence is reported, never treated as an
+empty worklist or a successful check. Empeiria works directly from the issue.
 No dependency is cloned or fetched by the launcher.
 
 ## eo_check_anoieu
@@ -454,15 +458,18 @@ $ eo_check_anoieu --codex --print
 
 Asks an assistant to start from Anoieu's bug database: the open entries in
 `bug_db/bugs.json` whose owner names the current repository are the worklist.
+The default reads the published repository through read-only GitHub access,
+recording its revision.
 Run it in any target's Git checkout, including cvc5, ethos or logos; the agent
 identifies the project from its remote, documentation or `anoieu.json`. Each
 static finding's cited location is re-read and each fuzzer finding's committed
 reproducer replayed at this revision; confirmed defects get fixes and regression
 checks in that repository, and findings that no longer hold are reported, not
 closed. No open entry for this repository is reported as such, not replaced by a
-fresh analysis. The analyzer is run only to confirm a fix. This does not run the
+fresh analysis. `--tool-root` opts into a local Anoieu checkout and running its
+analyzer only to confirm a fix. This does not run the
 optional ecosystem policy checker or update Anoieu's database.
-The common options and discovery rules are above.
+The common options are above.
 
 ## eo_cvc5_check_emperia
 
@@ -472,12 +479,16 @@ $ eo_cvc5_check_emperia 12905 --show-prompt
 ```
 
 `N` is a required positive cvc5 **issue number**. The command's requested
-`emperia` spelling refers to Paideia's `tools/empeiria/` child. Its charter asks
-for reproduction, diagnosis, the smallest justified fix, and a regression tested
-before and after. Earlier cases may inform the work; the triage index alone is
-not evidence. Proof-completeness bugs are identified as Dokimasia's scope.
-The result stays in the cvc5 tree for review, without writing a child ledger or
-inventing a maintainer response. The common options and discovery rules are above.
+`emperia` spelling refers to Paideia's `tools/empeiria/` child. The default prompt
+works directly from the issue and cvc5's contributor instructions: reproduce,
+diagnose, make the smallest justified fix, and test a regression before and after.
+It does not require, discover or mention an Empeiria checkout.
+
+`--tool-root /path/to/paideia/tools/empeiria` explicitly adds that checkout's
+charter, triage notes and prior cases to the prompt. In this mode, the triage
+index alone is not evidence and proof-completeness bugs are identified as
+Dokimasia's scope. The tool checkout remains unchanged. The result stays staged
+in the cvc5 tree for review. The common agent and preview options are above.
 
 ## eo_cvc5_check_anakrisis
 
@@ -487,10 +498,17 @@ $ eo_cvc5_check_anakrisis 12893 --show-prompt
 ```
 
 `N` is a required positive cvc5 **pull-request number**. Run from a clean checkout
-of that PR. The agent must verify its head and base, then use Anakrisis's documented
-delta interface and Dokimasia to compare the merge base with the head at the
-same analysis scope. Missing evidence stops the review; a failed analysis must
-not become an empty delta.
+of that PR. The agent must verify its head and base. By default, it reads the
+published Anakrisis protocol and Dokimasia contract through read-only GitHub
+access, then uses published delta evidence linked from the PR or recorded in
+Anakrisis's cases. The delta must match the verified head and merge base and use
+the same analyzer revision and scope for both measurements. Missing, stale or
+unverifiable evidence stops the review.
+
+`--tool-root /path/to/paideia/tools/anakrisis` opts into the local charter and
+delta interface, using Dokimasia to compute the comparison. This mode also needs
+the analyzer as documented by Anakrisis. A failed analysis must not become an
+empty delta.
 
 The review follows Paideia's `tools/anakrisis/` charter and review protocol:
 attribute observations to changed hunks, account for renames, and support
@@ -498,7 +516,7 @@ behavioral claims with actual runs. It covers measured observations, proof
 hygiene and the documented contract. An empty delta is not a correctness verdict,
 and “nothing to say” is valid. The agent returns its review locally without
 editing or staging cvc5 source, writing a ledger, or submitting anything.
-The common options and discovery rules are above.
+The common options are above.
 
 ## eo_init
 

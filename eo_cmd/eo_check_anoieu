@@ -14,6 +14,8 @@ import sys
 
 COMMAND = 'eo_check_anoieu'
 TOOL = 'anoieu'
+SOURCE = 'https://github.com/ajreynol/anoieu'
+SOURCE_PREFIX = 'anoieu'
 SUMMARY = 'investigate and fix Eunoia signature and semantics defects'
 TASK = """Start from Anoieu's bug database, not its tooling. Read
 `{tool}/bug_db/README.md` and `{tool}/bug_db/reporting-policy.md`, then
@@ -35,32 +37,17 @@ evidence, rather than closing them; closure is the database owner's workflow.
 Distinguish target defects from analysis-tool or external checker defects, and
 report those without changing another tree. If no open entry names this
 repository, report that and stop; do not substitute a fresh analysis for an
-empty worklist. Run the analyzer (`{tool}/anoieu_analyzer/usage.md`) only to
-confirm a fix, with absolute paths, this target as the working directory and its
-own `anoieu.json` or documented profiles, and never the database updater.
+empty worklist.
 This is signature and semantics work, not the optional ecosystem policy check.
+{analysis}
 
 **Leave the work staged and not committed**: `git add` what you changed and
 stop there, so a person reviews a diff rather than a history. Stage only your
 changes, preserving any changes already staged when the run began."""
-
-
-def locate_tool(root, explicit):
-    """Explicit settings win, even when invalid; never substitute another tree."""
-    selected = explicit or os.environ.get(TOOL.upper() + "_ROOT")
-    if selected:
-        return Path(selected).expanduser().resolve()
-    roots = [Path(p).expanduser() for p in
-             os.environ.get("ANOIEU_REPOS", "").split(os.pathsep) if p]
-    roots += [root.parent, Path.home()]
-    for search in roots:
-        for candidate in (search / TOOL, search):
-            # A search root's own README is not necessarily this tool's charter.
-            if candidate == search and candidate.name != TOOL:
-                continue
-            if (candidate / "README.md").is_file():
-                return candidate.resolve()
-    return None
+LOCAL_ANALYSIS = """Run the analyzer (`{tool}/anoieu_analyzer/usage.md`) only to
+confirm a fix, with absolute paths, this target as the working directory and its
+own `anoieu.json` or documented profiles, and never the database updater.
+"""
 
 
 def main():
@@ -72,12 +59,11 @@ def main():
                     "An Eunoia ecosystem prompt command. Run it in the repository to check;\n"
                     "the agent starts at the checkout root on the current branch.\n"
                     "Read the tool's charter, investigate, and leave the result locally.",
-        epilog="--show-prompt works without a Git checkout, the tool, or an agent installed.\n"
-               "Tool discovery: --tool-root, $" + TOOL.upper() + "_ROOT, then\n"
-               "$ANOIEU_REPOS (colon-separated), siblings of the target repository,\n"
-               "and $HOME. --tool-root names the charter directory.\n"
+        epilog="--show-prompt works without a Git checkout or an agent installed.\n"
+               "--tool-root opts into local tool context and analyzer use.\n"
+               "No tool is discovered by default.\n"
                "No launcher switches branches, pulls, runs analyses, or writes files.")
-    parser.add_argument("--tool-root", metavar="DIR", help="directory containing the tool's README.md")
+    parser.add_argument("--tool-root", metavar="DIR", help="optionally use a local tool checkout containing README.md")
     parser.add_argument("--codex", dest="agent", action="store_const", const="codex",
                         help="select codex instead of claude")
     parser.add_argument("--claude", dest="agent", action="store_const", const="claude",
@@ -89,7 +75,7 @@ def main():
     parser.add_argument("--push", action="store_true", help="refused: these runs keep their results local")
     args = parser.parse_args()
     if args.push:
-        parser.error("--push is refused: this tool's charter leaves upstream delivery to a person")
+        parser.error("--push is refused: upstream delivery remains a person's decision")
 
     try:
         git = subprocess.run(["git", "rev-parse", "--show-toplevel"],
@@ -100,21 +86,25 @@ def main():
     is_checkout = git is not None and git.returncode == 0
     if not is_checkout and not args.show_prompt:
         parser.error("run this in the target repository's Git checkout")
-    tool = locate_tool(root, args.tool_root)
-    has_charter = tool is not None and (tool / "README.md").is_file()
-    if not has_charter and not args.show_prompt:
-        parser.error(f"no {TOOL} charter found; set --tool-root DIR to its README.md directory. "
-                     "--show-prompt still prints the workflow")
-
-    if has_charter:
+    tool = Path(args.tool_root).expanduser().resolve() if args.tool_root is not None else None
+    if tool is not None:
+        if not (tool / "README.md").is_file() and not args.show_prompt:
+            parser.error(f"no {TOOL} charter found at {tool / 'README.md'}; "
+                         "--tool-root must name its README.md directory")
         context = f"Read `{tool / 'README.md'}` first; it is {TOOL}'s charter."
+        context += (" Use the tool checkout as a source of instructions and analysis, "
+                    "without modifying its code, database, ledger, or baselines.")
     else:
-        context = (f"No checkout with {TOOL}'s README.md was found. Before working, locate "
-                   "`anoieu/README.md` and read its charter; "
-                   "--tool-root selects its directory. Do not invent the missing charter.")
+        context = (f"Read {SOURCE} through read-only GitHub access, beginning with "
+                   f"`{SOURCE_PREFIX}/README.md`. Record the source revision and use it "
+                   f"consistently. References below beginning with `{SOURCE_PREFIX}/` "
+                   "name paths in that published repository. If required evidence is "
+                   "unavailable, report the limitation; do not invent findings or treat "
+                   "unread records as an empty worklist.")
     if not is_checkout:
         context += " This preview is outside a Git checkout; a real run requires one."
-    task = TASK.format(tool=tool if has_charter else f"<{TOOL}-root>")
+    task = TASK.format(tool=tool if tool is not None else SOURCE_PREFIX,
+                       analysis=LOCAL_ANALYSIS.format(tool=tool) if tool is not None else "")
     prompt = f"""You are working in the target repository at `{root}`, following {TOOL}'s charter.
 {context} Read this repository's own contributor instructions and relevant tests. Keep the
 current branch and inspect existing changes before doing anything; preserve work
@@ -123,9 +113,8 @@ that was already here. Do not switch branches, pull, reset, or stash this tree.
 {task}
 
 Use Anoieu as the source of the worklist and its evidence. Make fixes only in this target
-repository; leave dependency checkouts and Anoieu's finding database, ledger and
-baselines unchanged. Put temporary analyzer output and builds
-in temporary directories outside the source checkouts. Report the source revisions,
+repository; leave Anoieu's finding database, ledger and baselines unchanged.
+Put temporary output and builds in temporary directories outside the target repository. Report the source revisions,
 commands, actual results, fixes or review findings, and anything still unverified.
 Do not commit, push, open a pull request, post a review or comment, or send anything
 upstream. A person decides what to publish.
@@ -143,7 +132,8 @@ upstream. A person decides what to publish.
     if args.noninteractive:
         argv.append("exec" if args.agent == "codex" else "-p")
     argv.append(prompt)
-    print(f"-- {COMMAND}: {root}, via {args.agent}; charter: {tool / 'README.md'}", file=sys.stderr)
+    charter = f"; charter: {tool / 'README.md'}" if tool is not None else ""
+    print(f"-- {COMMAND}: {root}, via {args.agent}{charter}", file=sys.stderr)
     os.chdir(root)
     os.execv(executable, argv)
 

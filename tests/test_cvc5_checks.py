@@ -87,8 +87,14 @@ class Cvc5Checks(unittest.TestCase):
             with self.subTest(command=suffix):
                 result = self.run_command(suffix, *args, "--show-prompt")
                 self.assertEqual(result.returncode, 0, result.stderr)
-                self.assertIn("No checkout", result.stdout)
-                self.assertIn(tool, result.stdout)
+                self.assertNotIn("No checkout", result.stdout)
+                self.assertNotIn("tool checkout", result.stdout)
+                self.assertNotIn("--tool-root", result.stdout)
+                if suffix == "emperia":
+                    self.assertNotIn(tool, result.stdout)
+                else:
+                    self.assertIn("read-only GitHub access", result.stdout)
+                    self.assertIn(tool, result.stdout)
                 outside = "outside a Git checkout" if suffix == "anoieu" else "outside a cvc5 checkout"
                 self.assertIn(outside, result.stdout)
                 self.assertNotIn("Traceback", result.stderr)
@@ -110,7 +116,7 @@ class Cvc5Checks(unittest.TestCase):
             help_result = self.run_command(suffix, "--help")
             self.assertEqual(help_result.returncode, 0, help_result.stderr)
 
-    def test_real_runs_require_the_target_checkout_and_a_charter(self):
+    def test_real_runs_require_the_target_checkout_and_validate_explicit_tools(self):
         for suffix, (_, _, args) in COMMANDS.items():
             result = self.run_command(suffix, *args)
             self.assertEqual(result.returncode, 2, result.stderr)
@@ -135,18 +141,23 @@ class Cvc5Checks(unittest.TestCase):
         self.make_tools()
         before = self.snapshot()
         for suffix, (_, relative, args) in COMMANDS.items():
-            preview = self.run_command(suffix, *args, "--show-prompt")
-            self.assertEqual(preview.returncode, 0, preview.stderr)
-            self.assertIn(str(self.ecosystem / relative / "README.md"), preview.stdout)
-            for flags, prefix in (([], []), (["--print"], ["-p"]),
-                                  (["--codex"], []), (["--codex", "--print"], ["exec"]),
-                                  (["--codex", "--claude", "--print"], ["-p"])):
-                with self.subTest(command=suffix, flags=flags):
-                    result = self.run_command(suffix, *args, *flags, cwd=self.cwd / "src/theory")
-                    self.assertEqual(result.returncode, 0, result.stderr)
-                    got = json.loads(result.stdout)
-                    self.assertEqual(got["cwd"], str(self.cwd))
-                    self.assertEqual(got["args"], [*prefix, preview.stdout])
+            for context in ([], ["--tool-root", str(self.ecosystem / relative)]):
+                preview = self.run_command(suffix, *args, *context, "--show-prompt")
+                self.assertEqual(preview.returncode, 0, preview.stderr)
+                if context:
+                    self.assertIn(str(self.ecosystem / relative / "README.md"), preview.stdout)
+                else:
+                    self.assertNotIn(str(self.ecosystem), preview.stdout)
+                for flags, prefix in (([], []), (["--print"], ["-p"]),
+                                      (["--codex"], []), (["--codex", "--print"], ["exec"]),
+                                      (["--codex", "--claude", "--print"], ["-p"])):
+                    with self.subTest(command=suffix, context=context, flags=flags):
+                        result = self.run_command(suffix, *args, *context, *flags,
+                                                  cwd=self.cwd / "src/theory")
+                        self.assertEqual(result.returncode, 0, result.stderr)
+                        got = json.loads(result.stdout)
+                        self.assertEqual(got["cwd"], str(self.cwd))
+                        self.assertEqual(got["args"], [*prefix, preview.stdout])
         self.assertEqual(self.snapshot(), before)
 
     def test_anoieu_runs_in_non_cvc5_targets(self):
@@ -173,7 +184,7 @@ class Cvc5Checks(unittest.TestCase):
                 self.assertIn("anoieu.json", preview.stdout)
                 self.assertEqual(self.snapshot(), before)
 
-    def test_explicit_and_environment_discovery_and_missing_agent(self):
+    def test_explicit_tool_selection_and_missing_agent(self):
         self.make_cvc5()
         self.make_tools()
         alternate = self.root / "a charter elsewhere"
@@ -182,17 +193,13 @@ class Cvc5Checks(unittest.TestCase):
         for suffix, (tool, relative, args) in COMMANDS.items():
             env = dict(self.env, **{tool.upper() + "_ROOT": str(alternate)})
             result = self.run_command(suffix, *args, "--show-prompt", env=env)
-            self.assertIn(str(alternate / "README.md"), result.stdout)
+            self.assertNotIn(str(alternate), result.stdout)
             result = self.run_command(suffix, *args, "--tool-root", str(self.ecosystem / relative),
                                       "--show-prompt", env=env)
             self.assertIn(str(self.ecosystem / relative / "README.md"), result.stdout)
-            env[tool.upper() + "_ROOT"] = str(self.root / "missing")
-            self.assertEqual(self.run_command(suffix, *args, env=env).returncode, 2)
-        env = dict(self.env, ANOIEU_REPOS="", PAIDEIA_ROOT=str(self.ecosystem / "paideia"))
-        for suffix in ("emperia", "anakrisis"):
-            _, relative, args = COMMANDS[suffix]
-            result = self.run_command(suffix, *args, "--show-prompt", env=env)
-            self.assertIn(str(self.ecosystem / relative / "README.md"), result.stdout)
+            result = self.run_command(suffix, *args, "--tool-root", str(alternate), "--print")
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn(str(alternate / "README.md"), json.loads(result.stdout)["args"][-1])
         (self.bin / "codex").unlink()
         result = self.run_command("dokimasia", "--codex")
         self.assertEqual(result.returncode, 127, result.stderr)
@@ -214,6 +221,109 @@ class Cvc5Checks(unittest.TestCase):
             if suffix == "emperia":
                 self.assertIn("https://github.com/cvc5/cvc5/issues/12905", prompt)
             self.assertIn("Do not commit, push", prompt)
+
+    def test_emperia_runs_without_tool_context_by_default(self):
+        self.make_cvc5()
+        before = self.snapshot()
+        preview = self.run_command("emperia", "12905", "--show-prompt")
+        self.assertEqual(preview.returncode, 0, preview.stderr)
+        for reference in ("empeiria", "paideia", "charter", "triage.md", "ledger",
+                          "tool checkout", "--tool-root"):
+            self.assertNotIn(reference, preview.stdout)
+        self.assertIn("https://github.com/cvc5/cvc5/issues/12905", preview.stdout)
+        self.assertIn("test the reproducer before and after", preview.stdout)
+        result = self.run_command("emperia", "12905", "--print")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout)["args"], ["-p", preview.stdout])
+        self.assertNotIn("charter", result.stderr)
+
+        # Existing checkouts and inherited discovery settings cannot opt a run in.
+        self.make_tools()
+        for search in (self.cwd.parent, self.home):
+            path = search / "paideia/tools/empeiria"
+            path.mkdir(parents=True)
+            (path / "README.md").touch()
+        for selected in (self.ecosystem / "paideia/tools/empeiria", self.root / "missing"):
+            env = dict(self.env, EMPEIRIA_ROOT=str(selected),
+                       PAIDEIA_ROOT=str(self.ecosystem / "paideia"))
+            result = self.run_command("emperia", "12905", "--print", env=env)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(json.loads(result.stdout)["args"], ["-p", preview.stdout])
+            self.assertNotIn("charter", result.stderr)
+        self.assertEqual(self.snapshot(), before)
+
+    def test_emperia_tool_context_requires_explicit_opt_in(self):
+        self.make_cvc5()
+        self.make_tools()
+        tool = self.ecosystem / "paideia/tools/empeiria"
+        args = ["12905", "--tool-root", str(tool)]
+        preview = self.run_command("emperia", *args, "--show-prompt")
+        self.assertEqual(preview.returncode, 0, preview.stderr)
+        for relative in ("README.md", "docs/triage.md", "ledger/"):
+            self.assertIn(f"{tool}/{relative}", preview.stdout)
+        self.assertIn("without modifying", preview.stdout)
+        result = self.run_command("emperia", *args, "--codex", "--print")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout)["args"], ["exec", preview.stdout])
+        self.assertIn(str(tool / "README.md"), result.stderr)
+
+    def test_all_checks_run_without_local_tools_and_ignore_discovery(self):
+        self.make_cvc5()
+        before = self.snapshot()
+        previews = {}
+        for suffix, (_, _, args) in COMMANDS.items():
+            preview = self.run_command(suffix, *args, "--show-prompt")
+            self.assertEqual(preview.returncode, 0, preview.stderr)
+            previews[suffix] = preview.stdout
+            result = self.run_command(suffix, *args, "--print")
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(json.loads(result.stdout)["args"], ["-p", preview.stdout])
+            self.assertNotIn("charter", result.stderr)
+
+        self.make_tools()
+        for search in (self.cwd.parent, self.home):
+            for _, relative, _ in COMMANDS.values():
+                path = search / relative
+                path.mkdir(parents=True, exist_ok=True)
+                (path / "README.md").touch()
+        for exists in (True, False):
+            env = dict(self.env, PAIDEIA_ROOT=str(self.ecosystem / "paideia"))
+            for tool, relative, _ in COMMANDS.values():
+                env[tool.upper() + "_ROOT"] = str(self.ecosystem / relative if exists
+                                                 else self.root / "missing")
+            for suffix, (_, _, args) in COMMANDS.items():
+                with self.subTest(command=suffix, exists=exists):
+                    result = self.run_command(suffix, *args, "--print", env=env)
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertEqual(json.loads(result.stdout)["args"], ["-p", previews[suffix]])
+        self.assertEqual(self.snapshot(), before)
+
+    def test_published_evidence_and_explicit_analyzer_workflows(self):
+        self.make_tools()
+        for suffix, analyzer in (("dokimasia", "scripts/dokimasia_analyzer"),
+                                  ("anoieu", "anoieu_analyzer/usage.md"),
+                                  ("anakrisis", "run_anakrisis 12893 --delta")):
+            _, relative, args = COMMANDS[suffix]
+            default = self.run_command(suffix, *args, "--show-prompt")
+            local = self.run_command(suffix, *args, "--tool-root", str(self.ecosystem / relative),
+                                     "--show-prompt")
+            self.assertEqual(default.returncode, 0, default.stderr)
+            self.assertEqual(local.returncode, 0, local.stderr)
+            self.assertIn("https://github.com/ajreynol/", default.stdout)
+            self.assertIn("source revision", default.stdout)
+            self.assertNotIn(analyzer, default.stdout)
+            self.assertNotIn("DOKIMASIA_ROOT", default.stdout)
+            self.assertIn(analyzer, local.stdout)
+            if suffix == "anakrisis":
+                self.assertIn("published delta evidence", default.stdout)
+                self.assertIn("SHAs match the verified PR", default.stdout)
+                self.assertIn("stop the review", default.stdout)
+                self.assertIn("analysis is not an empty delta", default.stdout)
+                self.assertIn("analysis is not an empty delta", local.stdout)
+            else:
+                self.assertIn("bug_db/bugs.json", default.stdout)
+                self.assertIn("reproducer" if suffix == "anoieu" else "concrete inputs",
+                              default.stdout)
 
 
 if __name__ == "__main__":

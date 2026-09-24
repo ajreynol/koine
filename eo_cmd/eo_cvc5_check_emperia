@@ -15,56 +15,39 @@ import sys
 
 COMMAND = 'eo_cvc5_check_emperia'
 TOOL = 'empeiria'
-REPOSITORY = 'paideia'
-CHILD = 'tools/empeiria'
 NUMBER_KIND = 'issue'
 SUMMARY = 'reproduce and fix one numbered cvc5 issue'
 TASK = """Work cvc5 issue #{number}: https://github.com/cvc5/cvc5/issues/{number}.
-Read the issue and discussion through read-only access, along with
-`{tool}/docs/triage.md` and any relevant prior cases in `{tool}/ledger/`.
-The triage index is a lead, not evidence; previous maintainer responses may teach
-what to check, but never invent a response or treat it as this issue's diagnosis.
+Read the issue and discussion through read-only access.
 Reproduce the report on this revision first: build what is needed and record the
 exact command and actual output. If it does not reproduce, report that result
 and the remaining uncertainty. Locate the cause in a file and line, implement the
 smallest justified fix, add a regression, and test the reproducer before and after
 along with relevant existing tests. A reproduced defect with a named cause is a
-useful result if a fix is blocked; do not guess at a design decision. Stay within
-empeiria's charter for reported general cvc5 defects. Identify proof-completeness
-bugs as dokimasia's scope, and report that routing locally. Finish with what was
-reproduced, changed and tested and what remains unresolved; leave the tool's ledger
-and any future maintainer response for their own workflow.
+useful result if a fix is blocked; do not guess at a design decision. Stay focused
+on the reported cvc5 defect. Finish with what was reproduced, changed and tested
+and what remains unresolved.
 
 **Leave the work staged and not committed**: `git add` what you changed and
 stop there, so a person reviews a diff rather than a history. Stage only your
 changes, preserving any changes already staged when the run began."""
+TOOL_CONTEXT = """Read `{tool}/README.md` first; it is empeiria's charter.
+Read `{tool}/docs/triage.md` and any relevant prior cases in `{tool}/ledger/`.
+The triage index is a lead, not evidence; previous maintainer responses may teach
+what to check, but never invent a response or treat it as this issue's diagnosis.
+Stay within empeiria's charter for reported general cvc5 defects. Identify
+proof-completeness bugs as dokimasia's scope, and report that routing locally.
+Use the tool checkout as a source of instructions and analysis, without modifying
+its code, database, ledger, or baselines. Leave the tool's ledger and any future
+maintainer response for their own workflow.
+
+"""
 
 
 def positive_number(value):
     if not re.fullmatch(r"[1-9][0-9]*", value):
         raise argparse.ArgumentTypeError("N must be a positive issue or PR number")
     return value
-
-
-def locate_tool(root, explicit):
-    """Explicit settings win, even when invalid; never substitute another tree."""
-    selected = explicit or os.environ.get(TOOL.upper() + "_ROOT")
-    if selected:
-        return Path(selected).expanduser().resolve()
-    if CHILD and os.environ.get("PAIDEIA_ROOT"):
-        return Path(os.environ["PAIDEIA_ROOT"]).expanduser().resolve() / CHILD
-    roots = [Path(p).expanduser() for p in
-             os.environ.get("ANOIEU_REPOS", "").split(os.pathsep) if p]
-    roots += [root.parent, Path.home()]
-    for search in roots:
-        for repository in (search / REPOSITORY, search):
-            candidate = repository / CHILD if CHILD else repository
-            # A search root's own README is not necessarily this tool's charter.
-            if repository == search and repository.name != REPOSITORY:
-                continue
-            if (candidate / "README.md").is_file():
-                return candidate.resolve()
-    return None
 
 
 def main():
@@ -75,16 +58,15 @@ def main():
         description=f"{COMMAND} -- {SUMMARY}.\n\n"
                     "An Eunoia ecosystem prompt command. Run it in a cvc5 repository;\n"
                     "the agent starts at the checkout root on the current branch.\n"
-                    "Read the tool's charter, investigate, and leave the result locally.",
-        epilog="--show-prompt works without cvc5, the tool, or an agent installed.\n"
-               "Tool discovery: --tool-root, $" + TOOL.upper() + "_ROOT, then\n"
-               "$PAIDEIA_ROOT for children, $ANOIEU_REPOS (colon-separated),\n"
-               "siblings of cvc5, and $HOME. --tool-root names the charter directory.\n"
+                    "Investigate the issue and leave the result locally.",
+        epilog="--show-prompt works without cvc5 or an agent installed.\n"
+               "--tool-root opts into local empeiria context; no tool is discovered by default.\n"
                "No launcher switches branches, pulls, runs analyses, or writes files.")
     if NUMBER_KIND:
         parser.add_argument("number", metavar="N", type=positive_number,
                             help=f"the cvc5 {NUMBER_KIND} number (required)")
-    parser.add_argument("--tool-root", metavar="DIR", help="directory containing the tool's README.md")
+    parser.add_argument("--tool-root", metavar="DIR",
+                        help="optionally use an empeiria checkout containing README.md")
     parser.add_argument("--codex", dest="agent", action="store_const", const="codex",
                         help="select codex instead of claude")
     parser.add_argument("--claude", dest="agent", action="store_const", const="claude",
@@ -96,7 +78,7 @@ def main():
     parser.add_argument("--push", action="store_true", help="refused: these runs keep their results local")
     args = parser.parse_args()
     if args.push:
-        parser.error("--push is refused: this tool's charter leaves upstream delivery to a person")
+        parser.error("--push is refused: upstream delivery remains a person's decision")
 
     try:
         git = subprocess.run(["git", "rev-parse", "--show-toplevel"],
@@ -108,32 +90,27 @@ def main():
                and (root / "configure.sh").is_file() and (root / "src/theory").is_dir())
     if not is_cvc5 and not args.show_prompt:
         parser.error("run this in a cvc5 Git checkout (configure.sh and src/theory/ are required)")
-    tool = locate_tool(root, args.tool_root)
-    has_charter = tool is not None and (tool / "README.md").is_file()
-    if not has_charter and not args.show_prompt:
-        parser.error(f"no {TOOL} charter found; set --tool-root DIR to its README.md directory. "
-                     "--show-prompt still prints the workflow")
-
-    if has_charter:
-        context = f"Read `{tool / 'README.md'}` first; it is {TOOL}'s charter."
-    else:
-        context = (f"No checkout with {TOOL}'s README.md was found. Before working, locate "
-                   f"`{REPOSITORY}/{CHILD + '/' if CHILD else ''}README.md` and read its charter; "
-                   "--tool-root selects its directory. Do not invent the missing charter.")
+    tool = Path(args.tool_root).expanduser().resolve() if args.tool_root is not None else None
+    context = ""
+    if tool is not None:
+        if not (tool / "README.md").is_file():
+            if not args.show_prompt:
+                parser.error(f"no {TOOL} charter found at {tool / 'README.md'}; "
+                             "--tool-root must name its README.md directory")
+            context = f"No checkout with {TOOL}'s README.md was found at `{tool}`.\n"
+        context += TOOL_CONTEXT.format(tool=tool)
     if not is_cvc5:
-        context += " This preview is outside a cvc5 checkout; a real run requires one."
-    task = TASK.format(root=root, tool=tool if has_charter else f"<{TOOL}-root>",
-                       number=getattr(args, "number", ""))
-    prompt = f"""You are working in the cvc5 checkout at `{root}`, following {TOOL}'s charter.
-{context} Read cvc5's own contributor instructions and relevant tests. Keep the
+        context += "This preview is outside a cvc5 checkout; a real run requires one.\n"
+    task = TASK.format(number=args.number)
+    prompt = f"""You are working in the cvc5 checkout at `{root}`.
+{context}Read cvc5's own contributor instructions and relevant tests. Keep the
 current branch and inspect existing changes before doing anything; preserve work
 that was already here. Do not switch branches, pull, reset, or stash this tree.
 
 {task}
 
-Use the tool checkout as a source of instructions and analysis, without modifying
-its code, database, ledger, or baselines. Put temporary analyzer output and builds
-in temporary directories outside the source checkouts. Report the source revisions,
+Put temporary output and builds in temporary directories outside the source
+checkouts. Report the source revisions,
 commands, actual results, fixes or review findings, and anything still unverified.
 Do not commit, push, open a pull request, post a review or comment, or send anything
 upstream. A person decides what to publish.
@@ -151,7 +128,8 @@ upstream. A person decides what to publish.
     if args.noninteractive:
         argv.append("exec" if args.agent == "codex" else "-p")
     argv.append(prompt)
-    print(f"-- {COMMAND}: {root}, via {args.agent}; charter: {tool / 'README.md'}", file=sys.stderr)
+    charter = f"; charter: {tool / 'README.md'}" if tool is not None else ""
+    print(f"-- {COMMAND}: {root}, via {args.agent}{charter}", file=sys.stderr)
     os.chdir(root)
     os.execv(executable, argv)
 
