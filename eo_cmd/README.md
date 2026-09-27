@@ -552,9 +552,12 @@ so `--codex` names the branch too, with the first free numeric suffix —
 `ai-heuresis-r9-claude2` — when the name is taken. The launcher reads the
 checkout's refs to pick it, remote-tracking refs included, and the prompt carries
 the same rule for a ref that arrives after that. Because the work goes on a new
-branch, this run **requires a clean working tree** and stops on a dirty one
-without disturbing it, where the other checks keep the current branch and
-preserve existing work.
+branch, this run **requires the tracked tree to be clean** and stops on a dirty
+one without disturbing it, where the other checks keep the current branch and
+preserve existing work. **Untracked files are ignored**: a build directory or
+scratch output is normal in a cvc5 checkout and is no reason to refuse a run, so
+the prompt neither counts them nor stages them — the files staged at the end are
+the ones the agent edited and wrote.
 
 The prompt asks for the change to be guarded behind a new option defaulting to
 current behaviour, so that what was written is one arm against the register's

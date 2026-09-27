@@ -62,8 +62,10 @@ and what came out, what is still unverified, and the row you would add to
 R{number}'s proposals table, in that table's columns.
 
 **Leave the work staged and not committed**: `git add` what you changed and
-stop there, so a person reviews a diff rather than a history. The branch is
-what keeps that diff off the branch this run started on."""
+stop there, so a person reviews a diff rather than a history. Stage the files
+you wrote along with the ones you edited, and nothing that was untracked before
+you started. The branch is what keeps that diff off the branch this run started
+on."""
 
 
 def direction_number(value):
@@ -177,9 +179,13 @@ def main():
                        tool=tool if tool is not None else SOURCE_PREFIX)
     prompt = f"""You are working in the cvc5 checkout at `{root}`, following {TOOL}'s charter.
 {context} Read cvc5's own contributor instructions and relevant tests. This run
-puts its work on a branch it creates, so require a clean working tree: if this
-one has changes, report them and stop without disturbing them. Do not pull,
-reset, or stash this tree, and switch to no branch but the one you create.
+puts its work on a branch it creates, so require a clean working tree: if a
+tracked file here has staged or unstaged changes
+(`git status --porcelain --untracked-files=no`), report them and stop without
+disturbing them. **Ignore untracked files** -- a build directory or scratch
+output is normal in a cvc5 checkout, is nobody's work to lose, and is no reason
+to stop; leave them where they are, and do not stage them. Do not pull, reset,
+or stash this tree, and switch to no branch but the one you create.
 
 {task}
 

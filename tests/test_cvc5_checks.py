@@ -339,6 +339,9 @@ class Cvc5Checks(unittest.TestCase):
                 "is a variant rather than a new approach",
                 "**Make no performance claim.**",
                 "require a clean working tree",
+                "(`git status --porcelain --untracked-files=no`)",
+                "**Ignore untracked files**",
+                "nothing that was untracked before you started",
                 "Leave heuresis's own documents alone",
                 "**Leave the work staged and not committed**",
                 "create branch `ai-heuresis-r9-claude` from the current HEAD"):
@@ -352,6 +355,12 @@ class Cvc5Checks(unittest.TestCase):
         codex = self.run_command("heuresis", "9", "--codex", "--show-prompt")
         self.assertIn("create branch `ai-heuresis-r9-codex` from", " ".join(codex.stdout.split()))
         self.assertNotIn("claude", codex.stdout)
+        # A build directory is not a dirty tree. The requirement is about
+        # tracked changes, and it says so, because a cvc5 checkout that has been
+        # built once has untracked output in it and a run that refused those
+        # would refuse every real checkout it was pointed at.
+        for never in ("git add -A", "git add .", "git clean"):
+            self.assertNotIn(never, flat)
         # The clean tree is the agent's to check: this fixture is dirty, the run
         # launches, and the requirement travels in the prompt rather than being
         # guessed at by a launcher that would have to decide what a stash is for.
