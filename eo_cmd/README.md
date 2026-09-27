@@ -20,6 +20,7 @@ Prompt commands hand work to an assistant; programs do the work themselves.
 | [`eo_check_anoieu`](eo_check_anoieu) | investigate the current repository's Eunoia signatures and semantics and fix confirmed defects |
 | [`eo_cvc5_check_emperia`](eo_cvc5_check_emperia) | reproduce, locate, fix and test one numbered cvc5 issue |
 | [`eo_cvc5_check_anakrisis`](eo_cvc5_check_anakrisis) | review one numbered cvc5 PR using the measured inventory delta |
+| [`eo_cvc5_check_heuresis`](eo_cvc5_check_heuresis) | write a new approach in one heuresis research direction, on a branch of its own |
 | `koine_append_db` | append a run's records to a database, whatever that database calls them; implementation and usage in [`../bug_db_manager/`](../bug_db_manager/README.md) |
 | `koine_window` | resolve and describe the window of another project's history a closure run reads; in [`../bug_db_manager/`](../bug_db_manager/README.md) |
 | `koine_check_db` | check that a closure run changed only what it was allowed to; in [`../bug_db_manager/`](../bug_db_manager/README.md) |
@@ -133,6 +134,7 @@ after CI passes, which is still the final step of the work.
 | `eo_check_anoieu` | refused: upstream delivery remains a person's decision |
 | `eo_cvc5_check_emperia` | refused: upstream delivery remains a person's decision |
 | `eo_cvc5_check_anakrisis` | refused: the result is a local review |
+| `eo_cvc5_check_heuresis` | refused: upstream delivery remains a person's decision |
 
 The programs — `eo_status`, `eo_git_status`, `eo_listen` — write nothing and
 reject the flag as an unknown argument.
@@ -424,9 +426,11 @@ observations that no longer hold are reported, not closed. `--tool-root` opts in
 a local Dokimasia checkout and running its analyzer only to confirm a fix, never
 to update the database.
 
-The three `eo_cvc5_check_` commands and `eo_check_anoieu` launch the selected
-assistant from the target Git root. They keep the current branch and preserve
-existing work. Dokimasia, Anoieu and Empeiria ask for changes to be left staged
+The four `eo_cvc5_check_` commands and `eo_check_anoieu` launch the selected
+assistant from the target Git root. All but Heuresis keep the current branch and
+preserve existing work; Heuresis requires a clean tree and asks the agent to
+create the one branch its diff is left on. Dokimasia, Anoieu, Empeiria and
+Heuresis ask for changes to be left staged
 and not committed; Anakrisis returns a review. All refuse `--push`, leaving
 publication to a person. Tool repositories
 are read without changing their databases, ledgers or baselines.
@@ -435,7 +439,7 @@ They accept `--codex`, `--claude`, `--print` for a non-interactive run, and
 `--show-prompt` to preview without starting an assistant. The default agent is
 the same as the other prompt commands. The launcher itself performs no analysis,
 network access, branch changes or writes. A real run requires the target Git
-checkout. The three cvc5 commands additionally require
+checkout. The four cvc5 commands additionally require
 `configure.sh` and `src/theory/`.
 A preview needs no target checkout or agent installed.
 
@@ -443,7 +447,7 @@ A preview needs no target checkout or agent installed.
 directory containing its charter. Only this mode requires that tool's
 `README.md`. Without the flag, local tool checkouts are neither discovered nor
 mentioned in the prompt, even when environment variables or neighboring trees
-point to them. Dokimasia, Anoieu and Anakrisis read their published instructions
+point to them. Dokimasia, Anoieu, Anakrisis and Heuresis read their published instructions
 and evidence by default; unavailable evidence is reported, never treated as an
 empty worklist or a successful check. Empeiria works directly from the issue.
 No dependency is cloned or fetched by the launcher.
@@ -517,6 +521,50 @@ hygiene and the documented contract. An empty delta is not a correctness verdict
 and “nothing to say” is valid. The agent returns its review locally without
 editing or staging cvc5 source, writing a ledger, or submitting anything.
 The common options are above.
+
+## eo_cvc5_check_heuresis
+
+```console
+$ eo_cvc5_check_heuresis 9
+$ eo_cvc5_check_heuresis R9 --show-prompt
+$ eo_cvc5_check_heuresis 9 --tool-root /path/to/tachyon/tools/heuresis --codex
+```
+
+`N` is a required **research direction number** in Heuresis's register, written
+`9` or `R9`. By default the agent reads that register —
+[`tools/heuresis/docs/directions.md`](https://github.com/ajreynol/tachyon/blob/main/tools/heuresis/docs/directions.md)
+in Tachyon — and the charter beside it through read-only GitHub access, recording
+the source revision. A direction the register does not have stops the run: the
+identifiers there are stable and a gap is deliberate.
+
+**The brainstorm comes before the code and is said out loud.** The agent reports
+what that direction has already tried — the cvc5 options that test it today, the
+branches under *Tried* with what the evidence says happened to each, and every
+row of its proposals table — then two or three approaches that are none of them,
+and which one it will implement and how it differs from each existing attempt by
+name. An approach whose difference cannot be stated against a named branch or
+option is a variant, and the prompt sends it back rather than letting it be
+dressed up as new. A person watching the run can redirect it there, before
+anything is built.
+
+**It is the one command here that creates a branch**: `ai-heuresis-r<N>-<agent>`,
+so `--codex` names the branch too, with the first free numeric suffix —
+`ai-heuresis-r9-claude2` — when the name is taken. The launcher reads the
+checkout's refs to pick it, remote-tracking refs included, and the prompt carries
+the same rule for a ref that arrives after that. Because the work goes on a new
+branch, this run **requires a clean working tree** and stops on a dirty one
+without disturbing it, where the other checks keep the current branch and
+preserve existing work.
+
+The prompt asks for the change to be guarded behind a new option defaulting to
+current behaviour, so that what was written is one arm against the register's
+reference, and for a build, the regressions covering what was touched, and a run
+of the new path on a small quantified input. **It makes no performance claim**:
+measuring the set is Heuresis's own work on its benchmark host, so the run says
+what would have to be run against which reference to price the approach, and
+ends with the row it would add to that direction's proposals table. Heuresis's
+register, ledger and reports are left alone — a proposal earns its row there.
+The work stays staged on the new branch. The common options are above.
 
 ## eo_init
 

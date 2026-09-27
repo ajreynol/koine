@@ -46,14 +46,17 @@ def concrete(args):
 
     `<path>` wants a tree that exists and is read even when not previewing;
     `<name>` a repository beside this one; `<Dn>` a topic id; `<focus>` free
-    text; `<N>` a positive issue or PR number. One place decides these because
+    text; `<N>` a positive issue or PR number; `<n>` a research direction
+    number, which is a different kind of number in a different register and is
+    spelled differently in the manifest for that reason -- an issue number
+    stands in for no direction. One place decides these because
     both tests below need the same
     answer, and the mapping was written twice before there was a third
     placeholder to get wrong.
     """
     return [ROOT if a == "<path>" else "kanon" if a == "<name>"
             else "D1" if a == "<Dn>" else "proofs" if a == "<focus>"
-            else "12905" if a == "<N>" else a
+            else "12905" if a == "<N>" else "9" if a == "<n>" else a
             for a in args]
 
 

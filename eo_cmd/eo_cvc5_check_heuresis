@@ -1,0 +1,213 @@
+#!/usr/bin/env python3
+"""eo_cvc5_check_heuresis -- write a new approach in one heuresis research direction.
+
+Self-contained because install_eo copies each command as a single file.
+The launcher reads paths and builds a prompt; only the selected agent does work.
+"""
+
+import argparse
+import os
+from pathlib import Path
+import re
+import shutil
+import subprocess
+import sys
+
+COMMAND = 'eo_cvc5_check_heuresis'
+TOOL = 'heuresis'
+NUMBER_KIND = 'research direction'
+SOURCE = 'https://github.com/ajreynol/tachyon'
+SOURCE_PREFIX = 'tachyon/tools/heuresis'
+REGISTER = ('https://github.com/ajreynol/tachyon/blob/main/'
+            'tools/heuresis/docs/directions.md')
+SUMMARY = 'write a new approach in one heuresis research direction'
+TASK = """Write a new approach in research direction R{number} of {name}'s register
+and implement it in this checkout.
+
+Read R{number}'s entry whole in `{tool}/docs/directions.md`, the documentation
+index `{tool}/docs/README.md`, and the pages that entry and its proposals
+table cite: the hypothesis rows, the ledger entries behind its numbers, the
+shared active-branch list, and the neighbouring directions it says are the same
+mechanism seen from another side. Read the register's own Proposals section for
+what counts as a proposal, the reference every number is measured against, and
+the columns. If the register has no R{number}, say so and stop; identifiers
+there are stable and a gap is deliberate.
+
+**Brainstorm before writing any code, and say the result in your response**:
+what R{number} has already tried -- the cvc5 options that test it today, each
+branch named under Tried and what the evidence says happened to it, and every
+row of its proposals table -- and then two or three approaches that are none of
+them. Choose one and explain what you plan to implement, which of that
+direction's evidence points at it, and how it differs from each existing
+attempt by name. An approach whose difference you cannot state against a named
+branch or option is a variant rather than a new approach: say so and choose
+again instead of dressing one up.
+
+Then create branch `{branch}` from the current HEAD of this checkout and do the
+work there; if that name is taken by the time you look, add the next free
+suffix -- `{next_one}`, then `{next_two}`. Locate the mechanism in cvc5's
+source yourself, and prefer guarding the change behind a new option whose
+default leaves current behaviour alone, so that what you wrote is one arm
+against the register's reference; say why if the approach cannot be written
+that way. Build cvc5, run the regressions covering what you touched, and run
+the new path on a small quantified input to show it does what you say it does.
+
+**Make no performance claim.** Measuring the set is the register's own work on
+its benchmark host, and a compile is not a result: say what would have to be
+run, against which reference, to price this approach, and report no speedup you
+have not measured. Leave {name}'s own documents alone -- the register, ledger
+and reports belong to another repository, and a proposal earns its row there.
+Finish with what you implemented and where it is in cvc5's source, what you ran
+and what came out, what is still unverified, and the row you would add to
+R{number}'s proposals table, in that table's columns.
+
+**Leave the work staged and not committed**: `git add` what you changed and
+stop there, so a person reviews a diff rather than a history. The branch is
+what keeps that diff off the branch this run started on."""
+
+
+def direction_number(value):
+    found = re.fullmatch(r"[Rr]?([1-9][0-9]*)", value)
+    if not found:
+        raise argparse.ArgumentTypeError(
+            "N must be a research direction number, written 9 or R9")
+    return found.group(1)
+
+
+def free_branch(root, base, search):
+    """The first unused branch name, and the two after it.
+
+    The prompt names a branch rather than stating a rule, because a rule is one
+    more thing to get wrong in a name a person will type again. Every ref this
+    checkout can see counts as taken, remote-tracking ones included: a name
+    already on the fork is not free even where no local branch holds it. The
+    rule goes in the prompt as well, with the next two free names, because a ref
+    that arrives between this and the agent's `git checkout -b` is not a
+    launcher's to see.
+    """
+    taken = set()
+    if search:
+        try:
+            refs = subprocess.run(["git", "for-each-ref", "--format=%(refname)"],
+                                  cwd=root, capture_output=True, text=True)
+        except FileNotFoundError:
+            refs = None
+        if refs is not None and refs.returncode == 0:
+            # The last component, which is the branch name for a head and for a
+            # remote-tracking ref alike. These names carry no slash of their own.
+            taken = {line.rsplit("/", 1)[-1] for line in refs.stdout.split()}
+    name, suffix = base, 2
+    while name in taken:
+        name, suffix = f"{base}{suffix}", suffix + 1
+    later = []
+    while len(later) < 2:
+        candidate = f"{base}{suffix}"
+        suffix += 1
+        if candidate not in taken:
+            later.append(candidate)
+    return name, later
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        prog=COMMAND, allow_abbrev=False,
+        usage="%(prog)s [options]" + (" N" if NUMBER_KIND else ""),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=f"{COMMAND} -- {SUMMARY}.\n\n"
+                    "An Eunoia ecosystem prompt command. Run it in a cvc5 repository;\n"
+                    "the agent starts at the checkout root and works on a branch it\n"
+                    "creates. Read the register, brainstorm, implement, leave it local.",
+        epilog="N is the research direction, written 9 or R9.\n"
+               "The branch is ai-heuresis-r<N>-<agent>, with the first free numeric\n"
+               "suffix if that name is taken; --codex therefore names the branch too.\n"
+               "--show-prompt works without cvc5 or an agent installed.\n"
+               "--tool-root opts into a local tachyon checkout's tools/heuresis;\n"
+               "the published register is read by default and no tool is discovered.\n"
+               "No launcher switches branches, pulls, runs analyses, or writes files.")
+    if NUMBER_KIND:
+        parser.add_argument("number", metavar="N", type=direction_number,
+                            help=f"the {TOOL} {NUMBER_KIND} number (required)")
+    parser.add_argument("--tool-root", metavar="DIR",
+                        help=f"optionally use a local {TOOL} checkout containing README.md")
+    parser.add_argument("--codex", dest="agent", action="store_const", const="codex",
+                        help="select codex instead of claude")
+    parser.add_argument("--claude", dest="agent", action="store_const", const="claude",
+                        help="select claude (the default)")
+    parser.set_defaults(agent="claude")
+    parser.add_argument("--print", dest="noninteractive", action="store_true",
+                        help="run the agent non-interactively and print the result")
+    parser.add_argument("--show-prompt", action="store_true", help="print the prompt and launch nothing")
+    parser.add_argument("--push", action="store_true", help="refused: these runs keep their results local")
+    args = parser.parse_args()
+    if args.push:
+        parser.error("--push is refused: upstream delivery remains a person's decision")
+
+    try:
+        git = subprocess.run(["git", "rev-parse", "--show-toplevel"],
+                             capture_output=True, text=True)
+    except FileNotFoundError:
+        git = None
+    root = Path(git.stdout.strip()).resolve() if git and git.returncode == 0 else Path.cwd()
+    is_cvc5 = (git is not None and git.returncode == 0
+               and (root / "configure.sh").is_file() and (root / "src/theory").is_dir())
+    if not is_cvc5 and not args.show_prompt:
+        parser.error("run this in a cvc5 Git checkout (configure.sh and src/theory/ are required)")
+    tool = Path(args.tool_root).expanduser().resolve() if args.tool_root is not None else None
+    if tool is not None:
+        if not (tool / "README.md").is_file() and not args.show_prompt:
+            parser.error(f"no {TOOL} charter found at {tool / 'README.md'}; "
+                         "--tool-root must name its README.md directory")
+        context = f"Read `{tool / 'README.md'}` first; it is {TOOL}'s charter."
+        context += (" Use the tool checkout as a source of instructions and evidence, "
+                    "without modifying its code, register, ledger, reports or baselines.")
+    else:
+        context = (f"Read {SOURCE} through read-only GitHub access, beginning with the "
+                   f"register at {REGISTER} and with `{SOURCE_PREFIX}/README.md` beside "
+                   f"it, which is {TOOL}'s charter. Record the source revision and use "
+                   f"it consistently. References below beginning with `{SOURCE_PREFIX}/` "
+                   "name paths in that published repository. If a page an entry cites is "
+                   "unavailable, report the limitation; do not invent what a direction "
+                   "says or what a branch did.")
+    if not is_cvc5:
+        context += " This preview is outside a cvc5 checkout; a real run requires one."
+    branch, later = free_branch(root, f"ai-{TOOL}-r{args.number}-{args.agent}",
+                                git is not None and git.returncode == 0)
+    task = TASK.format(number=args.number, name=TOOL, branch=branch,
+                       next_one=later[0], next_two=later[1],
+                       tool=tool if tool is not None else SOURCE_PREFIX)
+    prompt = f"""You are working in the cvc5 checkout at `{root}`, following {TOOL}'s charter.
+{context} Read cvc5's own contributor instructions and relevant tests. This run
+puts its work on a branch it creates, so require a clean working tree: if this
+one has changes, report them and stop without disturbing them. Do not pull,
+reset, or stash this tree, and switch to no branch but the one you create.
+
+{task}
+
+Put temporary output and builds in temporary directories outside the source
+checkouts. Report the source revisions,
+commands, actual results, what you implemented, and anything still unverified.
+Do not commit, push, open a pull request, post a review or comment, or send anything
+upstream. A person decides what to publish.
+"""
+    # Keep interpolated paths intact, including their spaces.
+    prompt = prompt.strip() + "\n"
+    if args.show_prompt:
+        print(prompt, end="")
+        return 0
+    executable = shutil.which(args.agent)
+    if executable is None:
+        print(f"{COMMAND}: {args.agent} is not on PATH", file=sys.stderr)
+        return 127
+    argv = [args.agent]
+    if args.noninteractive:
+        argv.append("exec" if args.agent == "codex" else "-p")
+    argv.append(prompt)
+    charter = f"; charter: {tool / 'README.md'}" if tool is not None else ""
+    print(f"-- {COMMAND}: {root}, R{args.number} on {branch}, "
+          f"via {args.agent}{charter}", file=sys.stderr)
+    os.chdir(root)
+    os.execv(executable, argv)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

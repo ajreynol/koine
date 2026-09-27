@@ -16,6 +16,7 @@ COMMANDS = {
     "anoieu": ("anoieu", "anoieu", []),
     "emperia": ("empeiria", "paideia/tools/empeiria", ["12905"]),
     "anakrisis": ("anakrisis", "paideia/tools/anakrisis", ["12893"]),
+    "heuresis": ("heuresis", "tachyon/tools/heuresis", ["9"]),
 }
 
 
@@ -137,6 +138,15 @@ class Cvc5Checks(unittest.TestCase):
             self.assertEqual(result.stdout, "")
 
     def test_installed_agent_launch_matches_preview_and_preserves_checkout(self):
+        """What a preview prints is what that same run hands an agent.
+
+        `--show-prompt` is compared against the launch of the *same* invocation,
+        which means the flags that select the agent go into both. They used to be
+        dropped from the preview, because no prompt depended on which agent got
+        it -- until heuresis, whose branch name carries the agent, so that two
+        agents sent at one research direction do not write to one name. A preview
+        taken without `--codex` is a preview of a different run.
+        """
         self.make_cvc5()
         self.make_tools()
         before = self.snapshot()
@@ -152,12 +162,17 @@ class Cvc5Checks(unittest.TestCase):
                                       (["--codex"], []), (["--codex", "--print"], ["exec"]),
                                       (["--codex", "--claude", "--print"], ["-p"])):
                     with self.subTest(command=suffix, context=context, flags=flags):
+                        selection = [flag for flag in flags if flag != "--print"]
+                        same = (preview if not selection else
+                                self.run_command(suffix, *args, *context, *selection,
+                                                 "--show-prompt"))
+                        self.assertEqual(same.returncode, 0, same.stderr)
                         result = self.run_command(suffix, *args, *context, *flags,
                                                   cwd=self.cwd / "src/theory")
                         self.assertEqual(result.returncode, 0, result.stderr)
                         got = json.loads(result.stdout)
                         self.assertEqual(got["cwd"], str(self.cwd))
-                        self.assertEqual(got["args"], [*prefix, preview.stdout])
+                        self.assertEqual(got["args"], [*prefix, same.stdout])
         self.assertEqual(self.snapshot(), before)
 
     def test_anoieu_runs_in_non_cvc5_targets(self):
@@ -297,6 +312,86 @@ class Cvc5Checks(unittest.TestCase):
                     self.assertEqual(result.returncode, 0, result.stderr)
                     self.assertEqual(json.loads(result.stdout)["args"], ["-p", previews[suffix]])
         self.assertEqual(self.snapshot(), before)
+
+    def test_heuresis_argues_before_it_writes_and_claims_no_measurement(self):
+        """The one check whose product is a new approach, and what stops it
+        being an old one renamed.
+
+        A direction with a register of branches behind it is exactly where a
+        plausible-looking approach is most likely to be something already tried
+        and measured, so the prompt asks for that inventory *before* any code and
+        refuses an approach whose difference cannot be stated against a named
+        branch or option. And a run that builds one binary must not report a
+        speedup: the number belongs to a whole-set run on the register's own
+        host, and a claim made here would enter that register as evidence it is
+        not.
+        """
+        self.make_cvc5()
+        before = self.snapshot()
+        preview = self.run_command("heuresis", "9", "--show-prompt")
+        self.assertEqual(preview.returncode, 0, preview.stderr)
+        flat = " ".join(preview.stdout.split())
+        for asked in (
+                "tools/heuresis/docs/directions.md",
+                "Record the source revision",
+                "**Brainstorm before writing any code, and say the result in "
+                "your response**",
+                "is a variant rather than a new approach",
+                "**Make no performance claim.**",
+                "require a clean working tree",
+                "Leave heuresis's own documents alone",
+                "**Leave the work staged and not committed**",
+                "create branch `ai-heuresis-r9-claude` from the current HEAD"):
+            self.assertIn(asked, flat)
+        # Written 9 or R9, it is the same direction; the register writes R9.
+        self.assertEqual(self.run_command("heuresis", "R9", "--show-prompt").stdout,
+                         preview.stdout)
+        self.assertIn("direction R9", flat)
+        # The agent that wrote it is in the branch name, so two agents on one
+        # direction do not collide.
+        codex = self.run_command("heuresis", "9", "--codex", "--show-prompt")
+        self.assertIn("create branch `ai-heuresis-r9-codex` from", " ".join(codex.stdout.split()))
+        self.assertNotIn("claude", codex.stdout)
+        # The clean tree is the agent's to check: this fixture is dirty, the run
+        # launches, and the requirement travels in the prompt rather than being
+        # guessed at by a launcher that would have to decide what a stash is for.
+        launched = self.run_command("heuresis", "9", "--print")
+        self.assertEqual(launched.returncode, 0, launched.stderr)
+        self.assertEqual(json.loads(launched.stdout)["args"], ["-p", preview.stdout])
+        self.assertIn("R9 on ai-heuresis-r9-claude", launched.stderr)
+        self.assertEqual(self.snapshot(), before)
+
+    def test_heuresis_takes_the_first_free_branch_name(self):
+        """A name already taken is not free, wherever the ref lives.
+
+        The fork is where these branches end up, so a remote-tracking ref counts
+        too: discovering the collision after the work is done costs a rename of
+        the one thing the register cites. The launcher reads refs and picks; it
+        creates nothing, and the prompt still carries the rule for a ref that
+        arrives after the pick.
+        """
+        self.make_cvc5()
+        self.git("-c", "user.email=t@example.invalid", "-c", "user.name=A Fixture",
+                 "commit", "-q", "-m", "a base commit")
+        for ref, expected, then in (
+                (None, "claude", ("claude2", "claude3")),
+                ("refs/heads/ai-heuresis-r9-claude", "claude2", ("claude3", "claude4")),
+                ("refs/remotes/origin/ai-heuresis-r9-claude2", "claude3",
+                 ("claude4", "claude5")),
+                ("refs/heads/ai-heuresis-r9-claude4", "claude3", ("claude5", "claude6"))):
+            if ref is not None:
+                self.git("update-ref", ref, "HEAD")
+            with self.subTest(taken=ref):
+                result = self.run_command("heuresis", "9", "--show-prompt")
+                self.assertEqual(result.returncode, 0, result.stderr)
+                flat = " ".join(result.stdout.split())
+                self.assertIn(f"create branch `ai-heuresis-r9-{expected}` from", flat)
+                self.assertIn(f"`ai-heuresis-r9-{then[0]}`, then "
+                              f"`ai-heuresis-r9-{then[1]}`", flat)
+        # Reading refs is all it does: no branch was created, switched or moved.
+        self.assertEqual(self.git("symbolic-ref", "HEAD").strip(), "refs/heads/" + self.git(
+            "rev-parse", "--abbrev-ref", "HEAD").strip())
+        self.assertNotIn("ai-heuresis-r9-claude3", self.git("for-each-ref", "--format=%(refname)"))
 
     def test_published_evidence_and_explicit_analyzer_workflows(self):
         self.make_tools()
