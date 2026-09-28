@@ -62,10 +62,9 @@ and what came out, what is still unverified, and the row you would add to
 R{number}'s proposals table, in that table's columns.
 
 **Leave the work staged and not committed**: `git add` what you changed and
-stop there, so a person reviews a diff rather than a history. Stage the files
-you wrote along with the ones you edited, and nothing that was untracked before
-you started. The branch is what keeps that diff off the branch this run started
-on."""
+stop there, so a person reviews a diff rather than a history. Stage what you
+wrote along with what you edited, and leave untracked files that were here
+before you where they are. The branch is what keeps your diff off `main`."""
 
 
 def direction_number(value):
@@ -178,14 +177,19 @@ def main():
                        next_one=later[0], next_two=later[1],
                        tool=tool if tool is not None else SOURCE_PREFIX)
     prompt = f"""You are working in the cvc5 checkout at `{root}`, following {TOOL}'s charter.
-{context} Read cvc5's own contributor instructions and relevant tests. This run
-puts its work on a branch it creates, so require a clean working tree: if a
-tracked file here has staged or unstaged changes
-(`git status --porcelain --untracked-files=no`), report them and stop without
-disturbing them. **Ignore untracked files** -- a build directory or scratch
-output is normal in a cvc5 checkout, is nobody's work to lose, and is no reason
-to stop; leave them where they are, and do not stage them. Do not pull, reset,
-or stash this tree, and switch to no branch but the one you create.
+{context} Read cvc5's own contributor instructions and relevant tests.
+**Check the tree before anything else and stop on any of three**, reporting what
+you found and changing nothing: this checkout is not on `main`; a tracked file
+has staged or unstaged changes; or `main` here is not the current tip of cvc5's
+own `main`, which you establish through read-only access to the upstream
+repository rather than trusting a local ref to be fresh. Each of the three would
+put something in this branch's diff that is not the new approach -- somebody
+else's uncommitted work, or a rebase somebody has to do before the register can
+measure it. **Untracked files are none of the three**: a build directory is
+normal in a cvc5 checkout and is nobody's work to lose, so leave it where it is
+and do not stage it. Do not pull, reset, stash, merge or rebase to satisfy any of
+this -- updating the tree is the person's call, and this run's is to say what it
+found -- and switch to no branch but the one you create.
 
 {task}
 

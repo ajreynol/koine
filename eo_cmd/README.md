@@ -428,8 +428,9 @@ to update the database.
 
 The four `eo_cvc5_check_` commands and `eo_check_anoieu` launch the selected
 assistant from the target Git root. All but Heuresis keep the current branch and
-preserve existing work; Heuresis requires a clean tree and asks the agent to
-create the one branch its diff is left on. Dokimasia, Anoieu, Empeiria and
+preserve existing work; Heuresis starts from `main` at the current upstream tip
+with no tracked changes, and creates the one branch its own diff is left on.
+Dokimasia, Anoieu, Empeiria and
 Heuresis ask for changes to be left staged
 and not committed; Anakrisis returns a review. All refuse `--push`, leaving
 publication to a person. Tool repositories
@@ -551,13 +552,20 @@ anything is built.
 so `--codex` names the branch too, with the first free numeric suffix —
 `ai-heuresis-r9-claude2` — when the name is taken. The launcher reads the
 checkout's refs to pick it, remote-tracking refs included, and the prompt carries
-the same rule for a ref that arrives after that. Because the work goes on a new
-branch, this run **requires the tracked tree to be clean** and stops on a dirty
-one without disturbing it, where the other checks keep the current branch and
-preserve existing work. **Untracked files are ignored**: a build directory or
-scratch output is normal in a cvc5 checkout and is no reason to refuse a run, so
-the prompt neither counts them nor stages them — the files staged at the end are
-the ones the agent edited and wrote.
+the same rule for a ref that arrives after that.
+
+**Three things stop the run before it reads anything**, each reported and none
+of them fixed by the agent: the checkout is not on `main`; a tracked file has
+staged or unstaged changes; or `main` here is not the current tip of cvc5's own
+`main`, which the agent establishes through read-only upstream access rather
+than trusting a local ref to be fresh. Each would put something in the branch's
+diff that is not the new approach — somebody else's uncommitted work, or a
+rebase somebody has to do before the register can measure it — and pulling,
+resetting or stashing to clear one is your call rather than the run's.
+
+**Untracked files are none of the three.** A build directory is normal in a
+cvc5 checkout and is nobody's work to lose, so the run neither stops for it nor
+stages it: what it stages is what it edited and wrote.
 
 The prompt asks for the change to be guarded behind a new option defaulting to
 current behaviour, so that what was written is one arm against the register's

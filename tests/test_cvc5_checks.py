@@ -338,10 +338,12 @@ class Cvc5Checks(unittest.TestCase):
                 "your response**",
                 "is a variant rather than a new approach",
                 "**Make no performance claim.**",
-                "require a clean working tree",
-                "(`git status --porcelain --untracked-files=no`)",
-                "**Ignore untracked files**",
-                "nothing that was untracked before you started",
+                "**Check the tree before anything else and stop on any of three**",
+                "this checkout is not on `main`",
+                "a tracked file has staged or unstaged changes",
+                "not the current tip of cvc5's own `main`",
+                "**Untracked files are none of the three**",
+                "leave untracked files that were here before you where they are",
                 "Leave heuresis's own documents alone",
                 "**Leave the work staged and not committed**",
                 "create branch `ai-heuresis-r9-claude` from the current HEAD"):
@@ -355,15 +357,19 @@ class Cvc5Checks(unittest.TestCase):
         codex = self.run_command("heuresis", "9", "--codex", "--show-prompt")
         self.assertIn("create branch `ai-heuresis-r9-codex` from", " ".join(codex.stdout.split()))
         self.assertNotIn("claude", codex.stdout)
-        # A build directory is not a dirty tree. The requirement is about
-        # tracked changes, and it says so, because a cvc5 checkout that has been
-        # built once has untracked output in it and a run that refused those
-        # would refuse every real checkout it was pointed at.
-        for never in ("git add -A", "git add .", "git clean"):
+        # A cvc5 checkout that has been built once has untracked output in it,
+        # so a gate that counted those would stop on every real checkout it was
+        # pointed at: the three are about the branch, the tracked tree and the
+        # revision. None of them is cleared by the agent, and the sweeps that
+        # would clear one by taking somebody's work with it are asked for
+        # nowhere.
+        for never in ("git add -A", "git add .", "git clean", "git stash",
+                      "git pull", "git reset"):
             self.assertNotIn(never, flat)
-        # The clean tree is the agent's to check: this fixture is dirty, the run
-        # launches, and the requirement travels in the prompt rather than being
-        # guessed at by a launcher that would have to decide what a stash is for.
+        # This fixture has both staged and unstaged changes in it, and the run
+        # still launches: the gate is in the prompt, checked by the agent that
+        # can also read upstream, rather than guessed at by a launcher that
+        # fetches nothing.
         launched = self.run_command("heuresis", "9", "--print")
         self.assertEqual(launched.returncode, 0, launched.stderr)
         self.assertEqual(json.loads(launched.stdout)["args"], ["-p", preview.stdout])
