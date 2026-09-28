@@ -1,0 +1,237 @@
+#!/usr/bin/env python3
+"""eo_cvc5_check_metagraphe -- implement one filed metagraphe candidate rewrite.
+
+Self-contained because install_eo copies each command as a single file.
+The launcher reads paths and builds a prompt; only the selected agent does work.
+"""
+
+import argparse
+import os
+from pathlib import Path
+import re
+import shutil
+import subprocess
+import sys
+
+COMMAND = 'eo_cvc5_check_metagraphe'
+TOOL = 'metagraphe'
+NUMBER_KIND = 'candidate'
+SOURCE = 'https://github.com/ajreynol/tachyon'
+SOURCE_PREFIX = 'tachyon/tools/metagraphe'
+REGISTER = ('https://github.com/ajreynol/tachyon/blob/main/'
+            'tools/metagraphe/rewrite_db/rewrites.json')
+SUMMARY = 'implement one filed metagraphe candidate rewrite'
+TASK = """Implement candidate M-{number} of {name}'s rewrite database in this
+checkout's rewriter.
+
+Read the record `metagraphe:M-{number}` whole in
+`{tool}/rewrite_db/rewrites.json` -- every schema in `proposal.rewrites` with its
+sorts, widths and conditions, the RARE drafts, the application context, the
+orientation, the three assessments with their reasons, the checks, the cautions
+and the next step -- and its generated view in `{tool}/rewrite_db/rewrites.md`.
+Read the database's own `{tool}/rewrite_db/README.md`, the charter's section on
+what counts as a finding, and the ledger entries the record cites. If the
+database has no M-{number}, say so and stop: the ledger may hold it as archived
+triage, and an ID there is never reused or reconstructed. If the record carries
+a `closed_*` verdict, report the verdict and stop.
+
+**Establish before writing any code, and say the result in your response**,
+three things the record may have settled on an older cvc5 and this checkout has
+not. Whether cvc5 still misses it: reproduce the record's own availability
+command at this HEAD, and if the rewrite now happens, say where and stop --
+that is evidence for a reassessment, not work for a branch. Whether it is
+valid: restate each schema's side condition and the record's validity argument,
+and if a caution or your own reading finds a counterexample, say so and do not
+implement that schema. And where it belongs: which theory rewriter and entry
+point, whether each condition is decidable on the terms at that point or known
+only during search (a condition known only during search is not a rewrite and
+stops that schema), which existing rules it overlaps or could cycle with in
+light of the declared orientation, and how the step is proved -- a RARE rule
+beside the theory's existing ones where the draft is expressible, or a
+dedicated proof rewrite rule otherwise -- so that proof production gains no
+trusted step. Choose the placement and say why, naming the rules beside it.
+
+Then create branch `{branch}` from the current HEAD of this checkout and do the
+work there; if that name is taken by the time you look, add the next free
+suffix -- `{next_one}`, then `{next_two}`. Implement the record's schemas and
+nothing else: a neighbouring identity you notice on the way is a lead for
+{name} to file, reported rather than added. Follow cvc5's convention for
+rewrites rather than guarding the rule behind an option; the branch's merge
+base is the reference it is measured against. Build cvc5 and run the
+regressions covering the theory you touched. Add a regression for each schema,
+and show on this build that each left-hand side now becomes its right-hand side
+with the same entry point the record used, that an instance violating the side
+condition -- the record's cautions name some -- is left alone, and that a proof
+through the new step checks with cvc5's own proof checking and carries no
+trusted step for it.
+
+**Make no performance claim.** Pricing a rewrite is {name}'s own work, and a
+compile is not a result: say what would have to be run -- the benchmarks the
+record cites for its value, against this branch's merge base -- and report no
+speedup you have not measured on this build. Leave {name}'s own documents alone
+-- the database, its view, the ledger and the reports belong to another
+repository, and a reassessment is a dated ledger entry a person reviews there.
+Finish with what you implemented and where it is in cvc5's source, what you ran
+and what came out, what is still unverified, and the evidence you would hand
+{name} for the record's availability and next step.
+
+**Leave the work staged and not committed**: `git add` what you changed and
+stop there, so a person reviews a diff rather than a history. Stage what you
+wrote along with what you edited, and leave untracked files that were here
+before you where they are. The branch is what keeps your diff off `main`."""
+
+
+def candidate_number(value):
+    found = re.fullmatch(r"(?:[Mm]-?)?([1-9][0-9]*)", value)
+    if not found:
+        raise argparse.ArgumentTypeError(
+            "N must be a candidate number, written 25, M25 or M-25")
+    return found.group(1)
+
+
+def free_branch(root, base, search):
+    """The first unused branch name, and the two after it.
+
+    The prompt names a branch rather than stating a rule, because a rule is one
+    more thing to get wrong in a name a person will type again. Every ref this
+    checkout can see counts as taken, remote-tracking ones included: a name
+    already on the fork is not free even where no local branch holds it. The
+    rule goes in the prompt as well, with the next two free names, because a ref
+    that arrives between this and the agent's `git checkout -b` is not a
+    launcher's to see.
+    """
+    taken = set()
+    if search:
+        try:
+            refs = subprocess.run(["git", "for-each-ref", "--format=%(refname)"],
+                                  cwd=root, capture_output=True, text=True)
+        except FileNotFoundError:
+            refs = None
+        if refs is not None and refs.returncode == 0:
+            # The last component, which is the branch name for a head and for a
+            # remote-tracking ref alike. These names carry no slash of their own.
+            taken = {line.rsplit("/", 1)[-1] for line in refs.stdout.split()}
+    name, suffix = base, 2
+    while name in taken:
+        name, suffix = f"{base}{suffix}", suffix + 1
+    later = []
+    while len(later) < 2:
+        candidate = f"{base}{suffix}"
+        suffix += 1
+        if candidate not in taken:
+            later.append(candidate)
+    return name, later
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        prog=COMMAND, allow_abbrev=False,
+        usage="%(prog)s [options]" + (" N" if NUMBER_KIND else ""),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=f"{COMMAND} -- {SUMMARY}.\n\n"
+                    "An Eunoia ecosystem prompt command. Run it in a cvc5 repository;\n"
+                    "the agent starts at the checkout root and works on a branch it\n"
+                    "creates. Read the record, check it still holds, implement, leave it local.",
+        epilog="N is the candidate, written 25, M25 or M-25.\n"
+               "The branch is ai-metagraphe-m<N>-<agent>, with the first free numeric\n"
+               "suffix if that name is taken; --codex therefore names the branch too.\n"
+               "--show-prompt works without cvc5 or an agent installed.\n"
+               "--tool-root opts into a local tachyon checkout's tools/metagraphe;\n"
+               "the published database is read by default and no tool is discovered.\n"
+               "No launcher switches branches, pulls, runs analyses, or writes files.")
+    if NUMBER_KIND:
+        parser.add_argument("number", metavar="N", type=candidate_number,
+                            help=f"the {TOOL} {NUMBER_KIND} number (required)")
+    parser.add_argument("--tool-root", metavar="DIR",
+                        help=f"optionally use a local {TOOL} checkout containing README.md")
+    parser.add_argument("--codex", dest="agent", action="store_const", const="codex",
+                        help="select codex instead of claude")
+    parser.add_argument("--claude", dest="agent", action="store_const", const="claude",
+                        help="select claude (the default)")
+    parser.set_defaults(agent="claude")
+    parser.add_argument("--print", dest="noninteractive", action="store_true",
+                        help="run the agent non-interactively and print the result")
+    parser.add_argument("--show-prompt", action="store_true", help="print the prompt and launch nothing")
+    parser.add_argument("--push", action="store_true", help="refused: these runs keep their results local")
+    args = parser.parse_args()
+    if args.push:
+        parser.error("--push is refused: upstream delivery remains a person's decision")
+
+    try:
+        git = subprocess.run(["git", "rev-parse", "--show-toplevel"],
+                             capture_output=True, text=True)
+    except FileNotFoundError:
+        git = None
+    root = Path(git.stdout.strip()).resolve() if git and git.returncode == 0 else Path.cwd()
+    is_cvc5 = (git is not None and git.returncode == 0
+               and (root / "configure.sh").is_file() and (root / "src/theory").is_dir())
+    if not is_cvc5 and not args.show_prompt:
+        parser.error("run this in a cvc5 Git checkout (configure.sh and src/theory/ are required)")
+    tool = Path(args.tool_root).expanduser().resolve() if args.tool_root is not None else None
+    if tool is not None:
+        if not (tool / "README.md").is_file() and not args.show_prompt:
+            parser.error(f"no {TOOL} charter found at {tool / 'README.md'}; "
+                         "--tool-root must name its README.md directory")
+        context = f"Read `{tool / 'README.md'}` first; it is {TOOL}'s charter."
+        context += (" Use the tool checkout as a source of instructions and evidence, "
+                    "without modifying its code, database, ledger, reports or baselines.")
+    else:
+        context = (f"Read {SOURCE} through read-only GitHub access, beginning with the "
+                   f"database at {REGISTER} and with `{SOURCE_PREFIX}/README.md` beside "
+                   f"it, which is {TOOL}'s charter. Record the source revision and use "
+                   f"it consistently. References below beginning with `{SOURCE_PREFIX}/` "
+                   "name paths in that published repository. If a page the record cites is "
+                   "unavailable, report the limitation; do not invent what a record "
+                   "says or what a check found.")
+    if not is_cvc5:
+        context += " This preview is outside a cvc5 checkout; a real run requires one."
+    branch, later = free_branch(root, f"ai-{TOOL}-m{args.number}-{args.agent}",
+                                git is not None and git.returncode == 0)
+    task = TASK.format(number=args.number, name=TOOL, branch=branch,
+                       next_one=later[0], next_two=later[1],
+                       tool=tool if tool is not None else SOURCE_PREFIX)
+    prompt = f"""You are working in the cvc5 checkout at `{root}`, following {TOOL}'s charter.
+{context} Read cvc5's own contributor instructions and relevant tests.
+**Check the tree before anything else and stop on any of three**, reporting what
+you found and changing nothing: this checkout is not on `main`; a tracked file
+has staged or unstaged changes; or `main` here is not the current tip of cvc5's
+own `main`, which you establish through read-only access to the upstream
+repository rather than trusting a local ref to be fresh. Each of the three would
+put something in this branch's diff that is not the rewrite -- somebody
+else's uncommitted work, or a rebase somebody has to do before {TOOL} can
+measure it. **Untracked files are none of the three**: a build directory is
+normal in a cvc5 checkout and is nobody's work to lose, so leave it where it is
+and do not stage it. Do not pull, reset, stash, merge or rebase to satisfy any of
+this -- updating the tree is the person's call, and this run's is to say what it
+found -- and switch to no branch but the one you create.
+
+{task}
+
+Put temporary output and builds in temporary directories outside the source
+checkouts. Report the source revisions,
+commands, actual results, what you implemented, and anything still unverified.
+Do not commit, push, open a pull request, post a review or comment, or send anything
+upstream. A person decides what to publish.
+"""
+    # Keep interpolated paths intact, including their spaces.
+    prompt = prompt.strip() + "\n"
+    if args.show_prompt:
+        print(prompt, end="")
+        return 0
+    executable = shutil.which(args.agent)
+    if executable is None:
+        print(f"{COMMAND}: {args.agent} is not on PATH", file=sys.stderr)
+        return 127
+    argv = [args.agent]
+    if args.noninteractive:
+        argv.append("exec" if args.agent == "codex" else "-p")
+    argv.append(prompt)
+    charter = f"; charter: {tool / 'README.md'}" if tool is not None else ""
+    print(f"-- {COMMAND}: {root}, M-{args.number} on {branch}, "
+          f"via {args.agent}{charter}", file=sys.stderr)
+    os.chdir(root)
+    os.execv(executable, argv)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

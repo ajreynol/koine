@@ -59,11 +59,13 @@ without changing any checkout; `eo_respond` answers one topic
 another tool addressed to you; `eo_housekeeping` brings a repository up to date, and
 `eo_brainstorm` looks for what it could do next, works through the list with
 you, and keeps what survives in `docs/brainstorm.md` without committing any of
-it. The four `eo_cvc5_check_` commands apply Dokimasia, Empeiria, Anakrisis and
-Heuresis to a cvc5 checkout: investigate proof defects, fix a numbered issue,
-review a numbered PR using the measured inventory delta, or write a new approach
-in one numbered research direction — brainstormed against what that direction has
-already tried, on a branch the run creates. `eo_check_anoieu` investigates
+it. The six `eo_cvc5_check_` commands apply Dokimasia, Empeiria, Anakrisis,
+Heuresis, Elaphros and Metagraphe to a cvc5 checkout: investigate proof defects,
+fix a numbered issue, review a numbered PR using the measured inventory delta,
+write a new approach in one numbered research direction of Heuresis or Elaphros —
+brainstormed against what that direction has already tried — or implement one
+filed Metagraphe rewrite after re-checking that cvc5 still misses it; the last
+three each work on a branch the run creates. `eo_check_anoieu` investigates
 Eunoia signature and semantics defects in the current target repository.
 These run where a person is working, with
 `eo_git_status` also accepting directories to search. They live with the tool

@@ -21,6 +21,8 @@ Prompt commands hand work to an assistant; programs do the work themselves.
 | [`eo_cvc5_check_emperia`](eo_cvc5_check_emperia) | reproduce, locate, fix and test one numbered cvc5 issue |
 | [`eo_cvc5_check_anakrisis`](eo_cvc5_check_anakrisis) | review one numbered cvc5 PR using the measured inventory delta |
 | [`eo_cvc5_check_heuresis`](eo_cvc5_check_heuresis) | write a new approach in one heuresis research direction, on a branch of its own |
+| [`eo_cvc5_check_elaphros`](eo_cvc5_check_elaphros) | write a new approach in one elaphros research direction, on a branch of its own |
+| [`eo_cvc5_check_metagraphe`](eo_cvc5_check_metagraphe) | implement one filed metagraphe candidate rewrite, on a branch of its own |
 | `koine_append_db` | append a run's records to a database, whatever that database calls them; implementation and usage in [`../bug_db_manager/`](../bug_db_manager/README.md) |
 | `koine_window` | resolve and describe the window of another project's history a closure run reads; in [`../bug_db_manager/`](../bug_db_manager/README.md) |
 | `koine_check_db` | check that a closure run changed only what it was allowed to; in [`../bug_db_manager/`](../bug_db_manager/README.md) |
@@ -135,6 +137,8 @@ after CI passes, which is still the final step of the work.
 | `eo_cvc5_check_emperia` | refused: upstream delivery remains a person's decision |
 | `eo_cvc5_check_anakrisis` | refused: the result is a local review |
 | `eo_cvc5_check_heuresis` | refused: upstream delivery remains a person's decision |
+| `eo_cvc5_check_elaphros` | refused: upstream delivery remains a person's decision |
+| `eo_cvc5_check_metagraphe` | refused: upstream delivery remains a person's decision |
 
 The programs — `eo_status`, `eo_git_status`, `eo_listen` — write nothing and
 reject the flag as an unknown argument.
@@ -426,12 +430,13 @@ observations that no longer hold are reported, not closed. `--tool-root` opts in
 a local Dokimasia checkout and running its analyzer only to confirm a fix, never
 to update the database.
 
-The four `eo_cvc5_check_` commands and `eo_check_anoieu` launch the selected
-assistant from the target Git root. All but Heuresis keep the current branch and
-preserve existing work; Heuresis starts from `main` at the current upstream tip
-with no tracked changes, and creates the one branch its own diff is left on.
+The six `eo_cvc5_check_` commands and `eo_check_anoieu` launch the selected
+assistant from the target Git root. Dokimasia, Empeiria, Anakrisis and Anoieu
+keep the current branch and preserve existing work; the three tachyon commands —
+Heuresis, Elaphros and Metagraphe — start from `main` at the current upstream tip
+with no tracked changes, and create the one branch their own diff is left on.
 Dokimasia, Anoieu, Empeiria and
-Heuresis ask for changes to be left staged
+the three tachyon commands ask for changes to be left staged
 and not committed; Anakrisis returns a review. All refuse `--push`, leaving
 publication to a person. Tool repositories
 are read without changing their databases, ledgers or baselines.
@@ -440,7 +445,7 @@ They accept `--codex`, `--claude`, `--print` for a non-interactive run, and
 `--show-prompt` to preview without starting an assistant. The default agent is
 the same as the other prompt commands. The launcher itself performs no analysis,
 network access, branch changes or writes. A real run requires the target Git
-checkout. The four cvc5 commands additionally require
+checkout. The six cvc5 commands additionally require
 `configure.sh` and `src/theory/`.
 A preview needs no target checkout or agent installed.
 
@@ -448,7 +453,7 @@ A preview needs no target checkout or agent installed.
 directory containing its charter. Only this mode requires that tool's
 `README.md`. Without the flag, local tool checkouts are neither discovered nor
 mentioned in the prompt, even when environment variables or neighboring trees
-point to them. Dokimasia, Anoieu, Anakrisis and Heuresis read their published instructions
+point to them. Dokimasia, Anoieu, Anakrisis and the three tachyon commands read their published instructions
 and evidence by default; unavailable evidence is reported, never treated as an
 empty worklist or a successful check. Empeiria works directly from the issue.
 No dependency is cloned or fetched by the launcher.
@@ -548,7 +553,7 @@ option is a variant, and the prompt sends it back rather than letting it be
 dressed up as new. A person watching the run can redirect it there, before
 anything is built.
 
-**It is the one command here that creates a branch**: `ai-heuresis-r<N>-<agent>`,
+**It creates a branch**, as the other two tachyon commands do: `ai-heuresis-r<N>-<agent>`,
 so `--codex` names the branch too, with the first free numeric suffix —
 `ai-heuresis-r9-claude2` — when the name is taken. The launcher reads the
 checkout's refs to pick it, remote-tracking refs included, and the prompt carries
@@ -576,6 +581,69 @@ what would have to be run against which reference to price the approach, and
 ends with the row it would add to that direction's proposals table. Heuresis's
 register, ledger and reports are left alone — a proposal earns its row there.
 The work stays staged on the new branch. The common options are above.
+
+## eo_cvc5_check_elaphros
+
+```console
+$ eo_cvc5_check_elaphros 1
+$ eo_cvc5_check_elaphros E1 --show-prompt
+$ eo_cvc5_check_elaphros 1 --tool-root /path/to/tachyon/tools/elaphros --codex
+```
+
+Heuresis's command applied to Elaphros, tachyon's project on what cvc5 pays to
+produce a proof. `N` is a **research direction number** in Elaphros's register,
+written `1` or `E1`, read from
+[`tools/elaphros/docs/directions.md`](https://github.com/ajreynol/tachyon/blob/main/tools/elaphros/docs/directions.md)
+by default. Everything above for Heuresis holds — the brainstorm said out loud
+before any code, a variant sent back, the checks that stop the run, the branch
+`ai-elaphros-e<N>-<agent>` with the first free suffix, the new option defaulting
+to current behaviour, no performance claim, the register left alone, the work
+staged — with the direction's evidence read from Elaphros's own pages: the
+hypothesis register, the branch survey and the pipeline audit.
+
+**One refusal is its own.** An approach that saves time by weakening the proof —
+more trusted steps, holes or unchecked rules than the reference produces — is
+not an approach here, because the register refuses it as a proposal. So the run
+checks the proof the new path emits with cvc5's own proof checking and compares
+it with the one the option's default produces on the same input. What it says
+would price the approach is three arms: ordinary solving, the proof-producing
+reference and this one, with the proof checked in each. The common options are
+above.
+
+## eo_cvc5_check_metagraphe
+
+```console
+$ eo_cvc5_check_metagraphe 25
+$ eo_cvc5_check_metagraphe M-25 --show-prompt
+$ eo_cvc5_check_metagraphe 25 --tool-root /path/to/tachyon/tools/metagraphe --codex
+```
+
+`N` is a **candidate number** in Metagraphe's rewrite database, written `25`,
+`M25` or `M-25`, and the record is `metagraphe:M-N` in
+[`tools/metagraphe/rewrite_db/rewrites.json`](https://github.com/ajreynol/tachyon/blob/main/tools/metagraphe/rewrite_db/rewrites.json),
+read by default. Unlike the two direction commands, there is nothing to invent:
+the record already states each schema `lhs -> rhs` with its sorts and
+conditions, so the run implements that and nothing else. A neighbouring
+identity found on the way is reported for Metagraphe to file.
+
+**What comes before the code is a re-check.** The record was observed on an older
+cvc5, so the agent reproduces its availability command at this HEAD and stops if
+the rewrite now happens; restates each side condition and the validity argument
+and drops a schema with a counterexample; and says where the rule belongs — the
+rewriter and entry point, whether each condition is decidable there (one known
+only during search is not a rewrite), which existing rules it overlaps or could
+cycle with, and how the step is proved, so that proof production gains no trusted
+step. A missing record or one carrying a `closed_*` verdict also stops the run.
+
+It starts from `main` at the upstream tip and creates `ai-metagraphe-m<N>-<agent>`
+exactly as Heuresis does. The rule is **not** option-guarded, following cvc5's
+convention for rewrites; the branch's merge base is the reference. It asks for a
+regression per schema, a negative case from the record's cautions left alone,
+and a checked proof through the new step. **It makes no performance claim** and
+names the benchmarks the record cites for its value. The database, its view and
+the ledger are left alone — a reassessment is a dated ledger entry a person
+reviews — and the run ends with the evidence it would hand Metagraphe. The work
+stays staged on the new branch. The common options are above.
 
 ## eo_init
 

@@ -210,10 +210,30 @@
         "eo_cvc5_check_heuresis <n> --codex"
       ],
       "kind": "prompt"
+    },
+    {
+      "name": "eo_cvc5_check_elaphros",
+      "short": "write a new approach in one elaphros research direction",
+      "what": "run in a cvc5 checkout with a research direction number, written 3 or E3: heuresis's shape applied to elaphros, tachyon's project on what cvc5 pays to produce a proof. It asks an assistant to read that direction's entry in elaphros's register and the survey and audit behind it, say what has already been tried there and what it plans that is none of it, and implement one new approach on a branch `ai-elaphros-e<N>-<agent>` it creates, with the first free numeric suffix if that name is taken. An approach that saves time by weakening the proof is refused as one: the emitted proof is checked and compared with the one the option's default produces. It makes no performance claim; the run says what would have to be run -- ordinary solving, the proof-producing reference and this arm -- to price it. --tool-root opts into a local tachyon checkout's tools/elaphros. Changes stay staged on the new branch; nothing is published, and elaphros's own register, ledger and reports are left to it",
+      "forms": [
+        "eo_cvc5_check_elaphros <n>",
+        "eo_cvc5_check_elaphros <n> --codex"
+      ],
+      "kind": "prompt"
+    },
+    {
+      "name": "eo_cvc5_check_metagraphe",
+      "short": "implement one filed metagraphe candidate rewrite",
+      "what": "run in a cvc5 checkout with a candidate number, written 25, M25 or M-25: ask an assistant to read the record metagraphe:M-N in metagraphe's rewrite database in tachyon, re-establish at this HEAD that cvc5 still misses it, that each schema is valid, and where in the rewriter it belongs and how its step is proved, and say all of that before any code. A rewrite cvc5 now performs stops the run, as does a record with a closed verdict or no record at all; a schema with a counterexample or a condition known only during search is not implemented. Then it implements the record's schemas and nothing else, on a branch `ai-metagraphe-m<N>-<agent>` it creates, unguarded as cvc5's rewrites are, with a regression per schema, a negative case from the record's cautions and a checked proof carrying no trusted step for the new rule. It makes no performance claim and names the benchmarks that would price it. --tool-root opts into a local tachyon checkout's tools/metagraphe. Changes stay staged on the new branch; nothing is published, and metagraphe's database, ledger and reports are left to it",
+      "forms": [
+        "eo_cvc5_check_metagraphe <n>",
+        "eo_cvc5_check_metagraphe <n> --codex"
+      ],
+      "kind": "prompt"
     }
   ],
   "convention": "Every installed command carries a prefix saying whose it is, because the name is claimed inside somebody else's process and on their PATH. `eo_` is the ecosystem's commands, which run inside a tree that is not this one. `koine_` is this repository's own. install_eo refuses anything else.",
-  "handoff": "**Where the work is left is one convention, not each command's own decision.** Every command here that changes a tree tells the assistant to leave the work staged and not committed, in the same words, because the diff is the review: a person reads what was done before any of it is in a history somebody has to undo. `--push` is that person saying they do not want the review -- it commits the work and pushes it, and stops rather than forcing a push that is rejected. A command with nothing to push refuses the flag with a reason: eo_brainstorm always, eo_housekeeping under --report. The four eo_cvc5_check_ commands and eo_check_anoieu also refuse --push: their charters leave upstream delivery to a person. Anakrisis returns a review without changing source files, and heuresis is the one that keeps no branch: it stages its work on a branch it creates, because a new approach is a diff nobody should find on the branch they were on. A `*.local.md` is staged by neither form, and neither is what eo_brainstorm adds to docs/brainstorm.md -- a proposal is not a decision somebody should find already in the history.",
+  "handoff": "**Where the work is left is one convention, not each command's own decision.** Every command here that changes a tree tells the assistant to leave the work staged and not committed, in the same words, because the diff is the review: a person reads what was done before any of it is in a history somebody has to undo. `--push` is that person saying they do not want the review -- it commits the work and pushes it, and stops rather than forcing a push that is rejected. A command with nothing to push refuses the flag with a reason: eo_brainstorm always, eo_housekeeping under --report. The six eo_cvc5_check_ commands and eo_check_anoieu also refuse --push: their charters leave upstream delivery to a person. Anakrisis returns a review without changing source files, and the three tachyon ones -- heuresis, elaphros and metagraphe -- keep no branch: each stages its work on a branch it creates, because a new approach or a new rewrite is a diff nobody should find on the branch they were on. A `*.local.md` is staged by neither form, and neither is what eo_brainstorm adds to docs/brainstorm.md -- a proposal is not a decision somebody should find already in the history.",
   "kinds": "`prompt` hands context to an assistant and takes --show-prompt, which prints what it would hand one and runs nothing. `program` does the work itself.",
   "register": "A command marked `needs: register` has the president's ecosystem.json baked into it when install_eo copies it, with the commit and date it was taken. That makes it usable away from the president's tree without ever presenting a snapshot as the live register.",
   "ground_truth": "This file is the ground truth for what these commands are and what each is for. The copy is the table in eo_cmd/README.md, and test_the_readme_table_agrees_with_the_manifest in tests/test_eo_cmd.py is what compares the two -- it decides that the same names appear in both and that each has somewhere it is written up, and it cannot decide whether a description is still true of the behaviour. The one claim `kinds` makes that a program can check, that only a prompt takes --show-prompt, is checked beside it.",

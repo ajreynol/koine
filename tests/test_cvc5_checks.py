@@ -17,6 +17,8 @@ COMMANDS = {
     "emperia": ("empeiria", "paideia/tools/empeiria", ["12905"]),
     "anakrisis": ("anakrisis", "paideia/tools/anakrisis", ["12893"]),
     "heuresis": ("heuresis", "tachyon/tools/heuresis", ["9"]),
+    "elaphros": ("elaphros", "tachyon/tools/elaphros", ["3"]),
+    "metagraphe": ("metagraphe", "tachyon/tools/metagraphe", ["25"]),
 }
 
 
@@ -407,6 +409,94 @@ class Cvc5Checks(unittest.TestCase):
         self.assertEqual(self.git("symbolic-ref", "HEAD").strip(), "refs/heads/" + self.git(
             "rev-parse", "--abbrev-ref", "HEAD").strip())
         self.assertNotIn("ai-heuresis-r9-claude3", self.git("for-each-ref", "--format=%(refname)"))
+
+    def test_elaphros_keeps_the_proof_it_is_making_cheaper(self):
+        """Heuresis's shape, with the one thing a proof-overhead approach can
+        cheat on refused out loud.
+
+        A proof with more trusted steps is cheaper to produce and is not the
+        same proof; the register refuses it as a proposal, so the prompt refuses
+        it as an approach and asks for the emitted proof to be checked and
+        compared with the default's.
+        """
+        self.make_cvc5()
+        before = self.snapshot()
+        preview = self.run_command("elaphros", "3", "--show-prompt")
+        self.assertEqual(preview.returncode, 0, preview.stderr)
+        flat = " ".join(preview.stdout.split())
+        for asked in (
+                "tools/elaphros/docs/directions.md",
+                "direction E3 of elaphros's register",
+                "**Brainstorm before writing any code, and say the result in "
+                "your response**",
+                "is a variant rather than a new approach",
+                "**An approach that saves its time by weakening the proof is not "
+                "an approach here**",
+                "check the proof it emits",
+                "**Make no performance claim.**",
+                "Leave elaphros's own documents alone",
+                "**Leave the work staged and not committed**",
+                "create branch `ai-elaphros-e3-claude` from the current HEAD"):
+            self.assertIn(asked, flat)
+        self.assertNotIn("heuresis", preview.stdout)
+        self.assertEqual(self.run_command("elaphros", "E3", "--show-prompt").stdout,
+                         preview.stdout)
+        # A heuresis direction is not an elaphros one.
+        self.assertEqual(self.run_command("elaphros", "R3", "--show-prompt").returncode, 2)
+        codex = self.run_command("elaphros", "3", "--codex", "--show-prompt")
+        self.assertIn("create branch `ai-elaphros-e3-codex` from", " ".join(codex.stdout.split()))
+        launched = self.run_command("elaphros", "3", "--print")
+        self.assertEqual(launched.returncode, 0, launched.stderr)
+        self.assertEqual(json.loads(launched.stdout)["args"], ["-p", preview.stdout])
+        self.assertIn("E3 on ai-elaphros-e3-claude", launched.stderr)
+        self.assertEqual(self.snapshot(), before)
+
+    def test_metagraphe_rechecks_the_record_before_implementing_it(self):
+        """A filed candidate was observed on an older cvc5, so availability and
+        validity are established again before any code, and the run implements
+        the record's schemas rather than inventing an approach.
+
+        The other refusals are the ones a rewrite invites: a condition only
+        known during search is not a rewrite, and a rule that adds a trusted
+        step to proofs has moved a cost rather than removed one.
+        """
+        self.make_cvc5()
+        before = self.snapshot()
+        preview = self.run_command("metagraphe", "25", "--show-prompt")
+        self.assertEqual(preview.returncode, 0, preview.stderr)
+        flat = " ".join(preview.stdout.split())
+        for asked in (
+                "tools/metagraphe/rewrite_db/rewrites.json",
+                "Implement candidate M-25 of metagraphe's rewrite database",
+                "record `metagraphe:M-25` whole",
+                "**Establish before writing any code, and say the result in your "
+                "response**",
+                "reproduce the record's own availability command at this HEAD",
+                "is not a rewrite and stops that schema",
+                "proof production gains no trusted step",
+                "Implement the record's schemas and nothing else",
+                "**Make no performance claim.**",
+                "Leave metagraphe's own documents alone",
+                "**Leave the work staged and not committed**",
+                "create branch `ai-metagraphe-m25-claude` from the current HEAD"):
+            self.assertIn(asked, flat)
+        self.assertNotIn("direction", preview.stdout)
+        for spelled in ("M25", "M-25", "m-25"):
+            with self.subTest(spelled=spelled):
+                self.assertEqual(self.run_command("metagraphe", spelled,
+                                                  "--show-prompt").stdout, preview.stdout)
+        for wrong in ("M--25", "R25", "M0"):
+            with self.subTest(wrong=wrong):
+                self.assertEqual(self.run_command("metagraphe", wrong,
+                                                  "--show-prompt").returncode, 2)
+        codex = self.run_command("metagraphe", "25", "--codex", "--show-prompt")
+        self.assertIn("create branch `ai-metagraphe-m25-codex` from",
+                      " ".join(codex.stdout.split()))
+        launched = self.run_command("metagraphe", "25", "--print")
+        self.assertEqual(launched.returncode, 0, launched.stderr)
+        self.assertEqual(json.loads(launched.stdout)["args"], ["-p", preview.stdout])
+        self.assertIn("M-25 on ai-metagraphe-m25-claude", launched.stderr)
+        self.assertEqual(self.snapshot(), before)
 
     def test_published_evidence_and_explicit_analyzer_workflows(self):
         self.make_tools()
